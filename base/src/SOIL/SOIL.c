@@ -105,6 +105,7 @@ unsigned int
 	);
 
 /*	and the code magic begins here [8^)	*/
+
 unsigned int
 	SOIL_load_OGL_texture
 	(

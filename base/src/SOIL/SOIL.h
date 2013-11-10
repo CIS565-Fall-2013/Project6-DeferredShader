@@ -36,7 +36,6 @@
 	* Dan Venkitachalam - for finding some non-compliant DDS files, and patching some explicit casts
 	* everybody at gamedev.net
 **/
-
 #ifndef HEADER_SIMPLE_OPENGL_IMAGE_LIBRARY
 #define HEADER_SIMPLE_OPENGL_IMAGE_LIBRARY
 
@@ -156,7 +155,7 @@ unsigned int
 		int force_channels,
 		unsigned int reuse_texture_ID,
 		unsigned int flags
-	);
+		);
 
 /**
 	Loads 6 images from disk into an OpenGL cubemap texture.

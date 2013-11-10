@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef MAIN_H
 #define MAIN_H
 
@@ -91,7 +93,7 @@ void printShaderInfoLog(GLint shader);
 void printLinkInfoLog(GLint prog);
 void initShade();
 void initPass();
-
+void initNoise1();
 void initMesh();
 device_mesh_t uploadMesh(const mesh_t & mesh);
 

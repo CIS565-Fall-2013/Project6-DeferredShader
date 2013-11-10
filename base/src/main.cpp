@@ -221,7 +221,7 @@ GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
 void initShader() {
-    Utility::shaders_t shaders = Utility::loadShaders("../res/shaders/pass.vert", "../res/shaders/pass.frag");
+    Utility::shaders_t shaders = Utility::loadShaders("../../../res/shaders/pass.vert", "../../../res/shaders/pass.frag");
 
     pass_prog = glCreateProgram();
 
@@ -231,7 +231,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(pass_prog,shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/diagnostic.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/diagnostic.frag");
 
     diagnostic_prog = glCreateProgram();
 
@@ -240,7 +240,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(diagnostic_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/ambient.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/ambient.frag");
 
     ambient_prog = glCreateProgram();
 
@@ -249,7 +249,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(ambient_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/point.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/point.frag");
 
     point_prog = glCreateProgram();
 
@@ -258,7 +258,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(point_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/post.vert", "../res/shaders/post.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/post.vert", "../../../res/shaders/post.frag");
 
     post_prog = glCreateProgram();
 
@@ -311,7 +311,7 @@ void checkFramebufferStatus(GLenum framebufferStatus) {
 
 GLuint random_normal_tex;
 GLuint random_scalar_tex;
-void initNoise() {  
+void initNoise1() {  
     random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../res/random_normal.png",0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -942,7 +942,7 @@ int main (int argc, char* argv[])
     cout << "Status: Using GLEW " << glewGetString(GLEW_VERSION) << endl;
     cout << "OpenGL version " << glGetString(GL_VERSION) << " supported" << endl;
 
-    initNoise();
+    initNoise1();
     initShader();
     initFBO(width,height);
     init();
