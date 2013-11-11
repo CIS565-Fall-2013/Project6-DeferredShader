@@ -25,6 +25,7 @@ CONTENTS:
 The Project6 root directory contains the following subdirectories:
 	
 * base/
+  * PROJ_WIN/ contains the vs2010 project files
   * PROJ_NIX/ contains makefile for building (tested on ubuntu 12.04 LTS)
   * res/ contains resources including shader source and obj files
   * src/ contains the c++ code for the project along with SOIL and tiny_obj_loader
