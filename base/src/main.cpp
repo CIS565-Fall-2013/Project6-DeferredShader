@@ -741,11 +741,12 @@ void updateTitle() {
 bool doIScissor = true;
 void display(void)
 {
-    // clear the screen
+    // Stage 1 -- RENDER TO G-BUFFER
     bindFBO(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     draw_mesh();
 
+    // Stage 2 -- RENDER TO P-BUFFER
     setTextures();
     bindFBO(1);
     glEnable(GL_BLEND);
@@ -788,11 +789,13 @@ void display(void)
     }
     glDisable(GL_BLEND);
 
+    //Stage 3 -- RENDER TO SCREEN
     setTextures();
+    glUseProgram(post_prog);
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_TEXTURE_2D);
-    glUseProgram(post_prog);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture);
