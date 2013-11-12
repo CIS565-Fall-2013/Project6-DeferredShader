@@ -102,13 +102,37 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
-    out_Color = vec4(0,0,0,1.0);
+    //out_Color = vec4(0,0,0,1.0);
+
+    //vec4 posWorld =  u_Persp * vec4(position, 1.0);
+    //vec4 lightWorld =  u_Persp * vec4(light, 1.0);
+
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
+        //out_Color = vec4(0,0,0,1.0);
+        if(length(position - light) <= lightRadius){
+            float diffuse = max(dot(normal, normalize(light - position)),0.0);
+            out_Color = vec4(diffuse * vec3(1.0,1.0,1.0), 1.0);
+        }
         //Put some code here to visualize the fragment associated with this point light
     }
     else
     {
+        if(length(position - light) <= lightRadius){
+            float diffuse = max(dot(normal, normalize(light - position)),0.0);
+
+            //Tone shading
+            // if(diffuse > 0.85)
+            //     out_Color = vec4(1.0 * color, 1.0);
+            // else if(diffuse > 0.65)
+            //     out_Color = vec4(0.7 * color, 1.0);
+            // else if(diffuse > 0.45)
+            //     out_Color = vec4(0.5 * color, 1.0);
+            // else if(diffuse > 0.0)
+            //     out_Color = vec4(0.2 * color, 1.0);
+
+            // out_Color = vec4(diffuse * color, 1.0);
+        }
         //Put some code here to actually compute the light from the point light
     }
     return;

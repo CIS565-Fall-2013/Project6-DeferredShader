@@ -115,9 +115,10 @@ void main() {
             out_Color = vec4(abs(position) / u_Far,1.0f);
             break;
         case(DISPLAY_COLOR):
-            out_Color = vec4(color, 1.0);
+            out_Color = vec4(vec3(length(color)), 1.0);
             break;
-        case(DISPLAY_LIGHTS):
+        case(DISPLAY_LIGHTS):            
+            break;
         case(DISPLAY_TOTAL):
             break;
     }	

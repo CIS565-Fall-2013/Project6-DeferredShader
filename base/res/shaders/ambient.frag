@@ -105,7 +105,7 @@ void main() {
     float strength = u_Light.w;
     if (lin_depth > 0.99f) {
         out_Color = vec4(vec3(0.0), 1.0);
-    } else {
+    } else{//sijie
         float ambient = u_LightIl;
         float diffuse = max(0.0, dot(normalize(light),normal));
         out_Color = vec4(color*(strength*diffuse + ambient),1.0f);

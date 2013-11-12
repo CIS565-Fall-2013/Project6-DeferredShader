@@ -384,7 +384,7 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
+    // create a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
 
@@ -714,10 +714,12 @@ bool doIScissor = true;
 void display(void)
 {
     // clear the screen
+	// Stage 1 -- RENDER TO G-BUFFER
     bindFBO(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     draw_mesh();
 
+	// Stage 2 -- RENDER TO P-BUFFER
     setTextures();
     bindFBO(1);
     glEnable(GL_BLEND);
@@ -740,7 +742,13 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+		/*for(float i = -5; i < 5.0; i+=1.0)
+			for(float j = -10; j < -2.5; j+= 1.0)
+				for(float k = -5.0; k < 5.0; k+=1.0)
+				{
+					draw_light(vec3(i, j, k), 0.5, sc, vp, NEARP);
+				}*/
+        draw_light(vec3(2.5, -2.5, 5.0), 5.0, sc, vp, NEARP);
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
@@ -760,11 +768,14 @@ void display(void)
     }
     glDisable(GL_BLEND);
 
+
+	 //Stage 3 -- RENDER TO SCREEN	
     setTextures();
+	glUseProgram(post_prog);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_TEXTURE_2D);
-    glUseProgram(post_prog);
+    
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture);
