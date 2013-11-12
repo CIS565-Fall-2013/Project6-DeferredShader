@@ -31,6 +31,54 @@ The Project6 root directory contains the following subdirectories:
   * src/ contains the c++ code for the project along with SOIL and tiny_obj_loader
 * shared32/ contains freeglut, glm, and glew.
 
+---
+BASE CODE TOUR
+---
+
+Most of your edits will be confined to the various fragment shader programs and main.cpp.
+
+Some methods worth exploring are:
+
+[initShader](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L223):
+This method initializes each shader program from specified source files. Note that the source name is declared inside a `#ifdef WIN32` guard block. This is done to reflect the relative directory structure between the linux and windows versions of the code.
+
+[initFBO](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L360):
+This method initializes the framebuffer objects used as render targets for the first and second stage of the pipeline. When you go to add another slot to the G buffer you will need to modify to first FBO accordingly. Try finding all the places where `colorTexture` is used (ctrl+F in windows will be helpful) and look at how textures are created, freed, added to the FBO, and assigned to the appropriate shader programs before adding your own. Also keep in mind that textures can be reused as inputs in other pipeline stages, for instance you might want access to the normals both in the lighting stage and in the post process stage.
+
+[draw_mesh](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L574),
+[draw_quad](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L647),
+[draw_light](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L657):
+These methods render the scene geometry, viewing quad, and point light quad to the screen. The draw_light method in particular is interesting because it will set up the scissor window for efficient rendering of point lights.
+
+[display](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L742):
+This is where the graphical work of your program is done. The method is separated into three stages with the majority of work being done in stage 2.
+
+Stage 1 renders the scene geometry to the G-Buffer
+* pass.vert
+* pass.frag
+
+Stage 2 renders the lighting passes and accumulates to the P-Buffer
+* shade.vert
+* ambient.frag
+* point.frag
+* diagnostic.frag
+
+Stage 3 renders the post processing
+* post.vert
+* post.frag
+
+[keyboard](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L870):
+This is a good reference for the key mappings in the program. 
+WASDQZ - Movement
+X - Toggle scissor test
+R - Reload shaders
+1 - View depth
+2 - View eye space normals
+3 - View Diffuse color
+4 - View eye space positions
+5 - View lighting debug mode
+0 - Standard view
+
 -------------------------------------------------------------------------------
 REQUIREMENTS:
 -------------------------------------------------------------------------------
