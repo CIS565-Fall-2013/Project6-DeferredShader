@@ -10,7 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-
+#define	DISPLAY_TOON 6
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs

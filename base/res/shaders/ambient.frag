@@ -10,6 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define	DISPLAY_TOON 6
 
 
 /////////////////////////////////////
@@ -103,13 +104,21 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float strength = u_Light.w;
-    if (lin_depth > 0.99f) {
-        out_Color = vec4(vec3(0.0), 1.0);
-    } else {
-        float ambient = u_LightIl;
-        float diffuse = max(0.0, dot(normalize(light),normal));
-        out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
-    }	
+	
+	if (u_DisplayType != DISPLAY_TOON)
+	{
+		if (lin_depth > 0.99f) {
+			out_Color = vec4(vec3(0.0), 1.0);
+		} else {
+			float ambient = u_LightIl;
+			float diffuse = max(0.0, dot(normalize(light),normal));
+			out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
+		}	
+	}
+	else // Toon Shading
+	{
+		
+	}
     return;
 }
 

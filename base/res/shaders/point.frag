@@ -1,7 +1,7 @@
 #version 330
 
 ////////////////////////////
-//       ENUMERATIONS
+//  ENUMERATIONS
 ////////////////////////////
 
 #define	DISPLAY_DEPTH 0
@@ -10,7 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-
+#define	DISPLAY_TOON 6
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -102,34 +102,27 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
-    out_Color = vec4(0,0,0,1.0);
+    vec3 toLight = light - position;
+	float distToLight = length(toLight);
+	
+	out_Color = vec4(0,0,0,1.0);
+	
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
-		out_Color = vec4(1,1,1,1);
+		
+		out_Color = (1.0f / (2.0f * distToLight)) * vec4(1,1,1,1);
     }
     else
     {
-        //Put some code here to actually compute the light from the point light
-		vec3 toLight = light - position;
-		
-		if (length(toLight) <= u_LightIl)
-		{
-			float diffuse = max(0.0, dot(normalize(light-position),normal));
-		    out_Color = vec4(diffuse*color,1.0f);
-		}
-		else
-		{
-			out_Color = vec4(0,0,0,1);
-		}
-		
-		if (length(toLight) < 1.0f)
+		if (distToLight <= u_LightIl)
 		{
 			out_Color = vec4(1,1,1,1);
 		}
 		else
 		{
-			out_Color = vec4(1,0,0,1);
+			float diffuse = max(0.0, dot(normalize(light-position),normal));
+		    out_Color = vec4(diffuse*color,1.0f);
 		}
 		
     }
