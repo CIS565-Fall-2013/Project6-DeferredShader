@@ -22,6 +22,7 @@ using namespace std;
 using namespace glm;
 
 const float PI = 3.14159f;
+const int NUM_RENDERTARGET = 4;
 
 int width, height;
 
@@ -212,6 +213,7 @@ GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint postTexture = 0;
+GLuint mvTexture = 0;
 GLuint FBO[2] = {0, 0};
 
 
@@ -221,7 +223,7 @@ GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
 void initShader() {
-    Utility::shaders_t shaders = Utility::loadShaders("../res/shaders/pass.vert", "../res/shaders/pass.frag");
+    Utility::shaders_t shaders = Utility::loadShaders("../../../res/shaders/pass.vert", "../../../res/shaders/pass.frag");
 
     pass_prog = glCreateProgram();
 
@@ -229,9 +231,15 @@ void initShader() {
     glBindAttribLocation(pass_prog, mesh_attributes::NORMAL, "Normal");
     glBindAttribLocation(pass_prog, mesh_attributes::TEXCOORD, "Texcoord");
 
+    //specify shader color number for each varying out variables in fragment shader
+    glBindFragDataLocation( pass_prog, 0, "out_Normal");
+    glBindFragDataLocation( pass_prog, 1, "out_Position");
+    glBindFragDataLocation( pass_prog, 2, "out_Color");
+    glBindFragDataLocation( pass_prog, 3, "out_MV" );
+
     Utility::attachAndLinkProgram(pass_prog,shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/diagnostic.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/diagnostic.frag");
 
     diagnostic_prog = glCreateProgram();
 
@@ -240,7 +248,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(diagnostic_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/ambient.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/ambient.frag");
 
     ambient_prog = glCreateProgram();
 
@@ -249,7 +257,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(ambient_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/point.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/point.frag");
 
     point_prog = glCreateProgram();
 
@@ -258,7 +266,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(point_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/post.vert", "../res/shaders/post.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/post.vert", "../../../res/shaders/post.frag");
 
     post_prog = glCreateProgram();
 
@@ -274,6 +282,7 @@ void freeFBO() {
     glDeleteTextures(1,&positionTexture);
     glDeleteTextures(1,&colorTexture);
     glDeleteTextures(1,&postTexture);
+    glDeleteTextures(1,&mvTexture );
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
 }
@@ -312,7 +321,7 @@ void checkFramebufferStatus(GLenum framebufferStatus) {
 GLuint random_normal_tex;
 GLuint random_scalar_tex;
 void initNoise() {  
-    random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../res/random_normal.png",0,0,0);
+    random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../../../res/random_normal.png",0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -320,7 +329,7 @@ void initNoise() {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    random_scalar_tex = (unsigned int)SOIL_load_OGL_texture("../res/random.png",0,0,0);
+    random_scalar_tex = (unsigned int)SOIL_load_OGL_texture("../../../res/random.png",0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -338,6 +347,7 @@ void initFBO(int w, int h) {
     glGenTextures(1, &normalTexture);
     glGenTextures(1, &positionTexture);
     glGenTextures(1, &colorTexture);
+    glGenTextures(1, &mvTexture );
 
     //Set up depth FBO
     glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -360,7 +370,7 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
     //Set up position FBO
     glBindTexture(GL_TEXTURE_2D, positionTexture);
@@ -371,7 +381,7 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
     //Set up color FBO
     glBindTexture(GL_TEXTURE_2D, colorTexture);
@@ -382,9 +392,21 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
+    //Set up motion vector FBO
+    glBindTexture(GL_TEXTURE_2D, mvTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+
+    // create a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
 
@@ -393,11 +415,14 @@ void initFBO(int w, int h) {
     GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-    GLenum draws [3];
+    GLint mv_loc = glGetFragDataLocation( pass_prog, "out_MV" );
+    GLenum draws [NUM_RENDERTARGET];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+    draws[mv_loc] = GL_COLOR_ATTACHMENT3;
+
+    glDrawBuffers(NUM_RENDERTARGET, draws);
 
     // attach the texture to FBO depth attachment point
     int test = GL_COLOR_ATTACHMENT0;
@@ -409,7 +434,10 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
     glBindTexture(GL_TEXTURE_2D, colorTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
+    glBindTexture(GL_TEXTURE_2D, mvTexture );
+    glFramebufferTexture( GL_FRAMEBUFFER, draws[mv_loc], mvTexture, 0 ); 
 
+    
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
@@ -433,7 +461,7 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
+    // create a framebuffer object
     glGenFramebuffers(1, &FBO[1]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
 
@@ -543,12 +571,14 @@ mat4x4 get_mesh_world() {
 
 float FARP;
 float NEARP;
+
+mat4 prevModelView = mat4();
+
 void draw_mesh() {
     FARP = 100.0f;
     NEARP = 0.1f;
 
     glUseProgram(pass_prog);
-
 
     mat4 model = get_mesh_world();
     mat4 view = cam.get_view();
@@ -561,7 +591,12 @@ void draw_mesh() {
     glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_Persp"),1,GL_FALSE,&persp[0][0]);
     glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_InvTrans") ,1,GL_FALSE,&inverse_transposed[0][0]);
 
-    for(int i=0; i<draw_meshes.size(); i++){
+    int loc = glGetUniformLocation(pass_prog,"u_PrevProj");
+    glUniformMatrix4fv( glGetUniformLocation(pass_prog,"u_PrevModelView"), 1, GL_FALSE, &prevModelView[0][0] );
+    glUniformMatrix4fv( glGetUniformLocation(pass_prog, "u_PrevProj" ), 1, GL_FALSE, &persp[0][0] );
+
+    for(int i=0; i<draw_meshes.size(); i++)
+    {
         glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
         glBindVertexArray(draw_meshes[i].vertex_array);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
@@ -569,6 +604,10 @@ void draw_mesh() {
     }
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+
+    //update the mvp matrix of the previous frame
+    prevModelView = view*model;
+    
 }
 
 
@@ -713,11 +752,15 @@ void updateTitle() {
 bool doIScissor = true;
 void display(void)
 {
+    //1st Pass: Draw geometry and store data into G-buffer 
     // clear the screen
     bindFBO(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    
     draw_mesh();
 
+    //2nd Pass: 
     setTextures();
     bindFBO(1);
     glEnable(GL_BLEND);
@@ -728,7 +771,9 @@ void display(void)
     if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
     {
         setup_quad(point_prog);
-        if(doIScissor) glEnable(GL_SCISSOR_TEST);
+        if(doIScissor) 
+            glEnable(GL_SCISSOR_TEST);
+
         mat4 vp = perspective(45.0f,(float)width/(float)height,NEARP,FARP) * 
                   cam.get_view();
         mat4 sc = mat4(width, 0.0,    0.0, 0.0,
@@ -748,7 +793,9 @@ void display(void)
         dir_light = normalize(dir_light);
         dir_light.w = 0.3;
         float strength = 0.09;
+
         setup_quad(ambient_prog);
+
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
         draw_quad();
@@ -770,13 +817,9 @@ void display(void)
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
     
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, random_normal_tex);
-    glUniform1i(glGetUniformLocation(post_prog, "u_RandomNormaltex"),4);
-    
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
-    glUniform1i(glGetUniformLocation(post_prog, "u_RandomScalartex"),5);
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, mvTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_mv"), 6 );
 
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
@@ -829,7 +872,7 @@ void motion(int x, int y)
         cam.adjust(0,0,dx,0,0,0);;
     }
     else {
-        cam.adjust(-dx*0.2f,-dy*0.2f,0,0,0,0);
+        cam.adjust(-dx*0.2f,-dy*0.2f,0.0f,0,0,0);
     }
 
     mouse_old_x = x;

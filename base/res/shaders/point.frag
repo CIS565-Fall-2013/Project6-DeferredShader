@@ -103,14 +103,20 @@ void main() {
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
     out_Color = vec4(0,0,0,1.0);
+
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
+	    float dst_factor = 1.0/distance( light, position );
         //Put some code here to visualize the fragment associated with this point light
+		out_Color = ( dst_factor*dst_factor ) * vec4( 1.0, 1.0, 1.0, 1 ); 
+		
     }
     else
     {
         //Put some code here to actually compute the light from the point light
+
+		out_Color = vec4( color * dot( normal, light - position ), 1 );
     }
-    return;
+    
 }
 
