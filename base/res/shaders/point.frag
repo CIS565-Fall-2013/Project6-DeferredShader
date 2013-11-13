@@ -106,10 +106,14 @@ void main() {
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
+		out_Color = vec4(1,1,1,1);
     }
     else
     {
         //Put some code here to actually compute the light from the point light
+		float ambient = u_LightIl;
+		float diffuse = max(0.0, dot(normalize(light-position),normal));
+        out_Color = vec4(color*(diffuse + ambient),1.0f);
     }
     return;
 }

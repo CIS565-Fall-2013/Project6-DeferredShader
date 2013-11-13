@@ -48,7 +48,7 @@ uniform float falloff = 0.1f;
 
 
 /////////////////////////////////////
-//				UTILITY FUNCTIONS
+//	UTILITY FUNCTIONS
 /////////////////////////////////////
 
 //Depth used in the Z buffer is not linearly related to distance from camera

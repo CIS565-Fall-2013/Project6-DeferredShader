@@ -412,9 +412,9 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
-    glGenFramebuffers(1, &FBO[0]);
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
+    // create a framebuffer object
+    glGenFramebuffers(1, &FBO[0]); // http://www.opengl.org/sdk/docs/man/xhtml/glGenFramebuffers.xml
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]); 
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_NONE);
@@ -425,16 +425,18 @@ void initFBO(int w, int h) {
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+    glDrawBuffers(3, draws); //This call will define an array of buffers into which outputs from the fragment shader data will be written
+							 //http://www.opengl.org/sdk/docs/man/xhtml/glDrawBuffers.xml
 
     // attach the texture to FBO depth attachment point
+	// Buffers (specific locations in the framebuffer) in FBOs are also called "attachment points"; they're the locations where images can be attached
     int test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, depthTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
     glBindTexture(GL_TEXTURE_2D, normalTexture);    
-    glFramebufferTexture(GL_FRAMEBUFFER, draws[normal_loc], normalTexture, 0);
-    glBindTexture(GL_TEXTURE_2D, positionTexture);    
-    glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[normal_loc], normalTexture, 0);		// Note that draw[i] is already defined by glDrawBuffers as the locations where the outputs
+    glBindTexture(GL_TEXTURE_2D, positionTexture);									// from the fragment shaders data will be written. If we bind these textures to the framebuffer,
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);  // we are essentially writing the output of the fragment shaders to these textures! Very cool!
     glBindTexture(GL_TEXTURE_2D, colorTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
 
@@ -461,8 +463,8 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
-    glGenFramebuffers(1, &FBO[1]);
+    // create a framebuffer object and bind it to contex
+    glGenFramebuffers(1, &FBO[1]); 
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
@@ -484,12 +486,13 @@ void initFBO(int w, int h) {
         checkFramebufferStatus(FBOstatus);
     }
 
-    // switch back to window-system-provided framebuffer
+    // switch back to window-system-provided framebuffer (i.e the default buffer provided by the OpenGL context)
     glClear(GL_DEPTH_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+// Given buf (index of the FBO array that we have created), this function will bind FBO[buf] to the current OpenGL contex
 void bindFBO(int buf) {
     glDisable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D,0); //Bad mojo to unbind the framebuffer using the texture
@@ -571,6 +574,9 @@ mat4x4 get_mesh_world() {
 
 float FARP;
 float NEARP;
+
+// uses pass_prog (pass.vert and pass.frag) to compute position, normal, and color.
+// The fragment shader will output those values to the corresponding textures.
 void draw_mesh() {
     FARP = 100.0f;
     NEARP = 0.1f;
@@ -602,6 +608,8 @@ void draw_mesh() {
 
 enum Display display_type = DISPLAY_TOTAL;
 
+// set up quads with either point_prog (shade.vert, point.frag) & ambient_prog (shade.vert, ambient.frag), 
+// or diagnostic_prog (vert.frag, diagnostic.frag)
 void setup_quad(GLuint prog)
 {
     glUseProgram(prog);
@@ -619,6 +627,7 @@ void setup_quad(GLuint prog)
     glUniform1i(glGetUniformLocation(prog, "u_DisplayType"), display_type);
     glUniformMatrix4fv(glGetUniformLocation(prog, "u_Persp"),1, GL_FALSE, &persp[0][0] );
 
+	// passing the textures as input.
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, depthTexture);
     glUniform1i(glGetUniformLocation(prog, "u_Depthtex"),0);
@@ -685,7 +694,7 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     float x = center.x-r;
     float y = center.y-r;
 
-    glScissor(x, y, 2*r, 2*r);
+    glScissor(x, y, 2*r, 2*r); // http://www.opengl.org/sdk/docs/man/xhtml/glScissor.xml
     draw_quad();
 }
 
@@ -704,7 +713,7 @@ void updateDisplayText(char * disp) {
             sprintf(disp, "Displaying Position");
             break;
         case(DISPLAY_TOTAL):
-            sprintf(disp, "Displaying Diffuse");
+            sprintf(disp, "Displaying Diffuse (TOTAL)");
             break;
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
@@ -747,16 +756,16 @@ void display(void)
     draw_mesh();
 
     // Stage 2 -- RENDER TO P-BUFFER
-    setTextures();
+    setTextures(); // unnecessary?
     bindFBO(1);
-    glEnable(GL_BLEND);
+    glEnable(GL_BLEND); // enable alpha value calculations
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_ONE, GL_ONE);
+    glBlendFunc(GL_ONE, GL_ONE); // http://www.opengl.org/sdk/docs/man/xhtml/glBlendFunc.xml
     glClear(GL_COLOR_BUFFER_BIT);
     if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
     {
-        setup_quad(point_prog);
+        setup_quad(point_prog); // used to render the light source and compute light from point light
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
         mat4 vp = perspective(45.0f,(float)width/(float)height,NEARP,FARP) * 
                   cam.get_view();
@@ -777,7 +786,7 @@ void display(void)
         dir_light = normalize(dir_light);
         dir_light.w = 0.3;
         float strength = 0.09;
-        setup_quad(ambient_prog);
+        setup_quad(ambient_prog); // render scene with directional light
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
         draw_quad();

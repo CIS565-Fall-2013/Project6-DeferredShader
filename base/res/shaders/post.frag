@@ -35,7 +35,7 @@ uniform float falloff = 0.1f;
 
 
 /////////////////////////////////////
-//				UTILITY FUNCTIONS
+//	UTILITY FUNCTIONS
 /////////////////////////////////////
 
 //Helper function to automicatlly sample and unpack positions
