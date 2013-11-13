@@ -10,6 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_TONE 6
 
 
 /////////////////////////////////////
@@ -23,6 +24,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Speculartex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -72,6 +74,11 @@ vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
 }
 
+//Helper function to automicatlly sample and unpack specular
+vec4 sampleSpec(vec2 texcoords) {
+    return texture(u_Speculartex,texcoords).xyzw;
+}
+
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
 vec3 getRandomNormal(vec2 texcoords) {
@@ -88,6 +95,7 @@ float getRandomScalar(vec2 texcoords) {
     return texture(u_RandomScalartex,vec2(texcoords.s*u_ScreenWidth/sz.x,
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
+
 
 ///////////////////////////////////
 // MAIN
@@ -115,7 +123,7 @@ void main() {
             out_Color = vec4(abs(position) / u_Far,1.0f);
             break;
         case(DISPLAY_COLOR):
-            out_Color = vec4(vec3(length(color)), 1.0);
+            out_Color = vec4(color, 1.0);
             break;
         case(DISPLAY_LIGHTS):            
             break;

@@ -80,6 +80,8 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
 
     out.texname = mesh.texname;
     out.color = mesh.color;
+	//Specular
+	out.specular = mesh.specular;
     return out;
 }
 
@@ -112,6 +114,10 @@ void initMesh() {
                 vec3 p2 = vec3(shape.mesh.positions[3*idx2],
                                shape.mesh.positions[3*idx2+1],
                                shape.mesh.positions[3*idx2+2]);
+
+
+				//cout<<"Specular "<< shape.material.specular[0] << " "<<shape.material.specular[1]<<" "<<shape.material.specular[2];
+				//cout<<" Shiness "<<shape.material.shininess;
 
                 mesh.vertices.push_back(p0);
                 mesh.vertices.push_back(p1);
@@ -161,6 +167,12 @@ void initMesh() {
             mesh.color = vec3(shape.material.diffuse[0],
                               shape.material.diffuse[1],
                               shape.material.diffuse[2]);
+
+			mesh.specular = vec4(shape.material.specular[0],
+									  shape.material.specular[1],
+									  shape.material.specular[2],
+									  shape.material.shininess);
+
             mesh.texname = shape.material.diffuse_texname;
             draw_meshes.push_back(uploadMesh(mesh));
             f=f+process;
@@ -211,6 +223,7 @@ GLuint depthTexture = 0;
 GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
+GLuint specularTexture = 0;
 GLuint postTexture = 0;
 GLuint FBO[2] = {0, 0};
 
@@ -221,7 +234,28 @@ GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
 void initShader() {
-    Utility::shaders_t shaders = Utility::loadShaders("../res/shaders/pass.vert", "../res/shaders/pass.frag");
+#ifdef WIN32
+        const char * pass_vert = "../../../res/shaders/pass.vert";
+        const char * shade_vert = "../../../res/shaders/shade.vert";
+        const char * post_vert = "../../../res/shaders/post.vert";
+
+        const char * pass_frag = "../../../res/shaders/pass.frag";
+        const char * diagnostic_frag = "../../../res/shaders/diagnostic.frag";
+        const char * ambient_frag = "../../../res/shaders/ambient.frag";
+        const char * point_frag = "../../../res/shaders/point.frag";
+        const char * post_frag = "../../../res/shaders/post.frag";
+#else
+        const char * pass_vert = "../res/shaders/pass.vert";
+        const char * shade_vert = "../res/shaders/shade.vert";
+        const char * post_vert = "../res/shaders/post.vert";
+
+        const char * pass_frag = "../res/shaders/pass.frag";
+        const char * diagnostic_frag = "../res/shaders/diagnostic.frag";
+        const char * ambient_frag = "../res/shaders/ambient.frag";
+        const char * point_frag = "../res/shaders/point.frag";
+        const char * post_frag = "../res/shaders/post.frag";
+#endif
+        Utility::shaders_t shaders = Utility::loadShaders(pass_vert, pass_frag);
 
     pass_prog = glCreateProgram();
 
@@ -231,7 +265,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(pass_prog,shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/diagnostic.frag");
+        shaders = Utility::loadShaders(shade_vert, diagnostic_frag);
 
     diagnostic_prog = glCreateProgram();
 
@@ -240,7 +274,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(diagnostic_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/ambient.frag");
+        shaders = Utility::loadShaders(shade_vert, ambient_frag);
 
     ambient_prog = glCreateProgram();
 
@@ -249,7 +283,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(ambient_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/point.frag");
+        shaders = Utility::loadShaders(shade_vert, point_frag);
 
     point_prog = glCreateProgram();
 
@@ -258,7 +292,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(point_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/post.vert", "../res/shaders/post.frag");
+        shaders = Utility::loadShaders(post_vert, post_frag);
 
     post_prog = glCreateProgram();
 
@@ -273,6 +307,7 @@ void freeFBO() {
     glDeleteTextures(1,&normalTexture);
     glDeleteTextures(1,&positionTexture);
     glDeleteTextures(1,&colorTexture);
+	glDeleteTextures(1,&specularTexture);
     glDeleteTextures(1,&postTexture);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
@@ -338,6 +373,7 @@ void initFBO(int w, int h) {
     glGenTextures(1, &normalTexture);
     glGenTextures(1, &positionTexture);
     glGenTextures(1, &colorTexture);
+	glGenTextures(1, &specularTexture);
 
     //Set up depth FBO
     glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -383,6 +419,18 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+	
+
+	//Set up specular FBO
+	glBindTexture(GL_TEXTURE_2D, specularTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
     // create a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
@@ -393,11 +441,13 @@ void initFBO(int w, int h) {
     GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-    GLenum draws [3];
+	GLint specular_loc = glGetFragDataLocation(pass_prog, "out_Specular");
+    GLenum draws [4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+	draws[specular_loc] = GL_COLOR_ATTACHMENT3;
+    glDrawBuffers(4, draws);
 
     // attach the texture to FBO depth attachment point
     int test = GL_COLOR_ATTACHMENT0;
@@ -409,6 +459,8 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
     glBindTexture(GL_TEXTURE_2D, colorTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, specularTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[specular_loc], specularTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -563,6 +615,7 @@ void draw_mesh() {
 
     for(int i=0; i<draw_meshes.size(); i++){
         glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
+		glUniform4fv(glGetUniformLocation(pass_prog, "u_Specular"), 1, &(draw_meshes[i].specular[0]));
         glBindVertexArray(draw_meshes[i].vertex_array);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
         glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
@@ -614,6 +667,10 @@ void setup_quad(GLuint prog)
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
+
+	glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, specularTexture);
+    glUniform1i(glGetUniformLocation(prog, "u_Speculartex"),6);
 }
 
 void draw_quad() {
@@ -681,6 +738,9 @@ void updateDisplayText(char * disp) {
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
             break;
+		case(DISPLAY_TONE):
+			sprintf(disp, "Displaying Tone");
+            break;
     }
 }
 
@@ -711,6 +771,17 @@ void updateTitle() {
 }
 
 bool doIScissor = true;
+int time = 0;
+float l1z = 0.0f;
+float l2z = 5.0f;
+float l3z = 0.0f;
+
+
+float speed = 0.01f;
+float up1z = speed;
+float up2z = -speed;
+float up3z = speed;
+
 void display(void)
 {
     // clear the screen
@@ -727,7 +798,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
+	if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TONE)
     {
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -742,20 +813,48 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-		/*for(float i = -5; i < 5.0; i+=1.0)
-			for(float j = -10; j < -2.5; j+= 1.0)
-				for(float k = -5.0; k < 5.0; k+=1.0)
+		
+		if(l1z >= 5.0)
+			up1z = -speed;
+		else if(l1z <= 0.0f)
+			up1z = speed;
+		l1z += up1z;
+
+		if(l2z >= 5.0)
+			up2z = -speed;
+		else if(l2z <= 0.0)
+			up2z = speed;
+		l2z += up2z;
+
+		int count = 0;
+		//float ly = -2.0;
+		for(float ly = - 1.0 ; ly >= -6.0; ly -= 2.0)
+		for(float i = 0.1; i < 6.0; i+= 0.8)
+		{
+			if(count %2 == 0)
+				draw_light(vec3(i, ly, l1z), 1.0, sc, vp, NEARP);
+			else
+				draw_light(vec3(i, ly, l2z), 1.0, sc, vp, NEARP);
+			count++;
+		}
+
+		//light for cornell box
+		/*for(float i = 0.1; i <= 5.5; i+=0.5)
+			for(float j = -1.0; j >= -5.0; j-= 1.0)
+				for(float k = 1.0; k <= 5.0; k+=0.9)
 				{
 					draw_light(vec3(i, j, k), 0.5, sc, vp, NEARP);
 				}*/
-        draw_light(vec3(2.5, -2.5, 5.0), 5.0, sc, vp, NEARP);
+        //draw_light(vec3(2.5, -2.5, 5.0), 0.5, sc, vp, NEARP);
+		//draw_light(vec3(5.5, -2.5, 2.0), 0.5, sc, vp, NEARP);
 
         glDisable(GL_SCISSOR_TEST);
+
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 
         dir_light = normalize(dir_light);
-        dir_light.w = 0.3;
-        float strength = 0.09;
+        dir_light.w = 0.3;        
+		float strength = 0.09;
         setup_quad(ambient_prog);
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
@@ -791,6 +890,7 @@ void display(void)
 
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
+	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
     draw_quad();
 
     glEnable(GL_DEPTH_TEST);
@@ -888,6 +988,9 @@ void keyboard(unsigned char key, int x, int y) {
         case('5'):
             display_type = DISPLAY_LIGHTS;
             break;
+		case('6'):
+			display_type = DISPLAY_TONE;
+			break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;

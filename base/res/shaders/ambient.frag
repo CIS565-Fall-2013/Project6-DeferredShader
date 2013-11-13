@@ -23,6 +23,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Speculartex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -72,6 +73,11 @@ vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
 }
 
+//Helper function to automicatlly sample and unpack specular
+vec4 sampleSpec(vec2 texcoords) {
+    return texture(u_Speculartex,texcoords).xyzw;
+}
+
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
 vec3 getRandomNormal(vec2 texcoords) {
@@ -105,7 +111,7 @@ void main() {
     float strength = u_Light.w;
     if (lin_depth > 0.99f) {
         out_Color = vec4(vec3(0.0), 1.0);
-    } else{//sijie
+    } else{
         float ambient = u_LightIl;
         float diffuse = max(0.0, dot(normalize(light),normal));
         out_Color = vec4(color*(strength*diffuse + ambient),1.0f);

@@ -10,6 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_TONE 6
 
 
 /////////////////////////////////////
@@ -23,6 +24,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Speculartex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -71,6 +73,11 @@ vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
 }
 
+//Helper function to automicatlly sample and unpack specular
+vec4 sampleSpec(vec2 texcoords) {
+    return texture(u_Speculartex,texcoords).xyzw;
+}
+
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
 vec3 getRandomNormal(vec2 texcoords) {
@@ -110,10 +117,8 @@ void main() {
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //out_Color = vec4(0,0,0,1.0);
-        if(length(position - light) <= lightRadius){
-            float diffuse = max(dot(normal, normalize(light - position)),0.0);
-            out_Color = vec4(diffuse * vec3(1.0,1.0,1.0), 1.0);
-        }
+        float diffuse = max(dot(normal, normalize(light - position)),0.0);
+        out_Color = vec4(diffuse * vec3(0.2,0.2,0.8), 0.2);
         //Put some code here to visualize the fragment associated with this point light
     }
     else
@@ -121,17 +126,34 @@ void main() {
         if(length(position - light) <= lightRadius){
             float diffuse = max(dot(normal, normalize(light - position)),0.0);
 
-            //Tone shading
-            // if(diffuse > 0.85)
-            //     out_Color = vec4(1.0 * color, 1.0);
-            // else if(diffuse > 0.65)
-            //     out_Color = vec4(0.7 * color, 1.0);
-            // else if(diffuse > 0.45)
-            //     out_Color = vec4(0.5 * color, 1.0);
-            // else if(diffuse > 0.0)
-            //     out_Color = vec4(0.2 * color, 1.0);
+            //For sepcular color
+            vec4 specular = sampleSpec(fs_Texcoord);
+            vec3 viewDirection = normalize(position - vec3(0.0));
+            vec3 lightDirecion = normalize(position - light);
+            vec3 specularColor;
+             if (dot(normal, lightDirecion) < 0.0)
+            {
+                //angle betweeen light dir and normal is too large
+                specularColor = vec3(0.0);
+            }
+            else{
+                specularColor = vec3(specular.xyz) * pow(max(0.0, dot(reflect(lightDirecion, normal), viewDirection)), specular.w);
+            }
 
-            // out_Color = vec4(diffuse * color, 1.0);
+            specularColor = vec3(0.0);
+            out_Color = vec4(color * diffuse + specularColor, 1.0);
+
+            //Tone shading
+            if(u_DisplayType == DISPLAY_TONE){
+                if(diffuse > 0.85)
+                    out_Color = vec4(1.0 * color, 1.0);
+                else if(diffuse > 0.65)
+                    out_Color = vec4(0.7 * color, 1.0);
+                else if(diffuse > 0.45)
+                    out_Color = vec4(0.5 * color, 1.0);
+                else if(diffuse > 0.0)
+                    out_Color = vec4(0.2 * color, 1.0);
+            }
         }
         //Put some code here to actually compute the light from the point light
     }
