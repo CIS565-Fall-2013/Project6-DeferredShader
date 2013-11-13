@@ -93,6 +93,8 @@
     <None Include="..\..\..\res\shaders\post.frag" />
     <None Include="..\..\..\res\shaders\post.vert" />
     <None Include="..\..\..\res\shaders\shade.vert" />
+    <None Include="..\..\..\res\shaders\ssao.frag" />
+    <None Include="..\..\..\res\shaders\ssao.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

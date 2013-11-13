@@ -683,6 +683,9 @@ void updateDisplayText(char * disp) {
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
             break;
+		case(DISPLAY_BLOOM):
+			sprintf(disp, "Displaying Bloom");
+			break;
     }
 }
 
@@ -727,7 +730,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
+	if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_BLOOM)
     {
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -898,6 +901,9 @@ void keyboard(unsigned char key, int x, int y) {
         case('5'):
             display_type = DISPLAY_LIGHTS;
             break;
+		case ('6'):
+			display_type = DISPLAY_BLOOM;
+			break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;

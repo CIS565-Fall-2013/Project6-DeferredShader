@@ -10,6 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_BLOOM 6
 
 
 /////////////////////////////////////
@@ -70,6 +71,13 @@ void main() {
     float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
     vin = 0;
 	out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+
+	if ( u_DisplayType == DISPLAY_BLOOM) {
+		out_Color.xyz = vec3( 0.0, 1.0, 0.0);
+	
+	}
+
+
     return;
 }
 
