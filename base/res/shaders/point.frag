@@ -111,9 +111,27 @@ void main() {
     else
     {
         //Put some code here to actually compute the light from the point light
-		float ambient = u_LightIl;
-		float diffuse = max(0.0, dot(normalize(light-position),normal));
-        out_Color = vec4(color*(diffuse + ambient),1.0f);
+		vec3 toLight = light - position;
+		
+		if (length(toLight) <= u_LightIl)
+		{
+			float diffuse = max(0.0, dot(normalize(light-position),normal));
+		    out_Color = vec4(diffuse*color,1.0f);
+		}
+		else
+		{
+			out_Color = vec4(0,0,0,1);
+		}
+		
+		if (length(toLight) < 1.0f)
+		{
+			out_Color = vec4(1,1,1,1);
+		}
+		else
+		{
+			out_Color = vec4(1,0,0,1);
+		}
+		
     }
     return;
 }

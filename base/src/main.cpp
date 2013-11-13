@@ -432,7 +432,7 @@ void initFBO(int w, int h) {
 	// Buffers (specific locations in the framebuffer) in FBOs are also called "attachment points"; they're the locations where images can be attached
     int test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, depthTexture);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);		// Look, GL_DEPTH_ATTACHMENT tells openGL to render depth information to depthTexture
     glBindTexture(GL_TEXTURE_2D, normalTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[normal_loc], normalTexture, 0);		// Note that draw[i] is already defined by glDrawBuffers as the locations where the outputs
     glBindTexture(GL_TEXTURE_2D, positionTexture);									// from the fragment shaders data will be written. If we bind these textures to the framebuffer,
@@ -468,6 +468,7 @@ void initFBO(int w, int h) {
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
+	// LOOK: For FBO[1], the output texture is being set at ambient_prog's out_Color
     glReadBuffer(GL_BACK);
     color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
     GLenum draw[1];
@@ -786,10 +787,10 @@ void display(void)
         dir_light = normalize(dir_light);
         dir_light.w = 0.3;
         float strength = 0.09;
-        setup_quad(ambient_prog); // render scene with directional light
-        glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
-        glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
-        draw_quad();
+        //setup_quad(ambient_prog); // render scene with directional light
+        //glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
+        //glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
+        //draw_quad();
     }
     else
     {
