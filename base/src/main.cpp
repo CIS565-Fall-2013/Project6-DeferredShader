@@ -221,7 +221,7 @@ GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
 void initShader() {
-    Utility::shaders_t shaders = Utility::loadShaders("../res/shaders/pass.vert", "../res/shaders/pass.frag");
+    Utility::shaders_t shaders = Utility::loadShaders("../../../res/shaders/pass.vert", "../../../res/shaders/pass.frag");
 
     pass_prog = glCreateProgram();
 
@@ -231,7 +231,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(pass_prog,shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/diagnostic.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/diagnostic.frag");
 
     diagnostic_prog = glCreateProgram();
 
@@ -240,7 +240,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(diagnostic_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/ambient.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/ambient.frag");
 
     ambient_prog = glCreateProgram();
 
@@ -249,7 +249,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(ambient_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/point.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/point.frag");
 
     point_prog = glCreateProgram();
 
@@ -258,7 +258,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(point_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/post.vert", "../res/shaders/post.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/post.vert", "../../../res/shaders/post.frag");
 
     post_prog = glCreateProgram();
 
@@ -312,7 +312,7 @@ void checkFramebufferStatus(GLenum framebufferStatus) {
 GLuint random_normal_tex;
 GLuint random_scalar_tex;
 void initNoise() {  
-    random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../res/random_normal.png",0,0,0);
+  //  random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../res/random_normal.png",0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -628,6 +628,8 @@ void draw_quad() {
 
 void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     float radius = strength;
+
+	//transform light position to camera space
     vec4 light = cam.get_view() * vec4(pos, 1.0); 
     if( light.z > NEARP)
     {
@@ -740,10 +742,29 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+		//set up more lights
+		glm::vec3 lightPos (-1.0, 1.0, -1.0);	
+
+		for (int i = 0; i < 10; ++i) {
+			lightPos.x += 1.0f;
+
+			for(int j = 0; j < 10; ++j) {
+				lightPos.y -= 1.0f;
+				
+				for(int k = 0; k < 10; ++k){
+					lightPos.z += 1.0f; 
+					draw_light(lightPos, 0.5, sc, vp, NEARP);
+				}
+				lightPos.z = -1.0f;
+			}
+			lightPos.y = 1.0f;
+		}
+		
 
         glDisable(GL_SCISSOR_TEST);
-        vec4 dir_light(0.1, 1.0, 1.0, 0.0);
+        
+		//ambient term calculation
+		vec4 dir_light(0.1, 1.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 
         dir_light = normalize(dir_light);
         dir_light.w = 0.3;

@@ -101,15 +101,25 @@ void main() {
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
-    float lightRadius = u_Light.w;
+
+	vec3 lightDir= normalize(light - position);
+    
+	float lightRadius = u_Light.w;
     out_Color = vec4(0,0,0,1.0);
-    if( u_DisplayType == DISPLAY_LIGHTS )
+  
+	float dist = clamp( 1.0 - length(position - light)/lightRadius, 0.0, 1.0);
+	
+	if( u_DisplayType == DISPLAY_LIGHTS )
     {
-        //Put some code here to visualize the fragment associated with this point light
+		//Put some code here to visualize the fragment associated with this point light
+		out_Color.xyz = dist * vec3(1.0, 0.0, 0.0);
     }
     else
     {
         //Put some code here to actually compute the light from the point light
+		float diffuse = max(0.0, dot(lightDir, normal));
+		out_Color.xyz = dist* diffuse* color;
+		//out_Color.xyz = color;
     }
     return;
 }
