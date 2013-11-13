@@ -894,27 +894,41 @@ void keyboard(unsigned char key, int x, int y) {
             ty = -0.1;
             break;
         case('1'):
+			cout << "Depth Debug Mode" << endl;
             display_type = DISPLAY_DEPTH;
             break;
         case('2'):
+			cout << "Normal Debug Mode" << endl;
             display_type = DISPLAY_NORMAL;
             break;
         case('3'):
+			cout << "Display Color Debug Mode" << endl;
             display_type = DISPLAY_COLOR;
             break;
         case('4'):
+			cout << "Display Eye Space Position Debug Mode" << endl;
             display_type = DISPLAY_POSITION;
             break;
         case('5'):
+			cout << "Display Lights Debug Mode" << endl;
             display_type = DISPLAY_LIGHTS;
             break;
         case('0'):
+			cout << "Full Rendering Mode" << endl;
             display_type = DISPLAY_TOTAL;
             break;
         case('x'):
+			cout << "Turning Scissor Test ";
             doIScissor ^= true;
+			if(doIScissor)
+			{
+				cout << "On" << endl;
+			}else{
+				cout << "Off" << endl;
+			}
             break;
         case('r'):
+			cout << "Reloading Shaders" <<endl;
             initShader();
             break;
     }
