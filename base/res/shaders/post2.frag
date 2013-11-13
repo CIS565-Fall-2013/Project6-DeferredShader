@@ -4,12 +4,12 @@
 //       ENUMERATIONS
 ////////////////////////////
 
-#define	DISPLAY_DEPTH 0
-#define	DISPLAY_NORMAL 1
-#define	DISPLAY_POSITION 2
-#define	DISPLAY_COLOR 3
-#define	DISPLAY_TOTAL 4
-#define	DISPLAY_LIGHTS 5
+#define DISPLAY_DEPTH 0
+#define DISPLAY_NORMAL 1
+#define DISPLAY_POSITION 2
+#define DISPLAY_COLOR 3
+#define DISPLAY_TOTAL 4
+#define DISPLAY_LIGHTS 5
 #define DISPLAY_TONE 6
 
 
@@ -39,7 +39,7 @@ uniform float falloff = 0.1f;
 
 
 /////////////////////////////////////
-//				UTILITY FUNCTIONS
+//              UTILITY FUNCTIONS
 /////////////////////////////////////
 
 //Helper function to automicatlly sample and unpack positions
@@ -111,9 +111,9 @@ void main() {
         vec3 c = vec3(0.0);
         int range = 10;
         for(int i = -range; i < range; i++)
-        {
-            float mx = float(i) / u_ScreenWidth;
-            c += sampleCol(vec2(fs_Texcoord.s + mx, fs_Texcoord.t));
+        {            
+            float my = float(i) / u_ScreenHeight;
+            c += sampleCol(vec2(fs_Texcoord.s, fs_Texcoord.t+my));       
         }
         c /= 2.0 * range;
 

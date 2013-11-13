@@ -225,7 +225,8 @@ GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint specularTexture = 0;
 GLuint postTexture = 0;
-GLuint FBO[2] = {0, 0};
+GLuint postTexture2 = 0;
+GLuint FBO[3] = {0, 0, 0};
 
 
 GLuint pass_prog;
@@ -233,6 +234,7 @@ GLuint point_prog;
 GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
+GLuint post_prog2;
 void initShader() {
 #ifdef WIN32
         const char * pass_vert = "../../../res/shaders/pass.vert";
@@ -244,6 +246,7 @@ void initShader() {
         const char * ambient_frag = "../../../res/shaders/ambient.frag";
         const char * point_frag = "../../../res/shaders/point.frag";
         const char * post_frag = "../../../res/shaders/post.frag";
+		const char * post_frag2 = "../../../res/shaders/post2.frag";
 #else
         const char * pass_vert = "../res/shaders/pass.vert";
         const char * shade_vert = "../res/shaders/shade.vert";
@@ -300,6 +303,15 @@ void initShader() {
     glBindAttribLocation(post_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(post_prog, shaders);
+		
+		shaders = Utility::loadShaders(post_vert, post_frag2);
+
+	 post_prog2 = glCreateProgram();
+
+    glBindAttribLocation(post_prog2, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(post_prog2, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(post_prog2, shaders);
 }
 
 void freeFBO() {
@@ -309,8 +321,10 @@ void freeFBO() {
     glDeleteTextures(1,&colorTexture);
 	glDeleteTextures(1,&specularTexture);
     glDeleteTextures(1,&postTexture);
+	glDeleteTextures(1,&postTexture2);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
+	glDeleteFramebuffers(1,&FBO[2]);
 }
 
 void checkFramebufferStatus(GLenum framebufferStatus) {
@@ -491,7 +505,7 @@ void initFBO(int w, int h) {
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_BACK);
-    color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
+	color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
     GLenum draw[1];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
     glDrawBuffers(1, draw);
@@ -501,10 +515,49 @@ void initFBO(int w, int h) {
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
 
-    // check FBO status
+	// check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
         printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[1]\n");
+        checkFramebufferStatus(FBOstatus);
+    }
+
+	//Set up Second post FBO
+	glActiveTexture(GL_TEXTURE9);
+
+    glGenTextures(1, &postTexture2);
+	glBindTexture(GL_TEXTURE_2D, postTexture2);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+    // creatwwe a framebuffer object
+    glGenFramebuffers(1, &FBO[2]);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO[2]);
+
+    // Instruct openGL that we won't bind a color texture with the currently bound FBO
+    glReadBuffer(GL_BACK);
+	color_loc = glGetFragDataLocation(post_prog,"out_Color");
+	if(color_loc == -1)
+		cout<<"Wo Cao"<<endl;
+    GLenum draw2[1];
+    draw2[color_loc] = GL_COLOR_ATTACHMENT0;
+    glDrawBuffers(1, draw2);
+
+    // attach the texture to FBO depth attachment point
+    test = GL_COLOR_ATTACHMENT0;
+    glBindTexture(GL_TEXTURE_2D, postTexture2);
+    glFramebufferTexture(GL_FRAMEBUFFER, draw2[color_loc], postTexture2, 0);
+
+    // check FBO status
+    FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[2]\n");
         checkFramebufferStatus(FBOstatus);
     }
 
@@ -858,6 +911,8 @@ void display(void)
         setup_quad(ambient_prog);
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
+
+		//setup_quad(post_prog2);
         draw_quad();
     }
     else
@@ -868,13 +923,19 @@ void display(void)
     glDisable(GL_BLEND);
 
 
-	 //Stage 3 -- RENDER TO SCREEN	
+	 //Stage 3 -- RENDER TO SCREEN		
     setTextures();
-	glUseProgram(post_prog);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	bindFBO(2);
+	glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
-    
+    glDisable(GL_DEPTH_TEST);
+    glBlendFunc(GL_ONE, GL_ONE);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+	glUseProgram(post_prog);
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_TEXTURE_2D);    
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture);
@@ -892,6 +953,32 @@ void display(void)
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
 	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
     draw_quad();
+	glDisable(GL_BLEND);
+
+	//Stage 4 One more stage for convotional
+	setTextures();
+	glUseProgram(post_prog2);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_TEXTURE_2D);    
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, postTexture2);
+    glUniform1i(glGetUniformLocation(post_prog2, "u_Posttex"),0);
+    
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, random_normal_tex);
+    glUniform1i(glGetUniformLocation(post_prog2, "u_RandomNormaltex"),4);
+    
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
+    glUniform1i(glGetUniformLocation(post_prog2, "u_RandomScalartex"),5);
+
+    glUniform1i(glGetUniformLocation(post_prog2, "u_ScreenHeight"), height);
+    glUniform1i(glGetUniformLocation(post_prog2, "u_ScreenWidth"), width);
+	glUniform1i(glGetUniformLocation(post_prog2, "u_DisplayType"), display_type);
+    draw_quad();
+
 
     glEnable(GL_DEPTH_TEST);
     updateTitle();
