@@ -109,7 +109,8 @@ void main() {
     }
     else
     {
-        //Put some code here to actually compute the light from the point light
+        float diffuse = max(0.0, dot(normalize(light-position),normal));
+        out_Color = vec4(color*diffuse, 1.0f);
     }
     return;
 }
