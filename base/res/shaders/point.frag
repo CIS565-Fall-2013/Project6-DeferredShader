@@ -112,7 +112,7 @@ void main() {
         vec3 lightVec = light - position;
         //got the following attenuation equation from http://www.gamedev.net/topic/595672-light-attenuation-model-for-deferred-shading/
         float distRatio = length( lightVec ) / lightRadius;
-        float attenuation = max(0.0,1.0 - distRatio);
+        float attenuation = max(0.0,1.0 - distRatio*distRatio);
         /*float dampPow = 2.0;*/
         /*float damping_factor = 1.0 - pow(distRatio, 2.0); */
         float damping_factor = 1.0;
