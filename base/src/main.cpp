@@ -2,8 +2,8 @@
 
 #include "Utility.h"
 
-#include <GL/glut.h>
 #include "SOIL.h"
+#include <GL/glut.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_projection.hpp>
 #include <glm/gtc/matrix_operation.hpp>
@@ -221,7 +221,28 @@ GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
 void initShader() {
-    Utility::shaders_t shaders = Utility::loadShaders("../res/shaders/pass.vert", "../res/shaders/pass.frag");
+#ifdef WIN32
+	const char * pass_vert = "../../../res/shaders/pass.vert";
+	const char * shade_vert = "../../../res/shaders/shade.vert";
+	const char * post_vert = "../../../res/shaders/post.vert";
+
+	const char * pass_frag = "../../../res/shaders/pass.frag";
+	const char * diagnostic_frag = "../../../res/shaders/diagnostic.frag";
+	const char * ambient_frag = "../../../res/shaders/ambient.frag";
+	const char * point_frag = "../../../res/shaders/point.frag";
+	const char * post_frag = "../../../res/shaders/post.frag";
+#else
+	const char * pass_vert = "../res/shaders/pass.vert";
+	const char * shade_vert = "../res/shaders/shade.vert";
+	const char * post_vert = "../res/shaders/post.vert";
+
+	const char * pass_frag = "../res/shaders/pass.frag";
+	const char * diagnostic_frag = "../res/shaders/diagnostic.frag";
+	const char * ambient_frag = "../res/shaders/ambient.frag";
+	const char * point_frag = "../res/shaders/point.frag";
+	const char * post_frag = "../res/shaders/post.frag";
+#endif
+	Utility::shaders_t shaders = Utility::loadShaders(pass_vert, pass_frag);
 
     pass_prog = glCreateProgram();
 
@@ -231,7 +252,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(pass_prog,shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/diagnostic.frag");
+	shaders = Utility::loadShaders(shade_vert, diagnostic_frag);
 
     diagnostic_prog = glCreateProgram();
 
@@ -240,7 +261,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(diagnostic_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/ambient.frag");
+	shaders = Utility::loadShaders(shade_vert, ambient_frag);
 
     ambient_prog = glCreateProgram();
 
@@ -249,7 +270,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(ambient_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/point.frag");
+	shaders = Utility::loadShaders(shade_vert, point_frag);
 
     point_prog = glCreateProgram();
 
@@ -258,7 +279,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(point_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/post.vert", "../res/shaders/post.frag");
+	shaders = Utility::loadShaders(post_vert, post_frag);
 
     post_prog = glCreateProgram();
 
@@ -312,7 +333,14 @@ void checkFramebufferStatus(GLenum framebufferStatus) {
 GLuint random_normal_tex;
 GLuint random_scalar_tex;
 void initNoise() {  
-    random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../res/random_normal.png",0,0,0);
+#ifdef WIN32
+	const char * rand_norm_png = "../../../res/random_normal.png";
+	const char * rand_png = "../../../res/random.png";
+#else
+	const char * rand_norm_png = "../res/random_normal.png";
+	const char * rand_png = "../res/random.png";
+#endif
+	random_normal_tex = (unsigned int)SOIL_load_OGL_texture(rand_norm_png,0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -320,7 +348,7 @@ void initNoise() {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    random_scalar_tex = (unsigned int)SOIL_load_OGL_texture("../res/random.png",0,0,0);
+	random_scalar_tex = (unsigned int)SOIL_load_OGL_texture(rand_png,0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -641,13 +669,13 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
     vec4 center = vp * vec4(pos, 1.0);
 
-    left = sc * left;
-    up = sc * up;
-    center = sc * center;
-
     left /= left.w;
     up /= up.w;
     center /= center.w;
+    
+    left = sc * left;
+    up = sc * up;
+    center = sc * center;
 
     float hw = glm::distance(left, center);
     float hh = glm::distance(up, center);
@@ -713,11 +741,12 @@ void updateTitle() {
 bool doIScissor = true;
 void display(void)
 {
-    // clear the screen
+    // Stage 1 -- RENDER TO G-BUFFER
     bindFBO(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     draw_mesh();
 
+    // Stage 2 -- RENDER TO P-BUFFER
     setTextures();
     bindFBO(1);
     glEnable(GL_BLEND);
@@ -760,11 +789,13 @@ void display(void)
     }
     glDisable(GL_BLEND);
 
+    //Stage 3 -- RENDER TO SCREEN
     setTextures();
+    glUseProgram(post_prog);
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_TEXTURE_2D);
-    glUseProgram(post_prog);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture);
