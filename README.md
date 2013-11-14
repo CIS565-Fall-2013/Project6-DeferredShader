@@ -19,10 +19,6 @@ as calculating screen space ambient occlusion and rendering the scene using
 a toon shader (or "cel shader"). 
 
 ------------------------------------------------------------------------------------
-NOTES:
-====================================================================================
-
-------------------------------------------------------------------------------------
 PART 1: Required Features
 ====================================================================================
 
@@ -80,7 +76,7 @@ fragment and multiplied with the ambient light in a scene. You can see the
 difference between the two sets of images below: the ones on the left were
 rendered with no occlusion, while the ones on the right include HBAO.
 
-![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/...png)
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/occlusion_demo.png)
 
 -------------------------------------------------------------------------------
 Who Knows What This Will Be
