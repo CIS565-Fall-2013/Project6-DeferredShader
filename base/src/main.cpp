@@ -214,12 +214,18 @@ GLuint colorTexture = 0;
 GLuint postTexture = 0;
 GLuint FBO[2] = {0, 0};
 
+//add bloom g buffer
+GLuint bloomTexture = 0;
 
 GLuint pass_prog;
 GLuint point_prog;
 GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
+
+GLuint bloom_prog;
+GLuint toon_prog;
+
 void initShader() {
     Utility::shaders_t shaders = Utility::loadShaders("../../../res/shaders/pass.vert", "../../../res/shaders/pass.frag");
 
@@ -266,6 +272,27 @@ void initShader() {
     glBindAttribLocation(post_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(post_prog, shaders);
+
+	//attach and link bloom shader
+	shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/bloom.frag");
+	
+	bloom_prog = glCreateProgram();
+	
+	glBindAttribLocation(bloom_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(bloom_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(bloom_prog, shaders);
+
+	//toon shader
+	shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/toon.frag");
+	
+	toon_prog = glCreateProgram();
+	
+	glBindAttribLocation(toon_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(toon_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(toon_prog, shaders);
+
 }
 
 void freeFBO() {
@@ -274,6 +301,9 @@ void freeFBO() {
     glDeleteTextures(1,&positionTexture);
     glDeleteTextures(1,&colorTexture);
     glDeleteTextures(1,&postTexture);
+	
+	glDeleteTextures(1, &bloomTexture);
+
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
 }
@@ -643,13 +673,13 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
     vec4 center = vp * vec4(pos, 1.0);
 
-    left = sc * left;
-    up = sc * up;
-    center = sc * center;
-
     left /= left.w;
     up /= up.w;
     center /= center.w;
+    
+    left = sc * left;
+    up = sc * up;
+    center = sc * center;
 
     float hw = glm::distance(left, center);
     float hh = glm::distance(up, center);
@@ -684,6 +714,9 @@ void updateDisplayText(char * disp) {
             sprintf(disp, "Displaying Lights");
             break;
 		case(DISPLAY_BLOOM):
+			sprintf(disp, "Displaying Bloom");
+			break;
+		case(DISPLAY_TOON):
 			sprintf(disp, "Displaying Bloom");
 			break;
     }
@@ -746,24 +779,25 @@ void display(void)
                        0.5, 0.5, 0.0, 1.0);
 
 		//set up more lights
-		glm::vec3 lightPos (-1.0, 1.0, -1.0);	
+		glm::vec3 lightPos (0.0, 0.0, 0.0);	
 
-		for (int i = 0; i < 10; ++i) {
-			lightPos.x += 1.0f;
-
-			for(int j = 0; j < 10; ++j) {
-				lightPos.y -= 1.0f;
+		for (int i = 0; i < 16; ++i) {
+			
+			for (int j = 0; j < 16; ++j) {
 				
-				for(int k = 0; k < 10; ++k){
-					lightPos.z += 1.0f; 
+				for (int k = 0; k < 16; ++k) {
 					draw_light(lightPos, 0.5, sc, vp, NEARP);
+					lightPos.z += 0.85f; 
 				}
-				lightPos.z = -1.0f;
+
+				lightPos.z = 0.0f;
+				lightPos.y -= 0.85f;
 			}
-			lightPos.y = 1.0f;
+
+			lightPos.y = 0.0f;
+			lightPos.x += 0.85f;
 		}
 		
-
         glDisable(GL_SCISSOR_TEST);
         
 		//ambient term calculation
@@ -776,7 +810,20 @@ void display(void)
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
         draw_quad();
+
+		//add bloom shader
     }
+	else if (display_type == DISPLAY_TOON){
+		setup_quad(toon_prog);
+		
+		vec4 light(2.5, -1.5, 5.0, 1.0);
+		light = cam.get_view() * light; 
+
+		//send light position to shader
+		glUniform4fv(glGetUniformLocation(toon_prog, "u_Light"), 1, &(light[0]));
+		draw_quad();
+
+	}
     else
     {
         setup_quad(diagnostic_prog);
@@ -804,6 +851,8 @@ void display(void)
 
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
+	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
+
     draw_quad();
 
     glEnable(GL_DEPTH_TEST);
@@ -903,6 +952,9 @@ void keyboard(unsigned char key, int x, int y) {
             break;
 		case ('6'):
 			display_type = DISPLAY_BLOOM;
+			break;
+		case ('7'):
+			display_type = DISPLAY_TOON;
 			break;
         case('0'):
             display_type = DISPLAY_TOTAL;

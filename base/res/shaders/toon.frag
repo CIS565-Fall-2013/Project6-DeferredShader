@@ -27,21 +27,17 @@ uniform sampler2D u_RandomScalartex;
 
 uniform float u_Far;
 uniform float u_Near;
-uniform int u_OcclusionType;
 uniform int u_DisplayType;
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 
 uniform vec4 u_Light;
-uniform float u_LightIl;
 
 in vec2 fs_Texcoord;
 
 out vec4 out_Color;
 ///////////////////////////////////////
-
-
 
 
 uniform float zerothresh = 1.0f;
@@ -90,27 +86,66 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
 const float occlusion_strength = 1.5f;
 void main() {
 
-    float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
-    float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
-
-    vec3 normal = sampleNrm(fs_Texcoord);
+	vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
-    vec3 light = u_Light.xyz;
-    float strength = u_Light.w;
-    if (lin_depth > 0.99f) {
-        out_Color = vec4(vec3(0.0), 1.0);
-    } else {
-        float ambient = u_LightIl;
-        float diffuse = max(0.0, dot(normalize(light),normal));
-        out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
-    }	
+
+	//sobel filtering
+	float stepX = 1.0/u_ScreenWidth;
+	float stepY = 1.0/u_ScreenHeight;
+
+	vec3 samples[9]; 
+	int count = 0;
+
+	//sample the pixel and its 8 neighbors
+	for (int j = -1; j < 2; ++j){
+		for (int i = -1; i < 2; ++i){
+			vec2 offset = vec2 (i * stepX, j * stepY);
+			samples[count] = sampleCol(fs_Texcoord.st + offset);
+			count ++;		
+		}
+	}
+	
+	//horizontal gradient
+	// -1  0  1
+	// -2  0  2
+	// -1  0  1
+	vec3 Dx = -samples[0] + samples[2] - 2.0*samples[3] + 2.0*samples[5] - samples[6] + samples[8];
+	
+	//vertical gradient
+	//  1  2  1
+	//  0  0  0
+	// -1 -2 -1
+	vec3 Dy = samples[0] + 2.0*samples[1] + samples[2] - samples[6] - 2.0*samples[7] - samples[8];
+
+	//calculate magnitude of gradient, if s is high, there is an edge, else, no edge
+	float s = sqrt(dot(Dx, Dx) + dot(Dy, Dy));
+
+	//toon shading based on normals
+	vec3 lightDir = normalize(u_Light.xyz - position);
+	float shade = max(dot(lightDir, normal), 0.0);
+
+	if (shade > 0.9) {
+		out_Color.rgb = 1.3 * color; 
+	}
+	else if (shade > 0.7) {
+		out_Color.rgb = color;
+	}
+	else if (shade > 0.3) {
+		out_Color.rgb = 0.3 * color;
+	} 
+	else{
+		out_Color.rgb = 0.2 * color;
+	}
+	
+	out_Color.rgb *= (1.0 - s);
     return;
 }
 

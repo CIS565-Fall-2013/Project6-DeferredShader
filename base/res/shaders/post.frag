@@ -23,6 +23,8 @@ uniform sampler2D u_RandomScalartex;
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 
+uniform int u_DisplayType;
+
 in vec2 fs_Texcoord;
 
 out vec4 out_Color;
@@ -61,6 +63,7 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
@@ -72,12 +75,8 @@ void main() {
     vin = 0;
 	out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
 
-	if ( u_DisplayType == DISPLAY_BLOOM) {
-		out_Color.xyz = vec3( 0.0, 1.0, 0.0);
-	
-	}
-
-
     return;
 }
+
+
 

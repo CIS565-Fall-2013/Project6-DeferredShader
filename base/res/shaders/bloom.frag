@@ -11,7 +11,7 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_BLOOM 6
-#define DISPLAY_TOON 7
+
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -27,7 +27,6 @@ uniform sampler2D u_RandomScalartex;
 
 uniform float u_Far;
 uniform float u_Near;
-uniform int u_OcclusionType;
 uniform int u_DisplayType;
 
 uniform int u_ScreenWidth;
@@ -90,6 +89,28 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+
+//testing bloom texture
+vec3 getBloomColor(vec3 fragColor) {
+	
+	if(fragColor.r < 0.1 && fragColor.g > 0.1 && fragColor.b > 0.1) {
+		//return vec3(0.0);
+	}
+
+	vec3 accumColor = vec3(0);
+
+	for (int i = -3; i < 3; ++i){
+		for (int j = -3; j < 3; ++j){
+			
+			vec2 offsetPos = fs_Texcoord + vec2(i, j)*0.01;
+			accumColor += sampleCol(offsetPos) * 0.01;
+		}
+	}
+	
+	return accumColor;
+
+}
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
@@ -103,14 +124,16 @@ void main() {
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
-    float strength = u_Light.w;
-    if (lin_depth > 0.99f) {
-        out_Color = vec4(vec3(0.0), 1.0);
-    } else {
-        float ambient = u_LightIl;
-        float diffuse = max(0.0, dot(normalize(light),normal));
-        out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
-    }	
+
+	vec3 lightDir= normalize(light - position);
+    
+	float lightRadius = u_Light.w;
+    out_Color = vec4(0,0,0,1.0);
+  
+  	if ( u_DisplayType == DISPLAY_BLOOM) {
+		out_Color.x = 1.0;
+	}
+	
     return;
 }
 

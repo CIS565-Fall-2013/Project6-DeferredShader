@@ -11,7 +11,7 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_BLOOM 6
-
+#define DISPLAY_TOON 7
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -106,6 +106,7 @@ void main() {
 	vec3 lightDir= normalize(light - position);
     
 	float lightRadius = u_Light.w;
+
     out_Color = vec4(0,0,0,1.0);
   
 	float dist = clamp( 1.0 - length(position - light)/lightRadius, 0.0, 1.0);
@@ -118,9 +119,9 @@ void main() {
     else
     {
         //Put some code here to actually compute the light from the point light
-		float diffuse = max(0.0, dot(lightDir, normal));
-		out_Color.xyz = dist* diffuse* color;
-		//out_Color.xyz = color;
+		float diffuse = max(0.0, dot(lightDir, normalize(normal)));
+		
+		out_Color.xyz = dist* u_LightIl* diffuse* color;
     }
     return;
 }
