@@ -102,7 +102,7 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
-    out_Color = vec4(0,0,0,1.0);
+    /*out_Color = vec4(0,0,0,1.0);*/
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         out_Color = vec4(1.0,1.0,0.0,1.0);
@@ -118,7 +118,8 @@ void main() {
         float damping_factor = 1.0;
         float final_intensity = attenuation * damping_factor;
         float diffuse = max(0.0, dot(normalize(lightVec),normal));
-        out_Color = vec4(color*diffuse*final_intensity, 1.0f);
+        out_Color = vec4(color*diffuse*final_intensity, 0.0f);
+        /*out_Color = vec4(color*diffuse, final_intensity);*/
     }
     return;
 }
