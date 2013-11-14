@@ -66,6 +66,8 @@ PART 2: Additional Features
 Screen Space Ambient Occlusion
 -------------------------------------------------------------------------------
 
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/AOpass.png)
+
 To compute screen space ambient occlusion, I implemented a method described by 
 NVidia (here: http://www.nvidia.com/object/siggraph-2008-HBAO.html) called
 Horizon Based Ambient Occlusion. This method finds the horizon angle from each
