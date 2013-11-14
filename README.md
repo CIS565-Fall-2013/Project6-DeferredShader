@@ -42,7 +42,7 @@ In the images below, I have set up a grid of point lights in the scene, evenly
 spaced within the bounds of the Cornell box. Their influence can be seen in the
 final render.
 
-![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/...png)
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/box_notoon1.png)
 
 -------------------------------------------------------------------------------
 Toon Shading
