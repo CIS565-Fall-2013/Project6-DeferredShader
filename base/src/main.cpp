@@ -669,13 +669,13 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
     vec4 center = vp * vec4(pos, 1.0);
 
-    left = sc * left;
-    up = sc * up;
-    center = sc * center;
-
     left /= left.w;
     up /= up.w;
     center /= center.w;
+    
+    left = sc * left;
+    up = sc * up;
+    center = sc * center;
 
     float hw = glm::distance(left, center);
     float hh = glm::distance(up, center);
