@@ -17,6 +17,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <map>
 
 using namespace std;
 using namespace glm;
@@ -78,7 +79,7 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
 	//Unplug Vertex Array
 	glBindVertexArray(0);
 
-	out.texname = mesh.texname;
+	out.diff_texid = mesh.diff_texid;
 	out.color = mesh.color;
 	return out;
 }
@@ -88,7 +89,43 @@ int num_boxes = 3;
 const int DUMP_SIZE = 1024;
 
 vector<device_mesh_t> draw_meshes;
+string m_Path;//Path to bbj file for texture loading.
+map<string, GLuint> textureIdMap;
+
+
+GLuint loadTexture(string textureName)
+{
+	//Check if texture alread loaded. 
+	if(textureName.length() > 0){
+		map<string, GLuint>::iterator it = textureIdMap.find(textureName);
+		GLuint texId;
+		if(it != textureIdMap.end())
+		{
+			//element found, just return texture id.
+			texId = it->second;
+		}else{
+			//If not loaded already, load texture
+			string textureFullPath = m_Path + textureName;
+			cout << "Loading Texture: " << textureFullPath << endl;
+			texId = (unsigned int)SOIL_load_OGL_texture(textureFullPath.c_str(),0,0,0);
+			glBindTexture(GL_TEXTURE_2D, texId);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			textureIdMap.insert(make_pair(textureName, texId));
+		}
+		return texId;
+	}
+	else{
+		return 0;//No texture
+	}
+}
+
 void initMesh() {
+	textureIdMap.clear();
+
 	for(vector<tinyobj::shape_t>::iterator it = shapes.begin();
 		it != shapes.end(); ++it)
 	{
@@ -161,7 +198,8 @@ void initMesh() {
 			mesh.color = vec3(shape.material.diffuse[0],
 				shape.material.diffuse[1],
 				shape.material.diffuse[2]);
-			mesh.texname = shape.material.diffuse_texname;
+
+			mesh.diff_texid = loadTexture(shape.material.diffuse_texname);
 			draw_meshes.push_back(uploadMesh(mesh));
 			f=f+process;
 		}
@@ -412,7 +450,7 @@ void initFBO(int w, int h) {
 
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-	// creatwwe a framebuffer object
+	// create a framebuffer object
 	glGenFramebuffers(1, &FBO[0]);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
 
@@ -590,7 +628,16 @@ void draw_mesh() {
 	glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_InvTrans") ,1,GL_FALSE,&inverse_transposed[0][0]);
 
 	for(int i=0; i<draw_meshes.size(); i++){
+		//TODO: BIND Textures here
 		glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
+		
+		//Diffuse texture
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, draw_meshes[i].diff_texid);
+		GLuint loc = glGetUniformLocation(pass_prog, "u_DiffTex");
+		//cout << loc << endl;
+		glUniform1i(loc,0);
+
 		glBindVertexArray(draw_meshes[i].vertex_array);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
 		glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
@@ -655,38 +702,38 @@ void draw_quad() {
 }
 
 void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
-    float radius = strength;
-    vec4 light = cam.get_view() * vec4(pos, 1.0); 
-    if( light.z > NEARP)
-    {
-        return;
-    }
-    light.w = radius;
-    glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
-    glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
+	float radius = strength;
+	vec4 light = cam.get_view() * vec4(pos, 1.0); 
+	if( light.z > NEARP)
+	{
+		return;
+	}
+	light.w = radius;
+	glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
+	glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
 
-    vec4 left = vp * vec4(pos + radius*cam.start_left, 1.0);
-    vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
-    vec4 center = vp * vec4(pos, 1.0);
+	vec4 left = vp * vec4(pos + radius*cam.start_left, 1.0);
+	vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
+	vec4 center = vp * vec4(pos, 1.0);
 
-    left /= left.w;
-    up /= up.w;
-    center /= center.w;
-    
-    left = sc * left;
-    up = sc * up;
-    center = sc * center;
+	left /= left.w;
+	up /= up.w;
+	center /= center.w;
 
-    float hw = glm::distance(left, center);
-    float hh = glm::distance(up, center);
+	left = sc * left;
+	up = sc * up;
+	center = sc * center;
 
-    float r = (hh > hw) ? hh : hw;
+	float hw = glm::distance(left, center);
+	float hh = glm::distance(up, center);
 
-    float x = center.x-r;
-    float y = center.y-r;
+	float r = (hh > hw) ? hh : hw;
 
-    glScissor(x, y, 2*r, 2*r);
-    draw_quad();
+	float x = center.x-r;
+	float y = center.y-r;
+
+	glScissor(x, y, 2*r, 2*r);
+	draw_quad();
 }
 
 void updateDisplayText(char * disp) {
@@ -978,6 +1025,7 @@ int main (int argc, char* argv[])
 				cerr << err << endl;
 				return -1;
 			}
+			m_Path = path;
 			loadedScene = true;
 		}
 	}

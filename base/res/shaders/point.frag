@@ -119,7 +119,7 @@ void main() {
 		if(NdotL > 0.0)
 		{
 			float att = clamp((lightRadius-dist)/lightRadius, 0.0,1.0);
-			
+			att *= att;
 			//diffuse
 			out_Color += att*vec4(color,1.0)*NdotL*u_LightIl;
 			

@@ -35,7 +35,7 @@ typedef struct {
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> texcoords;
 	std::vector<unsigned short> indices;
-    std::string texname;
+    unsigned int diff_texid;
     glm::vec3 color;
 } mesh_t;
 
@@ -47,7 +47,7 @@ typedef struct {
 	unsigned int vbo_normals;
 	unsigned int vbo_texcoords;
     glm::vec3 color;
-    std::string texname;
+    unsigned int diff_texid;
 } device_mesh_t;
 
 typedef struct {
