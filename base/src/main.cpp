@@ -669,13 +669,13 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
     vec4 center = vp * vec4(pos, 1.0);
 
-    left = sc * left;
-    up = sc * up;
-    center = sc * center;
-
     left /= left.w;
     up /= up.w;
     center /= center.w;
+
+    left = sc * left;
+    up = sc * up;
+    center = sc * center;
 
     float hw = glm::distance(left, center);
     float hh = glm::distance(up, center);
@@ -708,6 +708,12 @@ void updateDisplayText(char * disp) {
             break;
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
+            break;
+        case(DISPLAY_BLOOM):
+            sprintf(disp, "Displaying Bloom");
+            break;
+        case(DISPLAY_TOON):
+            sprintf(disp, "Displaying Toon");
             break;
     }
 }
@@ -754,7 +760,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_BLOOM || display_type == DISPLAY_TOON)
     {
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -769,7 +775,7 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+        draw_light(vec3(5.2, -2.5, 3.0), 8.5, sc, vp, NEARP);
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
@@ -907,6 +913,12 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case('5'):
             display_type = DISPLAY_LIGHTS;
+            break;
+        case('6'):
+            display_type = DISPLAY_BLOOM;
+            break;
+        case('7'):
+            display_type = DISPLAY_TOON;
             break;
         case('0'):
             display_type = DISPLAY_TOTAL;

@@ -10,7 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-
+#define DISPLAY_BLOOM 6
+#define DISPLAY_TOON 7
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -100,17 +101,30 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
-    vec3 light = u_Light.xyz;
+    vec3 light = u_Light.xyz; // light position
     float lightRadius = u_Light.w;
-    out_Color = vec4(0,0,0,1.0);
+    vec3 light_dir = normalize(position - light);
+    float light_dist = distance(position, light);
+    out_Color = vec4(0.0, 0.0, 0.0, 1.0);
+
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
-        //Put some code here to visualize the fragment associated with this point light
+        //Visualize the fragment associated with this point light
+        float diffuse = max(dot(normal, -light_dir), 0.0);
+        out_Color     = vec4(vec3(0.4, 0.2, 0.8) * diffuse, 1.0);
     }
     else
     {
-        //Put some code here to actually compute the light from the point light
+        //Put some code here to actually compute the light from the point light, using light attenuation formula from http://imdoingitwrong.wordpress.com/2011/01/31/light-attenuation/
+        // Attenuation
+        float d     = max(light_dist - lightRadius, 0.0);
+        float ratio = d / lightRadius;
+        float denom = ratio + 1.0;
+        float attenuation = 1 / (denom * denom) ;
+
+        // Diffuse with attenuation
+        float diffuse = max(dot(normal, -light_dir), 0.0);
+        out_Color     = vec4(diffuse * color * attenuation, 1.0);
     }
     return;
 }
-
