@@ -106,7 +106,7 @@ void main() {
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
-		out_Color = vec4(1.0,0.0,0.0,1.0);
+		out_Color = vec4(0.2,0.0,0.0,1.0);
     }
     else
     {
