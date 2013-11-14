@@ -752,7 +752,7 @@ void display(void)
     glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_ONE, GL_ONE);
+	glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
     if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
     {
@@ -769,7 +769,12 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+		glm::vec3 yellow = glm::vec3 (0,1,1);
+		glm::vec3 orange = glm::vec3 (0.89,0.44,0.1);
+		glUniform3fv (glGetUniformLocation(ambient_prog, "u_Light"), 1, &(yellow[0]));
+        draw_light(vec3(5.2, -2.5, 3.0), 0.85, sc, vp, NEARP);
+        draw_light(vec3(5.2, -0.5, 3.0), 0.85, sc, vp, NEARP);
+        draw_light(vec3(5.2, -4.5, 3.0), 0.85, sc, vp, NEARP);
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
