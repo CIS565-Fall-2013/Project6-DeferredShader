@@ -111,21 +111,38 @@ void main() {
     }
 	else if (u_DisplayType == DISPLAY_TOON )
 	{
-		vec3 dirToLight = vec3(light.xyz - position.xyz);
-		float distFromLight = length(dirToLight);
-		if (distFromLight < lightRadius)
-		{
-			float I = max(0.0, dot(normal, dirToLight))*u_Light.w / (distFromLight / (lightRadius - distFromLight));
-			
-			// toon shading
-			if		(I <= 0.05) { I = 0.1; }
-			else if (I <= 0.10) { I = 0.3; }
-			else if (I <= 0.15) { I = 0.5; }
-			else if (I <= 0.20) { I = 0.7; }
-			else			    { I = 0.9; }
+		ivec2 sz = textureSize(u_Normaltex,0);
+		vec3 normal_up    = sampleNrm(vec2(fs_Texcoord.x+(2.0/sz.x), fs_Texcoord.y));
+		vec3 normal_down  = sampleNrm(vec2(fs_Texcoord.x-(2.0/sz.x), fs_Texcoord.y));
+		vec3 normal_right = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y+(2.0/sz.y)));
+		vec3 normal_left  = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y-(2.0/sz.y)));
 
-			out_Color += vec4(I);
-			out_Color *= vec4(color, 1.0);
+		if ( dot(normal, normal_up)    <= 0.96 ||
+			 dot(normal, normal_down)  <= 0.96 ||
+			 dot(normal, normal_right) <= 0.96 ||
+			 dot(normal, normal_left)  <= 0.96)
+		{
+			out_Color = vec4(vec3(0), 1.0f);
+		}
+		
+		else
+		{
+			vec3 dirToLight = vec3(light.xyz - position.xyz);
+			float distFromLight = length(dirToLight);
+			if (distFromLight < lightRadius)
+			{
+				float I = max(0.0, dot(normal, dirToLight))*u_Light.w / (distFromLight / (lightRadius - distFromLight));
+			
+				// toon shading
+				if		(I <= 0.05) { I = 0.1; }
+				else if (I <= 0.10) { I = 0.3; }
+				else if (I <= 0.15) { I = 0.5; }
+				else if (I <= 0.20) { I = 0.7; }
+				else			    { I = 0.9; }
+
+				out_Color += vec4(I);
+				out_Color *= vec4(color, 1.0);
+			}
 		}
 	}
     else

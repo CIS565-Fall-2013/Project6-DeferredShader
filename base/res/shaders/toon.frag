@@ -164,10 +164,10 @@ void main() {
     if( u_DisplayType == DISPLAY_TOON ) {
 
 		ivec2 sz = textureSize(u_Normaltex,0);
-		vec3 normal_up    = sampleNrm(vec2(fs_Texcoord.x+(1.0/sz.x), fs_Texcoord.y));
-		vec3 normal_down  = sampleNrm(vec2(fs_Texcoord.x-(1.0/sz.x), fs_Texcoord.y));
-		vec3 normal_right = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y+(1.0/sz.y)));
-		vec3 normal_left  = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y-(1.0/sz.y)));
+		vec3 normal_up    = sampleNrm(vec2(fs_Texcoord.x+(2.0/sz.x), fs_Texcoord.y));
+		vec3 normal_down  = sampleNrm(vec2(fs_Texcoord.x-(2.0/sz.x), fs_Texcoord.y));
+		vec3 normal_right = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y+(2.0/sz.y)));
+		vec3 normal_left  = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y-(2.0/sz.y)));
 
 		if ( dot(normal, normal_up)    <= 0.96 ||
 			 dot(normal, normal_down)  <= 0.96 ||
