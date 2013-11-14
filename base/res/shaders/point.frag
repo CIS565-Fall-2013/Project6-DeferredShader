@@ -106,6 +106,7 @@ void main() {
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
+		
     }
     else
     {

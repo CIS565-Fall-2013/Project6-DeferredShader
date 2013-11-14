@@ -745,6 +745,7 @@ void display(void)
     bindFBO(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     draw_mesh();
+	//At this point, G-Buffer has appropriate geometry rendered
 
     // Stage 2 -- RENDER TO P-BUFFER
     setTextures();

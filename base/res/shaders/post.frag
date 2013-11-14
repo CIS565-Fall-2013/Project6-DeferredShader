@@ -69,6 +69,7 @@ void main() {
     float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
     float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
     out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+	//out_Color = color;
     return;
 }
 
