@@ -111,15 +111,12 @@ void main() {
         ambColor = vec4(vec3(0.0), 1.0);
     } else {
         float ambient = u_LightIl;
-        float diffuse = max(0.0, dot(normalize(light),normal));
-        ambColor = vec4(color*(strength*diffuse + ambient),1.0);// * texture(u_Bloomtex,fs_Texcoord);		
-    }	
-	/*if(u_DisplayType == DISPLAY_BLOOM)
-	{
-		out_Color = ambColor * (1.0 - color4.a);  
-	}
-	else*/
-		out_Color = ambColor;
+        float diffuse = max(0.0, dot(normalize(light),normal));		
+		ambColor = vec4(color*(strength*diffuse + ambient),1.0);        		
+	}	
+
+	out_Color = ambColor;
+	
     return;
 }
 

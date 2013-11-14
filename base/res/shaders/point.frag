@@ -10,7 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-
+#define DISPLAY_BLOOM 6
+#define DISPLAY_SIL 7
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -109,15 +110,16 @@ void main() {
 	//vec3 lightColor = vec3(1.0,0.0,1.0);
 	float Intensity = 2.0;
     if( u_DisplayType == DISPLAY_LIGHTS )
-    {
+    {		
 		//Put some code here to visualize the fragment associated with this point light
 		if(dist <= lightRadius)
 		{
 			vec3 markColor = vec3(1.0,1.0,1.0)*0.4 + color * 0.6;
 			out_Color = vec4(markColor,1.0);
 		}	
-    }
-    else
+		
+    } 
+	else
     {	
 		float diffuse = max(0.0,dot(normalize(lightVector),normal));
 		float isInradius = step(0.0,lightRadius - length(lightVector));
@@ -125,7 +127,8 @@ void main() {
 		attenuation = attenuation / lightRadius + 1;
 		attenuation = 1.0/(attenuation * attenuation);
 		vec3 diffuseColor = Intensity * color * diffuse * u_lightColor * attenuation * isInradius;
-		out_Color = vec4(diffuseColor , 1.0);	
+		out_Color = vec4(diffuseColor , 1.0);
+				
     }
     return;
 }

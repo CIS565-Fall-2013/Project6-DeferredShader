@@ -36,6 +36,9 @@ uniform int u_blurAmount;
 uniform float u_blurScale;
 uniform float u_blurStrength;
 
+uniform	mat3 u_GX = mat3( -1.0, 0.0, 1.0,-2.0, 0.0, 2.0,-1.0, 0.0, 1.0 );
+uniform	mat3 u_GY = mat3(  1.0,  2.0,  1.0,0.0,  0.0,  0.0,-1.0, -2.0,	-1.0);
+
 in vec2 fs_Texcoord;
 
 out vec4 out_Color;
@@ -103,6 +106,10 @@ void main() {
     float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
     float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
     vec4 otherColor = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+	if(u_DisplayType == DISPLAY_SIL)
+	{
+		otherColor = vec4(color,1.0);
+	}
 	vec4 glowColor = vec4(0.0);
 	if(u_DisplayType == DISPLAY_BLOOM)
 	{
@@ -122,16 +129,20 @@ void main() {
 	}
 	else if(u_DisplayType == DISPLAY_SIL)
 	{
-		vec3 color1 =vec3(0.0,0.0,0.0);
-		vec3 eyeVector = vec3(0.0,0.0,5.0) - position;
-		eyeVector = normalize(eyeVector);
-		float sil = max(dot(normal,eyeVector), 0.0);
-		if (sil < 0.1)
-			out_Color = vec4(color1,1.0);
-		else
-			out_Color = otherColor;
+		// I'm impelmenteng a sebel edge detection method
+		//reference http://rastergrid.com/blog/2011/01/frei-chen-edge-detector/#more-532	
+		float sumX = 0.0; float sumY = 0.0;
+		for(int i = -1; i<= 1; ++i)
+		{
+			for(int j = -1; j<=1; ++j)
+			{
+				vec3 tmpColor = texture(u_Colortex,fs_Texcoord + vec2(i*u_texelSizeX, j*u_texelSizeY)).rgb;
+				sumX += length(tmpColor) * u_GX[i+1][j+1];
+				sumY += length(tmpColor) * u_GY[i+1][j+1];
+			}
+		}
+		out_Color = clamp(0.5*sqrt(sumX*sumX + sumY*sumY) + otherColor,0.0,1.0);
 		return;
-		
 	}
 	out_Color = otherColor;
     return;
