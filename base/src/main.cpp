@@ -655,38 +655,38 @@ void draw_quad() {
 }
 
 void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
-	float radius = strength;
-	vec4 light = cam.get_view() * vec4(pos, 1.0); 
-	if( light.z > NEARP)
-	{
-		return;
-	}
-	light.w = radius;
-	glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
-	glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), 1.0);
+    float radius = strength;
+    vec4 light = cam.get_view() * vec4(pos, 1.0); 
+    if( light.z > NEARP)
+    {
+        return;
+    }
+    light.w = radius;
+    glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
+    glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
 
-	vec4 left = vp * vec4(pos + radius*cam.start_left, 1.0);
-	vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
-	vec4 center = vp * vec4(pos, 1.0);
+    vec4 left = vp * vec4(pos + radius*cam.start_left, 1.0);
+    vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
+    vec4 center = vp * vec4(pos, 1.0);
 
-	left = sc * left;
-	up = sc * up;
-	center = sc * center;
+    left /= left.w;
+    up /= up.w;
+    center /= center.w;
+    
+    left = sc * left;
+    up = sc * up;
+    center = sc * center;
 
-	left /= left.w;
-	up /= up.w;
-	center /= center.w;
+    float hw = glm::distance(left, center);
+    float hh = glm::distance(up, center);
 
-	float hw = glm::distance(left, center);
-	float hh = glm::distance(up, center);
+    float r = (hh > hw) ? hh : hw;
 
-	float r = (hh > hw) ? hh : hw;
+    float x = center.x-r;
+    float y = center.y-r;
 
-	float x = center.x-r;
-	float y = center.y-r;
-
-	glScissor(x, y, 2*r, 2*r);
-	draw_quad();
+    glScissor(x, y, 2*r, 2*r);
+    draw_quad();
 }
 
 void updateDisplayText(char * disp) {
@@ -771,20 +771,20 @@ void display(void)
 			0.5, 0.5, 0.0, 1.0);
 
 		//Floor fixtures
-		draw_light(vec3(-9.36, -1.5, 0.8), 5.0, sc, vp, NEARP);
-		draw_light(vec3(-9.36, 2.25, 0.8), 5.0, sc, vp, NEARP);
-		draw_light(vec3(-2.25, -1.5, 0.8), 5.0, sc, vp, NEARP);
-		draw_light(vec3(-2.25, 2.25, 0.8), 5.0, sc, vp, NEARP);
-		draw_light(vec3(1.25, -1.5, 0.8), 5.0, sc, vp, NEARP);
-		draw_light(vec3(1.25, 2.25, 0.8), 5.0, sc, vp, NEARP);
-		draw_light(vec3(8.25, -1.5, 0.8), 5.0, sc, vp, NEARP);
-		draw_light(vec3(8.25, 2.25, 0.8), 5.0, sc, vp, NEARP);
+		draw_light(vec3(-9.36, -1.5, 0.8), 1.0, sc, vp, NEARP);
+		draw_light(vec3(-9.36, 2.25, 0.8), 1.0, sc, vp, NEARP);
+		draw_light(vec3(-2.25, -1.5, 0.8), 1.0, sc, vp, NEARP);
+		draw_light(vec3(-2.25, 2.25, 0.8), 1.0, sc, vp, NEARP);
+		draw_light(vec3(1.25, -1.5, 0.8), 1.0, sc, vp, NEARP);
+		draw_light(vec3(1.25, 2.25, 0.8), 1.0, sc, vp, NEARP);
+		draw_light(vec3(8.25, -1.5, 0.8), 1.0, sc, vp, NEARP);
+		draw_light(vec3(8.25, 2.25, 0.8), 1.0, sc, vp, NEARP);
 
 		//Lamps
-		draw_light(vec3(4.6, 2.2, 1.6), 6.0, sc, vp, NEARP);
-		draw_light(vec3(4.6, -1/8, 1.6), 6.0, sc, vp, NEARP);
-		draw_light(vec3(-6.0, 2.2, 1.6), 6.0, sc, vp, NEARP);
-		draw_light(vec3(-6.0, -1/8, 1.6), 6.0, sc, vp, NEARP);
+		draw_light(vec3(4.8, 2.0, 1.6), 2.0, sc, vp, NEARP);
+		draw_light(vec3(4.8, -1.2, 1.6), 2.0, sc, vp, NEARP);
+		draw_light(vec3(-6.0, 2.0, 1.6), 2.0, sc, vp, NEARP);
+		draw_light(vec3(-6.0, -1.2, 1.6), 2.0, sc, vp, NEARP);
 
 		glDisable(GL_SCISSOR_TEST);
 		vec4 dir_light(0.1, 1.0, 1.0, 0.0);
