@@ -54,7 +54,7 @@ great enough, I assumed this to be an edge and rendered it as a black line.
 Otherwise, I discretized the luminance of the fragment to one of five
 predefined bucket values. The results are below.  
 
-![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/...png)
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/toon_side_by_side.png)
 
 -------------------------------------------------------------------------------
 Additional G-Buffer
