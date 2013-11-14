@@ -4,7 +4,7 @@ Project 6: Deferred Shader
 Ricky Arietta Fall 2013
 -------------------------------------------------------------------------------
 
-![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/...png)
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/header.png)
 
 ------------------------------------------------------------------------------------
 INTRODUCTION:
