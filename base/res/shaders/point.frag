@@ -10,6 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define	DISPLAY_AO 6
+#define	DISPLAY_TOON 7
 
 
 /////////////////////////////////////
@@ -102,15 +104,41 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
-    out_Color = vec4(0,0,0,1.0);
+	out_Color = vec4(0, 0, 0, 0);
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
-        //Put some code here to visualize the fragment associated with this point light
+		out_Color += vec4(0, 0, 0.4, 0);
     }
+	else if (u_DisplayType == DISPLAY_TOON )
+	{
+		vec3 dirToLight = vec3(light.xyz - position.xyz);
+		float distFromLight = length(dirToLight);
+		if (distFromLight < lightRadius)
+		{
+			float I = max(0.0, dot(normal, dirToLight))*u_Light.w / (distFromLight / (lightRadius - distFromLight));
+			
+			// toon shading
+			if		(I <= 0.05) { I = 0.1; }
+			else if (I <= 0.10) { I = 0.3; }
+			else if (I <= 0.15) { I = 0.5; }
+			else if (I <= 0.20) { I = 0.7; }
+			else			    { I = 0.9; }
+
+			out_Color += vec4(I);
+			out_Color *= vec4(color, 1.0);
+		}
+	}
     else
     {
-        //Put some code here to actually compute the light from the point light
+		vec3 dirToLight = vec3(light.xyz - position.xyz);
+		float distFromLight = length(dirToLight);
+		if (distFromLight < lightRadius) {
+			float I = max(0.0, dot(normal, dirToLight))*u_Light.w / (distFromLight / (lightRadius - distFromLight));
+			out_Color += vec4(I);
+			out_Color *= 3.0*vec4(color,1.0);
+		} 
     }
+	
     return;
 }
 

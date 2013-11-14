@@ -28,7 +28,6 @@ uniform sampler2D u_RandomScalartex;
 
 uniform float u_Far;
 uniform float u_Near;
-uniform int u_OcclusionType;
 uniform int u_DisplayType;
 
 uniform int u_ScreenWidth;
@@ -69,7 +68,7 @@ vec3 samplePos(vec2 texcoords) {
     return texture(u_Positiontex,texcoords).xyz;
 }
 
-//Helper function to automicatlly sample and unpack colors
+//Helper function to automicatlly sample and unpack positions
 vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
 }
@@ -97,11 +96,9 @@ float getRandomScalar(vec2 texcoords) {
 const float occlusion_strength = 1.5f;
 void main() {
 
-	// depth data
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
     float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
 
-	// fragment data
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
@@ -164,19 +161,38 @@ void main() {
 	// ambient occlusion term
 	float occl = (sin(hup) - sin(tup)) / 4.0 + (sin(hdown) - sin(tdown)) / 4.0 + (sin(hright) - sin(tright)) / 4.0 + (sin(hleft) - sin(tleft)) / 4.0;
 	
-	if (u_DisplayType == DISPLAY_AO) {
-		out_Color = vec4(1.0-occl);
-	}
-	else {
-		// compute final color
-		if (lin_depth > 0.99f) {
-			out_Color = vec4(vec3(0.0), 1.0);
-		} else {
+    if( u_DisplayType == DISPLAY_TOON ) {
+
+		ivec2 sz = textureSize(u_Normaltex,0);
+		vec3 normal_up    = sampleNrm(vec2(fs_Texcoord.x+(1.0/sz.x), fs_Texcoord.y));
+		vec3 normal_down  = sampleNrm(vec2(fs_Texcoord.x-(1.0/sz.x), fs_Texcoord.y));
+		vec3 normal_right = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y+(1.0/sz.y)));
+		vec3 normal_left  = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y-(1.0/sz.y)));
+
+		if ( dot(normal, normal_up)    <= 0.96 ||
+			 dot(normal, normal_down)  <= 0.96 ||
+			 dot(normal, normal_right) <= 0.96 ||
+			 dot(normal, normal_left)  <= 0.96)
+		{
+			out_Color = vec4(vec3(0), 1.0f);
+		}
+
+		else
+		{
 			float ambient = u_LightIl;
 			float diffuse = max(0.0, dot(normalize(light),normal));
+			
+			// toon shading of ambient
+			if		(diffuse <= 0.1) { diffuse = 0.2; }
+			else if (diffuse <= 0.3) { diffuse = 0.4; }
+			else if (diffuse <= 0.5) { diffuse = 0.6; }
+			else if (diffuse <= 0.7) { diffuse = 0.8; }
+			else					 { diffuse = 1.0; }
+			
 			out_Color = vec4(color*(strength*diffuse + ambient*(1.0-occl)),1.0f);
-		}	
+		}
 	}
+	
     return;
 }
 
