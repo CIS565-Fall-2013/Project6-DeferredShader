@@ -176,12 +176,12 @@ void initMesh() {
 
 				if(shape.mesh.texcoords.size() > 0)
 				{
-					mesh.texcoords.push_back(vec2(shape.mesh.positions[2*idx0],
-						shape.mesh.positions[2*idx0+1]));
-					mesh.texcoords.push_back(vec2(shape.mesh.positions[2*idx1],
-						shape.mesh.positions[2*idx1+1]));
-					mesh.texcoords.push_back(vec2(shape.mesh.positions[2*idx2],
-						shape.mesh.positions[2*idx2+1]));
+					mesh.texcoords.push_back(vec2(shape.mesh.texcoords[2*idx0],
+						shape.mesh.texcoords[2*idx0+1]));
+					mesh.texcoords.push_back(vec2(shape.mesh.texcoords[2*idx1],
+						shape.mesh.texcoords[2*idx1+1]));
+					mesh.texcoords.push_back(vec2(shape.mesh.texcoords[2*idx2],
+						shape.mesh.texcoords[2*idx2+1]));
 				}
 				else
 				{
