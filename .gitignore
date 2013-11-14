@@ -161,3 +161,5 @@ $RECYCLE.BIN/
 
 # Vim stuff
 *.swp
+
+tags

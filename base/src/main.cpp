@@ -769,7 +769,14 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 2.5), 1.0, sc, vp, NEARP);
+        for(int x = 0; x < 5; x++){
+            for(int y = 0; y < 5; y++){
+                for(int z = 0; z < 5; z++){
+                    draw_light(vec3(x + 0.5, -y - 1, z + 0.5), 1.0, sc, vp, NEARP);
+                }
+            }
+        }
+        //draw_light(vec3(2.5, -2.5, 2.5), 1.0, sc, vp, NEARP);
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
