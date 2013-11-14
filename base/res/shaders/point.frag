@@ -106,11 +106,26 @@ void main() {
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
-		
+		out_Color = vec4(1.0,0.0,0.0,1.0);
     }
     else
     {
         //Put some code here to actually compute the light from the point light
+		vec3 lightDir = light-position;
+		float dist = length(lightDir);
+		
+		float NdotL = max(dot(normal, normalize(lightDir)),0.0);
+		
+		if(NdotL > 0.0)
+		{
+			float att = clamp((lightRadius-dist)/lightRadius, 0.0,1.0);
+			
+			//diffuse
+			out_Color += att*vec4(color,1.0)*NdotL*u_LightIl;
+			
+			//Specular
+			//out_Color += att*vec4(color,1.0)*u_LightIl;
+		}
     }
     return;
 }

@@ -663,7 +663,7 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     }
     light.w = radius;
     glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
-    glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
+    glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), 1.0);
 
     vec4 left = vp * vec4(pos + radius*cam.start_left, 1.0);
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
@@ -770,7 +770,7 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+        draw_light(vec3(2.5, -2.5, 4.0), 5.0, sc, vp, NEARP);
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
