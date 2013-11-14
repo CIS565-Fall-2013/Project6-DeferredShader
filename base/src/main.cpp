@@ -719,6 +719,9 @@ void updateDisplayText(char * disp) {
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
             break;
+		case(DISPLAY_TOON):
+			sprintf(disp, "Displaying Toon Shading");
+			break;
     }
 }
 
@@ -764,7 +767,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE); // http://www.opengl.org/sdk/docs/man/xhtml/glBlendFunc.xml
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON)
     {
         setup_quad(point_prog); // used to render the light source and compute light from point light
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -918,6 +921,9 @@ void keyboard(unsigned char key, int x, int y) {
         case('5'):
             display_type = DISPLAY_LIGHTS;
             break;
+		case('6'):
+			display_type = DISPLAY_TOON;
+			break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;

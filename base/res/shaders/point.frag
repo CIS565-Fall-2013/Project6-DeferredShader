@@ -47,7 +47,7 @@ uniform float falloff = 0.1f;
 
 
 /////////////////////////////////////
-//				UTILITY FUNCTIONS
+//	UTILITY FUNCTIONS
 /////////////////////////////////////
 
 //Depth used in the Z buffer is not linearly related to distance from camera
@@ -109,11 +109,24 @@ void main() {
 	
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
-        //Put some code here to visualize the fragment associated with this point light
-		
-		out_Color = (1.0f / (2.0f * distToLight)) * vec4(1,1,1,1);
+        out_Color = (1.0f / (2.0f * distToLight)) * vec4(1,1,1,1);
     }
-    else
+	else if (u_DisplayType == DISPLAY_TOON)
+	{
+		float intensity = max(0.0, dot(normalize(toLight),normal));
+		vec3 toonColor = vec3(0,0,0);
+		if (intensity > 0.95)
+			toonColor = color;
+		else if (intensity > 0.5)
+			toonColor = 0.6 * color;
+		else if (intensity > 0.25)
+			toonColor = 0.4 * color;
+		else
+			toonColor = 0.2 * color;
+
+		out_Color = vec4(toonColor, 1.0f);
+	}
+    else 
     {
 		if (distToLight <= u_LightIl)
 		{
@@ -124,7 +137,6 @@ void main() {
 			float diffuse = max(0.0, dot(normalize(light-position),normal));
 		    out_Color = vec4(diffuse*color,1.0f);
 		}
-		
     }
     return;
 }

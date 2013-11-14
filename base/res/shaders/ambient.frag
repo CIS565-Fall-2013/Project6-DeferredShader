@@ -115,9 +115,21 @@ void main() {
 			out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
 		}	
 	}
-	else // Toon Shading
+	else // Ambient Toon Shading
 	{
-		
+		float intensity = max(0.0, dot(normalize(light), normal));
+		vec3 toonColor = vec3(0,0,0);
+		vec3 toonAmbient = vec3(0.1, 0.1, 0.1);
+		if (intensity > 0.95)
+			toonColor = toonAmbient;
+		else if (intensity > 0.5)
+			toonColor = 0.75 * toonAmbient;
+		else if (intensity > 0.25)
+			toonColor = 0.5 * toonAmbient;
+		else
+			toonColor = 0.25 * toonAmbient;
+
+		out_Color = vec4(toonColor, 1.0f);
 	}
     return;
 }
