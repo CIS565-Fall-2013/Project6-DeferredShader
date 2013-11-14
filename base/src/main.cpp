@@ -770,19 +770,22 @@ void display(void)
 			0.0, 0.0, 1.0, 0.0,
 			0.5, 0.5, 0.0, 1.0);
 
-		draw_light(vec3(2.5, -2.5, 4.0), 5.0, sc, vp, NEARP);
-		//draw_light(vec3(3.5, -1.5, 2.5), 2.0, sc, vp, NEARP);
-		//draw_light(vec3(1.5, -3.5, 2.5), 2.0, sc, vp, NEARP);
-		for(float x = -1.25; x <= 5.0; x+=1.0)
-		{
-			for(float y = 1.0; y >= -6.0; y-=1.0)
-			{
-				for(float z = -1.0; z <= 6.0; z+=1.0)
-				{
-					draw_light(vec3(x,y,z), 1.0, sc, vp, NEARP);
-				}
-			}
-		}
+		//Floor fixtures
+		draw_light(vec3(-9.36, -1.5, 0.8), 5.0, sc, vp, NEARP);
+		draw_light(vec3(-9.36, 2.25, 0.8), 5.0, sc, vp, NEARP);
+		draw_light(vec3(-2.25, -1.5, 0.8), 5.0, sc, vp, NEARP);
+		draw_light(vec3(-2.25, 2.25, 0.8), 5.0, sc, vp, NEARP);
+		draw_light(vec3(1.25, -1.5, 0.8), 5.0, sc, vp, NEARP);
+		draw_light(vec3(1.25, 2.25, 0.8), 5.0, sc, vp, NEARP);
+		draw_light(vec3(8.25, -1.5, 0.8), 5.0, sc, vp, NEARP);
+		draw_light(vec3(8.25, 2.25, 0.8), 5.0, sc, vp, NEARP);
+
+		//Lamps
+		draw_light(vec3(4.6, 2.2, 1.6), 6.0, sc, vp, NEARP);
+		draw_light(vec3(4.6, -1/8, 1.6), 6.0, sc, vp, NEARP);
+		draw_light(vec3(-6.0, 2.2, 1.6), 6.0, sc, vp, NEARP);
+		draw_light(vec3(-6.0, -1/8, 1.6), 6.0, sc, vp, NEARP);
+
 		glDisable(GL_SCISSOR_TEST);
 		vec4 dir_light(0.1, 1.0, 1.0, 0.0);
 		dir_light = cam.get_view() * dir_light; 
@@ -942,6 +945,9 @@ void keyboard(unsigned char key, int x, int y) {
 	case('r'):
 		cout << "Reloading Shaders" <<endl;
 		initShader();
+		break;
+	case('p'):
+		cout << "Position: " << cam.pos.x << "," << cam.pos.y << "," << cam.z << endl;
 		break;
 	}
 
