@@ -549,8 +549,8 @@ void setTextures() {
 
 
 
-Camera cam(vec3(2.5, 5, 2),
-		   normalize(vec3(0,-1,0)),
+Camera cam(vec3(-7.0, 0.0, 6.0),
+		   normalize(vec3(1,0,0)),
 		   normalize(vec3(0,0,1)));
 
 void

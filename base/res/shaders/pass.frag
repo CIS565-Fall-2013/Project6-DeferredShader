@@ -21,7 +21,7 @@ void main(void)
 {
     out_Normal = vec4(normalize(fs_Normal),0.0f);
     out_Position = vec4(fs_Position.xyz,1.0f); //Tuck position into 0 1 range
-	vec4 textureColor = vec4(texture(u_DiffTex,vec2(fs_Texcoord)).rgb,1.0);
+	vec4 textureColor = vec4(texture(u_DiffTex,vec2(1.0,-1.0)*vec2(fs_Texcoord)).rgb,1.0);
     out_Color = textureColor*vec4(u_Color,1.0);
 	//out_Color = textureColor;
 	//out_Color = vec4(fs_Texcoord.x, fs_Texcoord.y, 0.0, 1.0);
