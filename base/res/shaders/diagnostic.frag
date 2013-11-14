@@ -10,7 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-
+#define DISPLAY_BLOOM 6
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -23,6 +23,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Bloomtex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -101,6 +102,7 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+	vec4 colorbloom = texture(u_Bloomtex,fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
 
@@ -116,7 +118,7 @@ void main() {
             break;
         case(DISPLAY_COLOR):
             out_Color = vec4(color, 1.0);
-            break;
+            break;	
         case(DISPLAY_LIGHTS):
         case(DISPLAY_TOTAL):
             break;

@@ -23,10 +23,12 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Bloomtex;
 
 uniform float u_Far;
 uniform float u_Near;
 uniform int u_DisplayType;
+uniform vec3 u_lightColor;
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
@@ -102,15 +104,35 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
-    out_Color = vec4(0,0,0,1.0);
+	vec3 lightVector = light - position;
+	float dist = length(lightVector);
+	//vec3 lightColor = vec3(1.0,0.0,1.0);
+	float Intensity = 2.0;
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
-        //Put some code here to visualize the fragment associated with this point light
+		//Put some code here to visualize the fragment associated with this point light
+		if(dist <= lightRadius)
+		{
+			vec3 markColor = vec3(1.0,1.0,1.0)*0.4 + color * 0.6;
+			out_Color = vec4(markColor,1.0);
+		}	
     }
     else
-    {
-        //Put some code here to actually compute the light from the point light
+    {	
+		float diffuse = max(0.0,dot(normalize(lightVector),normal));
+		float isInradius = step(0.0,lightRadius - length(lightVector));
+		float attenuation = dist/(1-(dist/lightRadius)*(dist/lightRadius));
+		attenuation = attenuation / lightRadius + 1;
+		attenuation = 1.0/(attenuation * attenuation);
+		vec3 diffuseColor = Intensity * color * diffuse * u_lightColor * attenuation * isInradius;
+		out_Color = vec4(diffuseColor , 1.0);	
     }
     return;
 }
+
+//light attenuation equation got from here
+//http://imdoingitwrong.wordpress.com/2011/02/10/improved-light-attenuation/
+// 1/(d/r + 1)^2
+// d is the position distance from light
+// r = 1 - (d/lightRadius);
 

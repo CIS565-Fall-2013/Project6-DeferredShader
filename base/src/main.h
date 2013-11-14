@@ -37,6 +37,7 @@ typedef struct {
 	std::vector<unsigned short> indices;
     std::string texname;
     glm::vec3 color;
+	float isBloom; // 1 means it's glow source, otherwise it is normal material
 } mesh_t;
 
 typedef struct {
@@ -48,6 +49,7 @@ typedef struct {
 	unsigned int vbo_texcoords;
     glm::vec3 color;
     std::string texname;
+	float isBloom;
 } device_mesh_t;
 
 typedef struct {
@@ -83,7 +85,9 @@ enum Display {
     DISPLAY_POSITION = 2,
     DISPLAY_COLOR = 3,
     DISPLAY_TOTAL = 4,
-    DISPLAY_LIGHTS = 5
+    DISPLAY_LIGHTS = 5,
+	DISPLAY_BLOOM = 6,
+	DISPLAY_SIL = 7
 };
 
 char* loadFile(char *fname, GLint &fSize);

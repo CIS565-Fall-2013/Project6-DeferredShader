@@ -10,7 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-
+#define DISPLAY_BLOOM 6
+#define DISPLAY_SIL 7
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -23,6 +24,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Bloomtex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -101,15 +103,23 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+	vec4 color4 = texture(u_Colortex,fs_Texcoord).xyzw;
     vec3 light = u_Light.xyz;
     float strength = u_Light.w;
+	vec4 ambColor = vec4(0.0);
     if (lin_depth > 0.99f) {
-        out_Color = vec4(vec3(0.0), 1.0);
+        ambColor = vec4(vec3(0.0), 1.0);
     } else {
         float ambient = u_LightIl;
         float diffuse = max(0.0, dot(normalize(light),normal));
-        out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
+        ambColor = vec4(color*(strength*diffuse + ambient),1.0);// * texture(u_Bloomtex,fs_Texcoord);		
     }	
+	/*if(u_DisplayType == DISPLAY_BLOOM)
+	{
+		out_Color = ambColor * (1.0 - color4.a);  
+	}
+	else*/
+		out_Color = ambColor;
     return;
 }
 
