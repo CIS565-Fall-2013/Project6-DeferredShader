@@ -140,6 +140,9 @@ void main() {
 		vec3 toonColor = getToonColor(intensity, toonAmbColor);
 		out_Color = vec4(toonColor, 1.0f);
 	}
+	
+	out_Spec = vec4(0,0,0,0); // temp
+
     return;
 }
 

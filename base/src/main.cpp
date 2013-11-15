@@ -294,6 +294,7 @@ void freeFBO() {
     glDeleteTextures(1,&positionTexture);
     glDeleteTextures(1,&colorTexture);
     glDeleteTextures(1,&postTexture);
+	glDeleteTextures(1,&specTexture);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
 }
@@ -376,7 +377,7 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0); // http://www.opengl.org/sdk/docs/man/xhtml/glTexImage2D.xml
 
     //Set up normal FBO
     glBindTexture(GL_TEXTURE_2D, normalTexture);
@@ -409,7 +410,7 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0); // Use GL_RGBA32F so I can pack things in the alpha ch.
 
     // create a framebuffer object
     glGenFramebuffers(1, &FBO[0]); // http://www.opengl.org/sdk/docs/man/xhtml/glGenFramebuffers.xml
@@ -462,7 +463,7 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
 	//Set up spec FBO
 	glBindTexture(GL_TEXTURE_2D, specTexture);
@@ -473,7 +474,7 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
     // create a framebuffer object and bind it to contex
     glGenFramebuffers(1, &FBO[1]); 
@@ -487,8 +488,8 @@ void initFBO(int w, int h) {
 	GLint spec_loc = glGetFragDataLocation(ambient_prog, "out_Spec");
     GLenum draw[2];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
-	//draw[spec_loc] = GL_COLOR_ATTACHMENT1;
-    glDrawBuffers(1, draw);
+	draw[spec_loc] = GL_COLOR_ATTACHMENT1;
+    glDrawBuffers(2, draw);
 
     // attach the texture to FBO color attachment point
     test = GL_COLOR_ATTACHMENT0;
@@ -731,7 +732,7 @@ void updateDisplayText(char * disp) {
             sprintf(disp, "Displaying Position");
             break;
         case(DISPLAY_TOTAL):
-            sprintf(disp, "Displaying Diffuse (TOTAL)");
+            sprintf(disp, "Displaying Diffuse + Specular (TOTAL)");
             break;
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
@@ -744,6 +745,9 @@ void updateDisplayText(char * disp) {
 			break;
 		case(DISPLAY_AA):
 			sprintf(disp, "Display Diffuse + AA");
+			break;
+		case(DISPLAY_SPECULAR):
+			sprintf(disp, "Display Specular");
 			break;
     }
 }
@@ -790,7 +794,8 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE); // This sums the outputs of the http://www.opengl.org/sdk/docs/man/xhtml/glBlendFunc.xml
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON || display_type == DISPLAY_BLOOM || display_type == DISPLAY_AA)
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON || display_type == DISPLAY_BLOOM 
+		|| display_type == DISPLAY_AA || display_type == DISPLAY_SPECULAR)
     {
         setup_quad(point_prog); // used to render the light source and compute light from point light
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -852,6 +857,10 @@ void display(void)
 	glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, normalTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_Normaltex"),1);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, specTexture);
+	glUniform1i(glGetUniformLocation(post_prog, "u_SpecTex"),2);
     
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
@@ -969,6 +978,9 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		case('8'):
 			display_type = DISPLAY_AA;
+			break;
+		case('9'):
+			display_type = DISPLAY_SPECULAR;
 			break;
         case('0'):
             display_type = DISPLAY_TOTAL;

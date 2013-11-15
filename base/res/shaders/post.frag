@@ -1,7 +1,7 @@
 #version 330
 
 ////////////////////////////
-//       ENUMERATIONS
+// ENUMERATIONS
 ////////////////////////////
 
 #define	DISPLAY_DEPTH 0
@@ -13,12 +13,14 @@
 #define	DISPLAY_TOON 6
 #define	DISPLAY_BLOOM 7
 #define	DISPLAY_AA 8
+#define	DISPLAY_SPECULAR 9
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
 uniform sampler2D u_Posttex;
 uniform sampler2D u_Normaltex;
+uniform sampler2D u_SpecTex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -225,6 +227,8 @@ void main() {
 		float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
 		out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
 		out_Color = vec4(color, 1.0);
+		vec4 specColor = vec4(abs(texture(u_SpecTex, fs_Texcoord).rgb), 1.0);
+		out_Color = vec4(color, 1.0) + specColor;
 	}
 	else if (u_DisplayType == DISPLAY_TOON)
 	{
@@ -249,10 +253,24 @@ void main() {
 		//out_Color = vec4(blurFactor,blurFactor,blurFactor,1.0);
 		out_Color = vec4(blurColor, 1.0);
 	}
+	else if (u_DisplayType == DISPLAY_SPECULAR)
+	{
+		out_Color = vec4(abs(texture(u_SpecTex, fs_Texcoord).rgb), 1.0);
+		//out_Color = vec4(1,0,0,0);
+	}
 	else
 	{
-		out_Color = vec4(color, 1.0);
+		out_Color = vec4(color, 1.0) ;
 	}
+	
+	// testing if we can change the alpha value of the input textures as well
+	// turns out it doesnt work. Maybe it's because this stage, we are using the 
+	// default framebuffer?
+	//vec4 specColorTest = texture(u_Posttex, fs_Texcoord);
+	//float sa = specColorTest.a;
+	//out_Color = vec4(sa,sa,sa,1.0);
+	//out_Color = specColorTest;
+	
 	
 	return;
 }

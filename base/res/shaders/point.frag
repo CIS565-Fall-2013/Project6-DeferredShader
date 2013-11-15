@@ -46,6 +46,9 @@ out vec4 out_Spec;
 uniform float zerothresh = 1.0f;
 uniform float falloff = 0.1f;
 
+uniform float u_ks = 0.2;
+uniform float u_specPower = 1.0;
+uniform vec3 u_specColor = vec3(1,1,1);
 
 /////////////////////////////////////
 //	UTILITY FUNCTIONS
@@ -59,7 +62,7 @@ float linearizeDepth(float exp_depth, float near, float far) {
 
 //Helper function to automatically sample and unpack normals
 vec3 sampleNrm(vec2 texcoords) {
-    return texture(u_Normaltex,texcoords).xyz;
+    return normalize(texture(u_Normaltex,texcoords).xyz);
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -128,12 +131,14 @@ void main() {
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         out_Color = (1.0f / (2.0f * distToLight)) * vec4(1,1,1,1);
+		out_Spec = vec4(0,0,0,1);
     }
 	else if (u_DisplayType == DISPLAY_TOON)
 	{
 		float intensity = max(0.0, dot(normalize(toLight),normal));
 		vec3 toonColor = getToonColor(intensity, color);
 		out_Color = vec4(toonColor, 1.0f);
+		out_Spec = vec4(0,0,0,1);
 	}
     else 
     {
@@ -143,9 +148,32 @@ void main() {
 		}
 		else
 		{
+			// compute diffuse color
 			float diffuse = max(0.0, dot(normalize(light-position),normal));
 			out_Color = vec4(diffuse*color,1.0f);
+			
+			// compute specular color
+			vec3 reflectDirection = vec3(0,0,0);
+			
+			// no specular reflection since light source is on the wrong side
+			if (dot(normal, toLight) < 0.0)
+			{
+				out_Spec = vec4(0,0,0,1);
+			}
+			else
+			{
+				reflectDirection = reflect(toLight, normal);
+				vec3 viewDirection = normalize(position - vec3(0.0));
+				vec3 specularHighlight = clamp(u_specColor * pow(max(0.0, dot(reflectDirection, viewDirection)), u_specPower), 0, 1);
+				out_Spec = vec4(u_ks*specularHighlight, 1.0);
+			}
 		}
     }
+	
+	// testing custom alpha value of u_Colortex
+	//vec4 test = texture(u_Colortex, fs_Texcoord);
+	//vec3 test2 = vec3(test.a, test.a, test.a);
+	//out_Color = vec4(test2, 1.0);
+	
     return;
 }

@@ -122,6 +122,8 @@ void main() {
         case(DISPLAY_TOTAL):
             break;
     }	
+	
+	out_Spec = vec4(0,0,0,0.0);
 
     return;
 }
