@@ -106,9 +106,16 @@ void main() {
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
+		//vec3 dif =  cudamat[geoms[obno].materialid].color *  glm::dot(dnorm,glm::normalize(LPOS - dips));
+		//if(length(position - light) < lightRadius)
+		out_Color = vec4(1.0,0,0,1.0);
+
     }
     else
     {
+		if(length(position - light) < lightRadius)
+		out_Color = vec4(color * dot(normalize(normal),normalize(light - position)) * (1.0 - (length(position - light)/lightRadius))  , 1.0);
+		//out_Color = vec4(color * dot(normalize(normal),normalize(light - position))  , 1.0);
         //Put some code here to actually compute the light from the point light
     }
     return;
