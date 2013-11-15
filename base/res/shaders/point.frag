@@ -73,20 +73,20 @@ vec3 sampleCol(vec2 texcoords) {
 
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
-vec3 getRandomNormal(vec2 texcoords) {
-    ivec2 sz = textureSize(u_RandomNormaltex,0);
-    return texture(u_RandomNormaltex,vec2(texcoords.s* (u_ScreenWidth)/sz.x,
-                (texcoords.t)*(u_ScreenHeight)/sz.y)).rgb;
-}
+//vec3 getRandomNormal(vec2 texcoords) {
+//    ivec2 sz = textureSize(u_RandomNormaltex,0);
+//    return texture(u_RandomNormaltex,vec2(texcoords.s* (u_ScreenWidth)/sz.x,
+//                (texcoords.t)*(u_ScreenHeight)/sz.y)).rgb;
+//}
 
 
-//Get a random scalar given a screen-space texture coordinate
-//Fetches from a random texture
-float getRandomScalar(vec2 texcoords) {
-    ivec2 sz = textureSize(u_RandomScalartex,0);
-    return texture(u_RandomScalartex,vec2(texcoords.s*u_ScreenWidth/sz.x,
-                texcoords.t*u_ScreenHeight/sz.y)).r;
-}
+////Get a random scalar given a screen-space texture coordinate
+////Fetches from a random texture
+//float getRandomScalar(vec2 texcoords) {
+//    ivec2 sz = textureSize(u_RandomScalartex,0);
+//    return texture(u_RandomScalartex,vec2(texcoords.s*u_ScreenWidth/sz.x,
+//                texcoords.t*u_ScreenHeight/sz.y)).r;
+//}
 
 ///////////////////////////////////
 // MAIN
@@ -104,6 +104,7 @@ void main() {
     float lightRadius = u_Light.w;
     out_Color = vec4(0,0,0,1.0);
 
+	float dst_factor = 1.0/distance( light, position );
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
 	    float dst_factor = 1.0/distance( light, position );
@@ -114,8 +115,7 @@ void main() {
     else
     {
         //Put some code here to actually compute the light from the point light
-
-		out_Color = vec4( color * dot( normal, light - position ), 1 );
+		out_Color = dst_factor*dst_factor*vec4( color * max( 0, dot( normal, light - position )), 1 );
     }
     
 }

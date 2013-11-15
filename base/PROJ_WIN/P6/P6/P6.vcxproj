@@ -46,13 +46,13 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\src\SOIL;..\..\..\src\tiny_obj_loader;..\..\..\..\shared32\freeglut\include;..\..\..\..\shared32\glew\include;..\..\..\..\shared32\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\shared32\freeglut\include;..\..\..\..\shared32\glew\include;..\..\..\src\SOIL;..\..\..\src\tiny_obj_loader;..\..\..\..\shared32\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\..\shared32\glew\lib;..\..\..\..\shared32\freeglut\lib;..\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SOIL.lib;freeglut.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\..\shared32\freeglut\lib;..\..\..\..\shared32\glew\lib;..\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freeglut.lib;SOIL.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -90,6 +90,8 @@
     <None Include="..\..\..\res\shaders\pass.frag" />
     <None Include="..\..\..\res\shaders\pass.vert" />
     <None Include="..\..\..\res\shaders\point.frag" />
+    <None Include="..\..\..\res\shaders\post-blur.frag" />
+    <None Include="..\..\..\res\shaders\post-smooth.frag" />
     <None Include="..\..\..\res\shaders\post.frag" />
     <None Include="..\..\..\res\shaders\post.vert" />
     <None Include="..\..\..\res\shaders\shade.vert" />

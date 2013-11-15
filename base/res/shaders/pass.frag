@@ -23,9 +23,9 @@ void main(void)
 
 	//get velocity
 	vec4 pos = NDCPos/ NDCPos.w;
-	pos = pos * 0.5 + 0.5;
-
+	pos = pos * 0.5 + 0.5; //position of this frame at screen space
+	
 	vec4 prevPos = PrevNDCPos / PrevNDCPos.w;
-	prevPos = prevPos * 0.5 + 0.5;
-	out_MV = ( pos - prevPos)/2.0;
+	prevPos = prevPos * 0.5 + 0.5;  //position of last frame at screen space
+	out_MV = ( pos - prevPos)/2.0; //velocity
 }

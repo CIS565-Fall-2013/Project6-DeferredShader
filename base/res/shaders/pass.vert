@@ -25,7 +25,7 @@ void main(void) {
     fs_Position = camera;
 	
     gl_Position = u_Persp * camera;
-
+	
 	//Get position in NDC space, both this frame and the prvious frame
 	NDCPos = gl_Position;
 	PrevNDCPos =  u_PrevProj * u_PrevModelView * vec4(Position,1);

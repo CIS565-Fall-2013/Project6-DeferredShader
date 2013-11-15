@@ -74,20 +74,20 @@ vec3 sampleCol(vec2 texcoords) {
 
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
-vec3 getRandomNormal(vec2 texcoords) {
-    ivec2 sz = textureSize(u_RandomNormaltex,0);
-    return texture(u_RandomNormaltex,vec2(texcoords.s* (u_ScreenWidth)/sz.x,
-                (texcoords.t)*(u_ScreenHeight)/sz.y)).rgb;
-}
+//vec3 getRandomNormal(vec2 texcoords) {
+//    ivec2 sz = textureSize(u_RandomNormaltex,0);
+//    return texture(u_RandomNormaltex,vec2(texcoords.s* (u_ScreenWidth)/sz.x,
+//                (texcoords.t)*(u_ScreenHeight)/sz.y)).rgb;
+//}
 
 
-//Get a random scalar given a screen-space texture coordinate
-//Fetches from a random texture
-float getRandomScalar(vec2 texcoords) {
-    ivec2 sz = textureSize(u_RandomScalartex,0);
-    return texture(u_RandomScalartex,vec2(texcoords.s*u_ScreenWidth/sz.x,
-                texcoords.t*u_ScreenHeight/sz.y)).r;
-}
+////Get a random scalar given a screen-space texture coordinate
+////Fetches from a random texture
+//float getRandomScalar(vec2 texcoords) {
+//    ivec2 sz = textureSize(u_RandomScalartex,0);
+//    return texture(u_RandomScalartex,vec2(texcoords.s*u_ScreenWidth/sz.x,
+//                texcoords.t*u_ScreenHeight/sz.y)).r;
+//}
 
 ///////////////////////////////////
 // MAIN

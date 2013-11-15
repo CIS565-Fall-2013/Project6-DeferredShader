@@ -2,7 +2,7 @@
 
 #include "Utility.h"
 
-#include <GL/glut.h>
+#include <GL/freeglut.h>
 #include "SOIL.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_projection.hpp>
@@ -12,6 +12,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/verbose_operator.hpp>
 
+#include <ctime>
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -25,6 +26,84 @@ const float PI = 3.14159f;
 const int NUM_RENDERTARGET = 4;
 
 int width, height;
+
+const int SSAO_SAMPLE_SIZE = 128;
+float kernels[ SSAO_SAMPLE_SIZE*4 ];
+GLuint kernelTexture = 0;
+void initSSAOSampleVectors( )
+{
+    srand(time(NULL));
+    for( int i = 0; i < SSAO_SAMPLE_SIZE; ++i )
+    {
+        vec3 kernel = vec3( 
+            ( (float)rand() / (float)RAND_MAX ) * 2.0f - 1.0f,
+            ( (float)rand() / (float)RAND_MAX ) * 2.0f - 1.0f,
+            ( (float)rand() / (float)RAND_MAX ) );
+
+        normalize( kernel );
+        kernel *= ( rand() / (float)RAND_MAX );
+
+        float scale = (float)(i) / (float)SSAO_SAMPLE_SIZE;
+        scale = 0.1f * ( 1 - scale*scale ) + 1.0f * scale * scale;
+        //scale = 0.1f + ( 1.0f - 0.1f )*scale*scale;
+        kernel *= scale;
+        kernels[ i*4 ] = kernel.x;
+        kernels[ i*4 + 1 ] = kernel.y;
+        kernels[ i*4 + 2 ] = kernel.z;
+    }
+
+    //Set up SSAO sample vector texture FBO
+    glGenTextures(1, &kernelTexture );
+    glBindTexture(GL_TEXTURE_1D, kernelTexture );
+
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    //glTexStorage2D( GL_TEXTURE_2D, 1, GL_RGBA8, 4, 4 );
+    glTexImage1D( GL_TEXTURE_1D, 0, GL_RGBA32F ,SSAO_SAMPLE_SIZE, 0, GL_RGBA, GL_FLOAT, &kernels[0] );
+    glBindTexture(GL_TEXTURE_1D, 0 );
+}
+
+GLuint noiseTexture = 0;
+const int SSAO_SAMPLE_NOISE_SIZE = 16;
+float noises[ 4 * SSAO_SAMPLE_NOISE_SIZE ];
+vec2 noiseSampleFactor;
+void initSSAOSampleNoiseTex()
+{
+    for( int i = 0; i <  SSAO_SAMPLE_NOISE_SIZE; ++i )
+    {
+        vec3 noise = vec3(
+            (float)rand()/(float)RAND_MAX * 2.0f +1.0f, 
+            (float)rand()/(float)RAND_MAX * 2.0f +1.0f,
+            0.0f );
+
+        normalize( noise );
+        noises[ 4*i ] = noise.x;
+        noises[ 4*i+1] = noise.y;
+        noises[ 4*i+2] = noise.z;
+        noises[ 4*i+3] = 0;
+    }
+
+    noiseSampleFactor.x = width / 4.0f;
+    noiseSampleFactor.y = height / 4.0f;
+
+    //Set up SSAO sample noise texture FBO
+    glGenTextures(1, &noiseTexture );
+    glBindTexture(GL_TEXTURE_2D, noiseTexture );
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    //glTexStorage2D( GL_TEXTURE_2D, 1, GL_RGBA8, 4, 4 );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , 4, 4, 0, GL_RGBA, GL_FLOAT, &noises[0] );
+    glBindTexture(GL_TEXTURE_2D, 0 );
+}
 
 device_mesh_t uploadMesh(const mesh_t & mesh) {
     device_mesh_t out;
@@ -96,7 +175,8 @@ void initMesh() {
         tinyobj::shape_t shape = *it;
         int totalsize = shape.mesh.indices.size() / 3;
         int f = 0;
-        while(f<totalsize){
+        while(f<totalsize)
+        {
             mesh_t mesh;
             int process = std::min(10000, totalsize-f);
             int point = 0;
@@ -214,6 +294,7 @@ GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint postTexture = 0;
 GLuint mvTexture = 0;
+
 GLuint FBO[2] = {0, 0};
 
 
@@ -222,6 +303,8 @@ GLuint point_prog;
 GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
+GLuint post_smooth_prog;
+GLuint post_blur_prog;
 void initShader() {
     Utility::shaders_t shaders = Utility::loadShaders("../../../res/shaders/pass.vert", "../../../res/shaders/pass.frag");
 
@@ -274,6 +357,14 @@ void initShader() {
     glBindAttribLocation(post_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(post_prog, shaders);
+
+    shaders = Utility::loadShaders("../../../res/shaders/post.vert", "../../../res/shaders/post-smooth.frag");
+    post_smooth_prog = glCreateProgram();
+
+    glBindAttribLocation(post_smooth_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(post_smooth_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(post_smooth_prog, shaders);
 }
 
 void freeFBO() {
@@ -283,6 +374,8 @@ void freeFBO() {
     glDeleteTextures(1,&colorTexture);
     glDeleteTextures(1,&postTexture);
     glDeleteTextures(1,&mvTexture );
+    //glDeleteTextures(1,&noiseTexture );
+    //glDeleteTextures(1,&kernelTexture );
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
 }
@@ -404,7 +497,6 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
-
 
     // create a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
@@ -573,7 +665,7 @@ float FARP;
 float NEARP;
 
 mat4 prevModelView = mat4();
-
+mat4 persp;
 void draw_mesh() {
     FARP = 100.0f;
     NEARP = 0.1f;
@@ -582,7 +674,7 @@ void draw_mesh() {
 
     mat4 model = get_mesh_world();
     mat4 view = cam.get_view();
-    mat4 persp = perspective(45.0f,(float)width/(float)height,NEARP,FARP);
+    //persp = perspective(45.0f,(float)width/(float)height,NEARP,FARP);
     mat4 inverse_transposed = transpose(inverse(view*model));
 
     glUniform1f(glGetUniformLocation(pass_prog, "u_Far"), FARP);
@@ -647,12 +739,12 @@ void setup_quad(GLuint prog)
     glUniform1i(glGetUniformLocation(prog, "u_Colortex"),3);
     
     glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, random_normal_tex);
-    glUniform1i(glGetUniformLocation(prog, "u_RandomNormaltex"),4);
+    //glBindTexture(GL_TEXTURE_2D, random_normal_tex);
+    //glUniform1i(glGetUniformLocation(prog, "u_RandomNormaltex"),4);
     
     glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
-    glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
+    //glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
+    //glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
 }
 
 void draw_quad() {
@@ -817,12 +909,39 @@ void display(void)
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
     
-    glActiveTexture(GL_TEXTURE6);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, mvTexture);
-    glUniform1i(glGetUniformLocation(post_prog, "u_mv"), 6 );
+    glUniform1i(glGetUniformLocation(post_prog, "u_mv"), 1 );
 
-    glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
-    glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_normaltex"), 2 );
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_depthtex"), 3 );
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, positionTexture );
+    glUniform1i(glGetUniformLocation(post_prog, "u_postex"), 4 );
+
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, noiseTexture );
+    glUniform1i(glGetUniformLocation(post_prog, "u_noisetex"), 5 );
+
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_1D, kernelTexture );
+    glUniform1i(glGetUniformLocation(post_prog, "u_kerneltex"), 6 );
+    
+    glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height );
+    glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width );
+    glUniform2fv( glGetUniformLocation( post_prog, "u_noiseSampleFactor" ), 1, &noiseSampleFactor[0] );
+    glUniform1f(glGetUniformLocation(post_prog, "u_zNear"), NEARP );
+    glUniform1f(glGetUniformLocation(post_prog, "u_zFar"),  FARP );
+    glUniformMatrix4fv(glGetUniformLocation(post_prog, "u_proj"), 1, GL_FALSE, &persp[0][0] ); 
+    //glUniform3fv( glGetUniformLocation(post_prog, "u_kernels"), SSAO_SAMPLE_SIZE, &kernels[0] );
+    
+
     draw_quad();
 
     glEnable(GL_DEPTH_TEST);
@@ -844,8 +963,16 @@ void reshape(int w, int h)
         freeFBO();
     }
     initFBO(w,h);
+    FARP = 100.0f;
+    NEARP = 0.1f;
+    persp = perspective(45.0f,(float)width/(float)height,NEARP,FARP);
 }
 
+void idle()
+{
+    glutPostRedisplay();
+
+}
 
 int mouse_buttons = 0;
 int mouse_old_x = 0;
@@ -941,6 +1068,8 @@ void init() {
     glClearColor(0.0f, 0.0f, 0.0f,1.0f);
 }
 
+
+
 int main (int argc, char* argv[])
 {
     bool loadedScene = false;
@@ -967,15 +1096,20 @@ int main (int argc, char* argv[])
         std::cin.ignore( std::numeric_limits<std::streamsize>::max(), '\n' );
         return 0;
     }
-
+    glewExperimental = 1;
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA |GLUT_DEPTH );
+    glutInitContextVersion( 4,0);
+    glutInitContextFlags( GLUT_FORWARD_COMPATIBLE );
+    glutInitContextProfile( GLUT_COMPATIBILITY_PROFILE );
     width = 1280;
     height = 720;
     glutInitWindowSize(width,height);
     glutCreateWindow("CIS565 OpenGL Frame");
+    //glewExperimental=TRUE;
     glewInit();
     GLenum err = glewInit();
+
     if (GLEW_OK != err)
     {
         /* Problem: glewInit failed, something is seriously wrong. */
@@ -984,16 +1118,20 @@ int main (int argc, char* argv[])
     }
     cout << "Status: Using GLEW " << glewGetString(GLEW_VERSION) << endl;
     cout << "OpenGL version " << glGetString(GL_VERSION) << " supported" << endl;
-
+    err = glGetError();
+    cout<<"Error: "<<glewGetErrorString(err)<<endl;
     initNoise();
+    initSSAOSampleNoiseTex();
+    initSSAOSampleVectors();
+
     initShader();
     initFBO(width,height);
     init();
     initMesh();
     initQuad();
 
-
     glutDisplayFunc(display);
+    glutIdleFunc( idle );
     glutReshapeFunc(reshape);	
     glutKeyboardFunc(keyboard);
     glutMouseFunc(mouse);
