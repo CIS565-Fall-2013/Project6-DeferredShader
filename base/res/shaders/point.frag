@@ -1,4 +1,4 @@
-#version 330
+#version 440
 
 ////////////////////////////
 //       ENUMERATIONS
@@ -11,7 +11,8 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 #define	DISPLAY_TOON 6
-#define	DISPLAY_BLOOM 7
+#define	DISPLAY_TOONEDGE 7
+#define	DISPLAY_BLOOM 8
 
 
 /////////////////////////////////////
@@ -118,6 +119,7 @@ void main() {
 				out_Color = vec4(1,0,0,1.0);
 			break;
 		case(DISPLAY_TOON):
+		case(DISPLAY_TOONEDGE):
 		case(DISPLAY_BLOOM):
 			break;
         case(DISPLAY_TOTAL):

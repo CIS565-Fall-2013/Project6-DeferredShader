@@ -1,4 +1,4 @@
-#version 330
+#version 440
 
 
 uniform mat4x4 u_Model;

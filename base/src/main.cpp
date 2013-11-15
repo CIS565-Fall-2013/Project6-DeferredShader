@@ -726,8 +726,13 @@ void updateDisplayText(char * disp) {
             break;
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
+			break;
 		case(DISPLAY_TOON):
 			sprintf(disp, "Displaying Toon Shading");
+			break;
+		case(DISPLAY_TOONEDGE):
+			sprintf(disp, "Displaying Toon Shading with edge detection");
+			break;
 		case(DISPLAY_BLOOM):
 			sprintf(disp, "Displaying Blooming");
             break;
@@ -777,7 +782,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON || display_type == DISPLAY_BLOOM)
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON || display_type == DISPLAY_TOONEDGE || display_type == DISPLAY_BLOOM)
     {
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -820,6 +825,13 @@ void display(void)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
+	glUniform1i(glGetUniformLocation(post_prog, "u_Depthtex"),1);
+
+	glUniform1f(glGetUniformLocation(post_prog, "u_Far"), FARP);
+	glUniform1f(glGetUniformLocation(post_prog, "u_Near"), NEARP);
     
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
@@ -831,6 +843,7 @@ void display(void)
 
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
+	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
     draw_quad();
 
     glEnable(GL_DEPTH_TEST);
@@ -930,6 +943,9 @@ void keyboard(unsigned char key, int x, int y) {
             break;
 		case('6'):
 			display_type = DISPLAY_TOON;
+			break;
+		case('^'):
+			display_type = DISPLAY_TOONEDGE;
 			break;
 		case('7'):
 			display_type = DISPLAY_BLOOM;
