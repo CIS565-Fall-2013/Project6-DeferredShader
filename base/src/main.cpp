@@ -795,6 +795,11 @@ void display(void)
         vec3 viewDir = spun;
         glUniform3fv(glGetUniformLocation(ambient_prog, "u_viewDir"), 1, &(viewDir[0]));
 
+        mat4 model = get_mesh_world();
+        mat4 view = cam.get_view();
+        glUniformMatrix4fv(glGetUniformLocation(ambient_prog,"u_Model"),1,GL_FALSE,&model[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(ambient_prog,"u_View"),1,GL_FALSE,&view[0][0]);
+
         draw_quad();
     }
     else
