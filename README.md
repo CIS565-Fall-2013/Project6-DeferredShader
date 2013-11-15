@@ -135,7 +135,22 @@ how the shader is implemented:
 PART 3: Performance Analysis
 ====================================================================================
 
-There is no performance analysis happening here.
+In my analysis of this project, I compared runtime FPS in Bloom shading for a traditional
+square 2D kernel versus my modified 2-Axis 1D kernel. Here is what I mean by the
+kernels:
+
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/kernel_shapes.png)
+
+Here is the difference in runtime between mine and the original 2D kernel I
+originally attempted to implement:
+
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/kernel_fps_chart.png)
+
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/kernel_fps_graph.png)
+
+Notice how the program does not even run for a 2D kernel of size greater than
+9x9. Unfortunately, the bloom effects are not even really visible until the kernel
+width is greater than 20, as judged by the modified 1D kernel implementation.
 
 ------------------------------------------------------------------------------------
 ACKNOWLEDGMENTS:
