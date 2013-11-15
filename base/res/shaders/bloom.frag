@@ -14,7 +14,7 @@
 #define DISPLAY_TOON 7
 
 #define M_PI 3.14159265358
-#define sigma 1.00		//standard deviation of distribution
+#define sigma 1.0		//standard deviation of distribution
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -108,17 +108,19 @@ float gaussian (float x, float y) {
 vec3 blur() {
 	
 	vec3 accumColor = vec3(0);
-	float stepX = 2.0/u_ScreenWidth;
-	float stepY = 2.0/u_ScreenHeight;
+	float stepX = 5.0/u_ScreenWidth;
+	float stepY = 5.0/u_ScreenHeight;
 
-	for (int i = -4; i < 5; ++i){
-		for (int j = -4; j < 5 ; ++j){
+	for (int i = -3; i < 4; ++i){
+		for (int j = -3; j < 4 ; ++j){
 			
 			float dX = i * stepX;
 			float dY = j * stepY;
 			float blur = gaussian(dX, dY);
-			//vec3 illum = vec3(blur);
-			vec3 illum = 0.15 * blur*sampleIllum(fs_Texcoord + vec2(dX, dY));
+			vec2 offset = fs_Texcoord + vec2(dX, dY);
+			vec3 illumCol = sampleCol(offset); 
+
+			vec3 illum = 0.2 * blur * sampleIllum(offset) * illumCol;
 			accumColor += illum;
 		}
 	}
@@ -145,7 +147,7 @@ void main() {
 	out_Color.xyz = u_LightIl * max(0.0, dot(lightDir, normal)) * color;
 
 	//calculate glow
-	vec3 glowCol = blur() * color;
+	vec3 glowCol = blur();
 	//out_Color.xyz = lightDir;
 	out_Color.xyz = min(out_Color.xyz + glowCol, 1.0);
 
