@@ -222,16 +222,21 @@ GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint postTexture = 0;
 //
-GLuint bloomTexture = 0;
-GLuint FBO[2] = {0, 0};
+GLuint bloomMap = 0;
+GLuint verblurTexture = 0;
+GLuint horblurTexture = 0;
+GLuint blurTexture = 0;
+GLuint FBO[4] = {0, 0, 0, 0};
 
 
 GLuint pass_prog;
 GLuint point_prog;
 GLuint ambient_prog;
-GLuint bloom_prog;
+//GLuint bloom_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
+GLuint verblur_prog;
+GLuint horblur_prog;
 void initShader() {
 #ifdef WIN32
 	const char * pass_vert = "../../../res/shaders/pass.vert";
@@ -243,7 +248,10 @@ void initShader() {
 	const char * ambient_frag = "../../../res/shaders/ambient.frag";
 	const char * point_frag = "../../../res/shaders/point.frag";
 	const char * post_frag = "../../../res/shaders/post.frag";
-	const char * bloom_frag = "../../../res/shaders/bloom.frag";
+	//const char * bloom_frag = "../../../res/shaders/bloom.frag";
+	const char * verblur_frag = "../../../res/shaders/verblur.frag";
+	const char * horblur_frag = "../../../res/shaders/horblur.frag";
+	
 #else
 	const char * pass_vert = "../res/shaders/pass.vert";
 	const char * shade_vert = "../res/shaders/shade.vert";
@@ -287,11 +295,26 @@ void initShader() {
 
     Utility::attachAndLinkProgram(ambient_prog, shaders);
 ///////////////////////////////////////////////////////////////////////////////////////
-	shaders = Utility::loadShaders(shade_vert,bloom_frag);
-	bloom_prog = glCreateProgram();
-	glBindAttribLocation(bloom_prog, quad_attributes::POSITION, "Position");
-	glBindAttribLocation(bloom_prog, quad_attributes::TEXCOORD, "Texcoord");
-	Utility::attachAndLinkProgram(bloom_prog, shaders);
+	//shaders = Utility::loadShaders(shade_vert,bloom_frag);
+	//bloom_prog = glCreateProgram();
+	//glBindAttribLocation(bloom_prog, quad_attributes::POSITION, "Position");
+	//glBindAttribLocation(bloom_prog, quad_attributes::TEXCOORD, "Texcoord");
+	//Utility::attachAndLinkProgram(bloom_prog, shaders);
+/////////////////////////////////horblur_prog/////////////////////////////////////////////
+	shaders = Utility::loadShaders(shade_vert,horblur_frag);
+	horblur_prog = glCreateProgram();
+	glBindAttribLocation(horblur_prog, quad_attributes::POSITION, "Position");
+	glBindAttribLocation(horblur_prog, quad_attributes::TEXCOORD, "Texcoord");
+	Utility::attachAndLinkProgram(horblur_prog, shaders);
+
+////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////verblur_prog/////////////////////////////////////////////
+	shaders = Utility::loadShaders(shade_vert,verblur_frag);
+	verblur_prog = glCreateProgram();
+	glBindAttribLocation(verblur_prog, quad_attributes::POSITION, "Position");
+	glBindAttribLocation(verblur_prog, quad_attributes::TEXCOORD, "Texcoord");
+	Utility::attachAndLinkProgram(verblur_prog, shaders);
+
 ////////////////////////////////////////////////////////////////////////////////////////
 	shaders = Utility::loadShaders(shade_vert, point_frag);
 
@@ -320,9 +343,15 @@ void freeFBO() {
     glDeleteTextures(1,&colorTexture);
     glDeleteTextures(1,&postTexture);
 	//
-	glDeleteTextures(1,&bloomTexture);
+	glDeleteTextures(1,&bloomMap);
+	glDeleteTextures(1,&blurTexture);
+	glDeleteTextures(1,&verblurTexture);
+	glDeleteTextures(1,&horblurTexture);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
+	//
+	glDeleteFramebuffers(1,&FBO[2]);
+	glDeleteFramebuffers(1,&FBO[3]);
 }
 
 void checkFramebufferStatus(GLenum framebufferStatus) {
@@ -386,13 +415,13 @@ void initNoise() {
 void initFBO(int w, int h) {
     GLenum FBOstatus;
 
-    glActiveTexture(GL_TEXTURE10);
+    glActiveTexture(GL_TEXTURE14);
 
     glGenTextures(1, &depthTexture);
     glGenTextures(1, &normalTexture);
     glGenTextures(1, &positionTexture);
     glGenTextures(1, &colorTexture);
-	glGenTextures(1,&bloomTexture);
+	glGenTextures(1, &bloomMap);
     //Set up depth FBO
     glBindTexture(GL_TEXTURE_2D, depthTexture);
 
@@ -406,7 +435,7 @@ void initFBO(int w, int h) {
     glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
 	// //Set up bloom map FBO
-	glBindTexture(GL_TEXTURE_2D,bloomTexture);
+	glBindTexture(GL_TEXTURE_2D,bloomMap);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -449,7 +478,7 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
+    // create a frame buffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
 
@@ -458,7 +487,6 @@ void initFBO(int w, int h) {
     GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-	// 
 	GLint bloom_loc = glGetFragDataLocation(pass_prog,"out_BloomMap");
     GLenum draws [4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
@@ -477,8 +505,8 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
     glBindTexture(GL_TEXTURE_2D, colorTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
-	glBindTexture(GL_TEXTURE_2D,bloomTexture);
-	glFramebufferTexture(GL_FRAMEBUFFER, draws[bloom_loc], bloomTexture, 0);
+	glBindTexture(GL_TEXTURE_2D,bloomMap);
+	glFramebufferTexture(GL_FRAMEBUFFER, draws[bloom_loc], bloomMap, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -487,8 +515,75 @@ void initFBO(int w, int h) {
         checkFramebufferStatus(FBOstatus);
     }
 
+	/////////////
+	glActiveTexture(GL_TEXTURE14);
+	glGenTextures(1,&horblurTexture);
+	glGenFramebuffers(1,&FBO[1]);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
+	glBindTexture(GL_TEXTURE_2D, horblurTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA , w, h, 0, GL_RGBA, GL_FLOAT,0);
+	glReadBuffer(GL_BACK);
+	color_loc = glGetFragDataLocation(ambient_prog ,"out_Color");
+	GLenum draw[1];
+	draw[color_loc] = GL_COLOR_ATTACHMENT0;
+	glDrawBuffers(2, draw);
+
+	test = GL_COLOR_ATTACHMENT0;
+	glBindTexture(GL_TEXTURE_2D, horblurTexture);
+	glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], horblurTexture, 0);
+	// check FBO status
+	FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+		printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[1]\n");
+		checkFramebufferStatus(FBOstatus);
+	}
+	/////////////////////////////////////////////////////////////////////////////
+	glActiveTexture(GL_TEXTURE14);
+	glGenTextures(1,&blurTexture);
+	glGenTextures(1,&verblurTexture);
+
+	glGenFramebuffers(1,&FBO[2]);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO[2]);
+	glBindTexture(GL_TEXTURE_2D, blurTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+	glBindTexture(GL_TEXTURE_2D, verblurTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+	glReadBuffer(GL_BACK);
+	color_loc = glGetFragDataLocation(horblur_prog,"out_Color");
+	GLuint verblur_loc = glGetFragDataLocation(horblur_prog,"out_horBlured");
+	GLenum drawblur[2];
+	drawblur[color_loc] = GL_COLOR_ATTACHMENT0;
+	drawblur[verblur_loc] = GL_COLOR_ATTACHMENT1;
+	glDrawBuffers(2, drawblur);
+
+	test = GL_COLOR_ATTACHMENT0;
+	glBindTexture(GL_TEXTURE_2D, blurTexture);
+	glFramebufferTexture(GL_FRAMEBUFFER, drawblur[color_loc], blurTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, verblurTexture);
+	glFramebufferTexture(GL_FRAMEBUFFER, drawblur[verblur_loc], verblurTexture, 0);
+	// check FBO status
+	FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+		printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[2]\n");
+		checkFramebufferStatus(FBOstatus);
+	}
+	/////////////////////////////////////////////////////////////////////////////
     //Post Processing buffer!
-    glActiveTexture(GL_TEXTURE10);
+    glActiveTexture(GL_TEXTURE14);
 
     glGenTextures(1, &postTexture);
 
@@ -503,26 +598,26 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
-    glGenFramebuffers(1, &FBO[1]);
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
+    // create a framebuffer object
+    glGenFramebuffers(1, &FBO[3]);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO[3]);
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_BACK);
-    color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
-    GLenum draw[1];
-    draw[color_loc] = GL_COLOR_ATTACHMENT0;
-    glDrawBuffers(1, draw);
+    color_loc = glGetFragDataLocation(verblur_prog,"out_Color");
+    GLenum drawB[1];
+    drawB[color_loc] = GL_COLOR_ATTACHMENT0;
+    glDrawBuffers(1, drawB);
 
     // attach the texture to FBO depth attachment point
     test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, postTexture);
-    glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, drawB[color_loc], postTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
-        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[1]\n");
+        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[3]\n");
         checkFramebufferStatus(FBOstatus);
     }
 
@@ -688,8 +783,9 @@ void setup_quad(GLuint prog)
     glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
 
 	glActiveTexture(GL_TEXTURE6);
-	glBindTexture(GL_TEXTURE_2D,bloomTexture);
+	glBindTexture(GL_TEXTURE_2D,bloomMap);
 	glUniform1i(glGetUniformLocation(prog, "u_Bloomtex"),6);
+
 
 }
 
@@ -806,8 +902,6 @@ void display(void)
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
-	//glBlendFunc(GL_ZERO,GL_ZERO);
-	//glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
     glClear(GL_COLOR_BUFFER_BIT);
     if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_BLOOM || display_type == DISPLAY_SIL)
     {
@@ -848,11 +942,65 @@ void display(void)
         setup_quad(diagnostic_prog);
         draw_quad();
     }
-  
 	glDisable(GL_BLEND);
 
-    //Stage 3 -- RENDER TO SCREEN
+	
+	//////stage 3, generate horizontal blured texture////////////////
 	setTextures();
+	bindFBO(2);
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glUseProgram(horblur_prog);
+		
+	glActiveTexture(GL_TEXTURE7);
+	glBindTexture(GL_TEXTURE_2D, horblurTexture);
+	glUniform1i(glGetUniformLocation(horblur_prog, "u_Blurtex"),7);
+
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D,bloomMap);
+	glUniform1i(glGetUniformLocation(horblur_prog, "u_Bloomtex"),6);
+
+	glUniform1i(glGetUniformLocation(horblur_prog, "u_DisplayType"), display_type);
+	texelSize = vec2(1.0/(float)width,1.0/(float)height);
+	blurAmount = 30; //20: 43 fps /10: 60 fps / 30: 36.2 fps / 40: 30.57 / 50: 25.7
+	blurStrength = 1.0;
+	blurScale = 7.0;
+	glUniform1f(glGetUniformLocation(horblur_prog,"u_texelSizeX"),texelSize.x);
+	glUniform1f(glGetUniformLocation(horblur_prog,"u_texelSizeY"),texelSize.y);
+	glUniform1i(glGetUniformLocation(horblur_prog,"u_blurAmount"),blurAmount);
+	glUniform1f(glGetUniformLocation(horblur_prog,"u_blurScale"),blurScale);
+	glUniform1f(glGetUniformLocation(horblur_prog,"u_blurStrength"),blurStrength);
+	draw_quad();	
+
+	//stage4 -- generate verticle blured texture
+	setTextures();
+	bindFBO(3);
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glUseProgram(verblur_prog);
+
+	glActiveTexture(GL_TEXTURE8);
+	glBindTexture(GL_TEXTURE_2D, verblurTexture);
+	glUniform1i(glGetUniformLocation(verblur_prog, "u_horBluredTex"),8);
+
+	glActiveTexture(GL_TEXTURE9);
+	glBindTexture(GL_TEXTURE_2D,blurTexture);
+	glUniform1i(glGetUniformLocation(verblur_prog, "u_bluredTex"),9);
+
+	glUniform1i(glGetUniformLocation(verblur_prog, "u_DisplayType"), display_type);
+	glUniform1f(glGetUniformLocation(verblur_prog,"u_texelSizeX"),texelSize.x);
+	glUniform1f(glGetUniformLocation(verblur_prog,"u_texelSizeY"),texelSize.y);
+	glUniform1i(glGetUniformLocation(verblur_prog,"u_blurAmount"),blurAmount);
+	glUniform1f(glGetUniformLocation(verblur_prog,"u_blurScale"),blurScale);
+	glUniform1f(glGetUniformLocation(verblur_prog,"u_blurStrength"),blurStrength);
+	draw_quad();	
+	
+
+    //Stage 5 -- RENDER TO SCREEN	 
+	setTextures();	
+	glClear(GL_COLOR_BUFFER_BIT);
 	glUseProgram(post_prog);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -868,7 +1016,7 @@ void display(void)
 	glUniform1i(glGetUniformLocation(post_prog, "u_Colortex"),3);
 
 	glActiveTexture(GL_TEXTURE6);
-	glBindTexture(GL_TEXTURE_2D,bloomTexture);
+	glBindTexture(GL_TEXTURE_2D,bloomMap);
 	glUniform1i(glGetUniformLocation(post_prog, "u_Bloomtex"),6);
 
 	glActiveTexture(GL_TEXTURE2);
@@ -892,10 +1040,10 @@ void display(void)
 	glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
 	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
 	// bloom related uniform values
-	texelSize = vec2(1.0/(float)width,1.0/(float)height);
-	blurAmount = 10; // FPS 4.25 // 10 FPS 13.26 effect best// // 30 FPS 2.0
-	blurStrength = 1.0;
-	blurScale = 5.0;
+	//texelSize = vec2(1.0/(float)width,1.0/(float)height);
+	//blurAmount = 50; //  FPS 4.25 // 10 FPS 13.26 //20: 4.28 // 30:1.98// 40:1.18//50:0.76
+	//blurStrength = 1.0;
+	//blurScale = 5.0;
 	glUniform1f(glGetUniformLocation(post_prog,"u_texelSizeX"),texelSize.x);
 	glUniform1f(glGetUniformLocation(post_prog,"u_texelSizeY"),texelSize.y);
 	glUniform1i(glGetUniformLocation(post_prog,"u_blurAmount"),blurAmount);
