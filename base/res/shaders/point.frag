@@ -113,14 +113,24 @@ void main() {
         //got the following attenuation equation from http://www.gamedev.net/topic/595672-light-attenuation-model-for-deferred-shading/
         float distRatio = length( lightVec ) / lightRadius;
         float attenuation = max(0.0,1.0 - distRatio);
-        /*float attenuation = max(0.0, 1 - distRatio*distRatio);*/
-        /*float dampPow = 2.0;*/
-        /*float damping_factor = 1.0 - pow(distRatio, 2.0); */
         float damping_factor = 1.0;
-        float final_intensity = attenuation * damping_factor;
         float diffuse = max(0.0, dot(normalize(lightVec),normal));
-        out_Color = vec4(color*diffuse*final_intensity, 1.0f);
-        /*out_Color = vec4(color*diffuse, final_intensity);*/
+        /*out_Color = vec4(color*diffuse*final_intensity, 1.0f);*/
+        float final_intensity = diffuse*attenuation;
+
+        vec3 toonColor;
+        if( final_intensity > 0.95 ){
+            toonColor = color;
+        } else if( final_intensity > 0.5){
+            toonColor = 0.6 * color;
+        } else if(final_intensity > 0.25){
+            toonColor = 0.4 * color;
+        } else if (final_intensity > 0.1){
+            toonColor = 0.2 * color;
+        } else {
+            toonColor = 0 * color;
+        }
+        out_Color = vec4(toonColor,1.0f);
     }
     return;
 }
