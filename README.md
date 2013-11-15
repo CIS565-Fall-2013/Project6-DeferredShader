@@ -103,8 +103,32 @@ rendered with no occlusion, while the ones on the right include HBAO.
 Light Bloom
 -------------------------------------------------------------------------------
 
+To achieve this effect, I once again utilized the additional Luminance G-Buffer,
+this time using it as a glow for the scene (i.e. the amount of glow from each
+surface fragment was dictated by its luminance value). By blurring the product
+of this simple luminance value and the original color values over a Gaussian 
+distribution in screen-space X and Y, I was able to achieve a bloom or glow 
+value each fragment. (The algorithm usuall calls for a Gaussian blur in all
+directions, but I found comparable effects by simply blurring once in the X
+direction and once in the Y direction and summing the components. This ran much
+faster than a standard square kernel, which would cause a timeout on the
+graphics card even at small sizes. I developed this as a simplification hack
+of 2-D convolution).
+
+You can see the results below. Here is the original image without and bloom:
+
 ![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/bloom0.png)
+
+And here is the bloom image with glow values equal to luminance. Notice how
+the white surfaces glow more than the green, and more so than the red:
+
 ![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/bloom1.png)
+
+To further illustrate how the bloom utilized the luminance buffer, I inverted
+the luminance and calculated bloom again. Notice in this version how the surfaces
+with lower luminance glow the most. Though it may seem less natural, it shows
+how the shader is implemented:
+
 ![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/bloom2.png)
 
 ------------------------------------------------------------------------------------
