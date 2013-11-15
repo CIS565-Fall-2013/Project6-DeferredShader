@@ -292,7 +292,8 @@ void initQuad() {
 GLuint depthTexture = 0;
 GLuint normalTexture = 0;
 GLuint positionTexture = 0;
-GLuint colorTexture = 0;
+GLuint diffColorTexture = 0;
+GLuint specColorTexture = 0;
 GLuint postTexture = 0;
 GLuint FBO[2] = {0, 0};
 
@@ -375,7 +376,8 @@ void freeFBO() {
 	glDeleteTextures(1,&depthTexture);
 	glDeleteTextures(1,&normalTexture);
 	glDeleteTextures(1,&positionTexture);
-	glDeleteTextures(1,&colorTexture);
+	glDeleteTextures(1,&diffColorTexture);
+	glDeleteTextures(1,&specColorTexture);
 	glDeleteTextures(1,&postTexture);
 	glDeleteFramebuffers(1,&FBO[0]);
 	glDeleteFramebuffers(1,&FBO[1]);
@@ -447,7 +449,8 @@ void initFBO(int w, int h) {
 	glGenTextures(1, &depthTexture);
 	glGenTextures(1, &normalTexture);
 	glGenTextures(1, &positionTexture);
-	glGenTextures(1, &colorTexture);
+	glGenTextures(1, &diffColorTexture);
+	glGenTextures(1, &specColorTexture);
 
 	//Set up depth FBO
 	glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -483,8 +486,8 @@ void initFBO(int w, int h) {
 
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-	//Set up color FBO
-	glBindTexture(GL_TEXTURE_2D, colorTexture);
+	//Set up diffuse color FBO
+	glBindTexture(GL_TEXTURE_2D, diffColorTexture);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -494,6 +497,19 @@ void initFBO(int w, int h) {
 
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
+	
+	//Set up specular color FBO
+	glBindTexture(GL_TEXTURE_2D, specColorTexture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+
 	// create a framebuffer object
 	glGenFramebuffers(1, &FBO[0]);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
@@ -502,24 +518,26 @@ void initFBO(int w, int h) {
 	glReadBuffer(GL_NONE);
 	GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
 	GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
-	GLint color_loc = glGetFragDataLocation(pass_prog,"out_Diff_Color");
-	//GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-	GLenum draws [3];
+	GLint diff_color_loc = glGetFragDataLocation(pass_prog,"out_Diff_Color");
+	GLint spec_color_loc = glGetFragDataLocation(pass_prog,"out_Spec_Color");
+	GLenum draws [4];
 	draws[normal_loc] = GL_COLOR_ATTACHMENT0;
 	draws[position_loc] = GL_COLOR_ATTACHMENT1;
-	draws[color_loc] = GL_COLOR_ATTACHMENT2;
-	glDrawBuffers(3, draws);
+	draws[diff_color_loc] = GL_COLOR_ATTACHMENT2;
+	draws[spec_color_loc] = GL_COLOR_ATTACHMENT3;
+	glDrawBuffers(4, draws);
 
 	// attach the texture to FBO depth attachment point
-	int test = GL_COLOR_ATTACHMENT0;
 	glBindTexture(GL_TEXTURE_2D, depthTexture);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
 	glBindTexture(GL_TEXTURE_2D, normalTexture);    
 	glFramebufferTexture(GL_FRAMEBUFFER, draws[normal_loc], normalTexture, 0);
 	glBindTexture(GL_TEXTURE_2D, positionTexture);    
 	glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
-	glBindTexture(GL_TEXTURE_2D, colorTexture);    
-	glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, diffColorTexture);    
+	glFramebufferTexture(GL_FRAMEBUFFER, draws[diff_color_loc], diffColorTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, specColorTexture);    
+	glFramebufferTexture(GL_FRAMEBUFFER, draws[spec_color_loc], specColorTexture, 0);
 
 	// check FBO status
 	FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -528,7 +546,11 @@ void initFBO(int w, int h) {
 		checkFramebufferStatus(FBOstatus);
 	}
 
-	//Post Processing buffer!
+
+	//Buffer between stage 1 and stage 2 has been initialized
+
+
+	//=======Setup Post Processing buffer!========
 	glActiveTexture(GL_TEXTURE9);
 
 	glGenTextures(1, &postTexture);
@@ -550,13 +572,12 @@ void initFBO(int w, int h) {
 
 	// Instruct openGL that we won't bind a color texture with the currently bound FBO
 	glReadBuffer(GL_BACK);
-	color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
+	GLint color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
 	GLenum draw[1];
 	draw[color_loc] = GL_COLOR_ATTACHMENT0;
 	glDrawBuffers(1, draw);
 
 	// attach the texture to FBO depth attachment point
-	test = GL_COLOR_ATTACHMENT0;
 	glBindTexture(GL_TEXTURE_2D, postTexture);
 	glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
 
@@ -744,16 +765,20 @@ void setup_quad(GLuint prog)
 	glUniform1i(glGetUniformLocation(prog, "u_Positiontex"),2);
 
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, colorTexture);
-	glUniform1i(glGetUniformLocation(prog, "u_Colortex"),3);
+	glBindTexture(GL_TEXTURE_2D, diffColorTexture);
+	glUniform1i(glGetUniformLocation(prog, "u_DiffColortex"),3);
 
 	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D, random_normal_tex);
-	glUniform1i(glGetUniformLocation(prog, "u_RandomNormaltex"),4);
+	glBindTexture(GL_TEXTURE_2D, specColorTexture);
+	glUniform1i(glGetUniformLocation(prog, "u_SpecColortex"),4);
 
 	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D, random_normal_tex);
+	glUniform1i(glGetUniformLocation(prog, "u_RandomNormaltex"),5);
+
+	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
-	glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
+	glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),6);
 }
 
 void draw_quad() {

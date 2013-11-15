@@ -20,7 +20,8 @@ uniform mat4 u_Persp;
 uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
-uniform sampler2D u_Colortex;
+uniform sampler2D u_DiffColortex;
+uniform sampler2D u_SpecColortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -69,7 +70,7 @@ vec3 samplePos(vec2 texcoords) {
 
 //Helper function to automicatlly sample and unpack positions
 vec3 sampleCol(vec2 texcoords) {
-    return texture(u_Colortex,texcoords).xyz;
+    return texture(u_DiffColortex,texcoords).xyz;
 }
 
 //Get a random normal vector  given a screen-space texture coordinate
