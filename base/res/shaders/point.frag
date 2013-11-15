@@ -110,11 +110,11 @@ void main() {
     {
 		float dist=length(position-light)/lightRadius;
 		if(dist<1.0f) out_Color=vec4(1,1,1,1);
-//		else if(dist<2.0f)
-//		{
-//		  float trans=dist-1.0f;
-//		  out_Color=vec4(1,1,1,1)*(1-trans)*(1-trans)*(1-trans);
-//		}
+		else if(dist<2.0f)
+		{
+		  float trans=dist-1.0f;
+		//  out_Color=vec4(1,1,1,1)*(1-trans)*(1-trans);
+		}
 		//light_Color=out_Color.rgb;
         //Put some code here to visualize the fragment associated with this point light
     }
@@ -126,7 +126,7 @@ void main() {
 		else if(dist<2.0f)
 		{
 		  float trans=dist-1.0f;
-		  out_Color=vec4(1,1,1,1)*(1-trans)*(1-trans)*(1-trans);
+		//  out_Color=vec4(1,1,1,1)*(1-trans)*(1-trans)*(1-trans);
 		}
 
 		//out_Color+=vec4(color*max(0,lightnormdot)*(3.0f/dist),1.0f);

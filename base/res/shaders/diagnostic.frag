@@ -21,6 +21,7 @@ uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
+uniform sampler2D u_Lightmaptex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -101,6 +102,7 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+	vec3 lightmap=texture(u_Lightmaptex,fs_Texcoord).xyz;
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
 
@@ -115,7 +117,7 @@ void main() {
             out_Color = vec4(abs(position) / u_Far,1.0f);
             break;
         case(DISPLAY_COLOR):
-            out_Color = vec4(color, 1.0);
+            out_Color = vec4(lightmap, 1.0);
             break;
         case(DISPLAY_LIGHTS):
         case(DISPLAY_TOTAL):

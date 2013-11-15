@@ -37,7 +37,7 @@ v 213.0 548.0 227.0
 f -4 -3 -2 -1
 
 o ceiling
-usemtl lightblue
+usemtl white
 v 556.0 548.8 0.0
 v 556.0 548.8 559.2
 v 0.0 548.8 559.2

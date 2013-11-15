@@ -21,6 +21,7 @@ uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
+uniform sampler2D u_Lightmaptex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -38,6 +39,7 @@ uniform float u_LightIl;
 in vec2 fs_Texcoord;
 
 out vec4 out_Color;
+out vec4 out_postlight;
 ///////////////////////////////////////
 
 
@@ -98,6 +100,9 @@ vec3 colorProduct(vec3 c1, vec3 c2)
 {
 	return vec3(c1.x*c2.x,c1.y*c2.y,c1.z*c2.z);
 }
+
+
+
 void main() {
 
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
@@ -105,12 +110,13 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+	vec3 lightcolor=texture(u_Lightmaptex,fs_Texcoord).xyz;
 
 	vec2 tempTex;
-	tempTex=fs_Texcoord+vec2(1.0f/float(u_ScreenWidth),0.0f); float depth1=texture(u_Depthtex,tempTex).r; float angle1=dot(sampleNrm(tempTex),normal);
-	tempTex=fs_Texcoord-vec2(1.0f/float(u_ScreenWidth),0.0f); float depth2=texture(u_Depthtex,tempTex).r; float angle2=dot(sampleNrm(tempTex),normal);
-	tempTex=fs_Texcoord+vec2(0.0f,1.0f/float(u_ScreenHeight)); float depth3=texture(u_Depthtex,tempTex).r; float angle3=dot(sampleNrm(tempTex),normal);
-	tempTex=fs_Texcoord-vec2(0.0f,1.0f/float(u_ScreenHeight)); float depth4=texture(u_Depthtex,tempTex).r; float angle4=dot(sampleNrm(tempTex),normal);
+	tempTex=fs_Texcoord+vec2(1.0f/float(u_ScreenWidth),0.0f); float depth1=texture(u_Depthtex,tempTex).r; float angle1=dot(sampleNrm(tempTex),normal); vec3 lightcolor1=texture(u_Lightmaptex,tempTex).xyz;
+	tempTex=fs_Texcoord-vec2(1.0f/float(u_ScreenWidth),0.0f); float depth2=texture(u_Depthtex,tempTex).r; float angle2=dot(sampleNrm(tempTex),normal); vec3 lightcolor2=texture(u_Lightmaptex,tempTex).xyz;
+	tempTex=fs_Texcoord+vec2(0.0f,1.0f/float(u_ScreenHeight)); float depth3=texture(u_Depthtex,tempTex).r; float angle3=dot(sampleNrm(tempTex),normal);vec3 lightcolor3=texture(u_Lightmaptex,tempTex).xyz;
+	tempTex=fs_Texcoord-vec2(0.0f,1.0f/float(u_ScreenHeight)); float depth4=texture(u_Depthtex,tempTex).r; float angle4=dot(sampleNrm(tempTex),normal);vec3 lightcolor4=texture(u_Lightmaptex,tempTex).xyz;
 
 	depth1=linearizeDepth(depth1,u_Near,u_Far);
 	depth2=linearizeDepth(depth2,u_Near,u_Far);
@@ -118,7 +124,7 @@ void main() {
 	depth4=linearizeDepth(depth4,u_Near,u_Far);
 
 	
-
+	//color+=lightmap;
 	//color=colorProduct(color,vec3(196.0f/255.0f,165.0f/255.0f,21.0f/255.0f));
     vec3 light = u_Light.xyz;
     float strength = u_Light.w;
@@ -128,7 +134,7 @@ void main() {
     } else {
         float ambient = u_LightIl;
 		//strength=1.0f;
-		ambient=0.3f;
+		//ambient=0.3f;
         float diffuse = max(0.0, dot(normalize(light),normal));
 		//float diffuse2 = max(0.0, dot(normalize(-light),normal));
 		//float diffuse=(diffuse1*0.9f+diffuse2*0.1f);
@@ -143,14 +149,21 @@ void main() {
 
 
         out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
+		if(length(lightcolor)>0.01f || length(lightcolor1)>0.01f || length(lightcolor2)>0.01f || length(lightcolor3)>0.01f || length(lightcolor4)>0.01f ) return;
+
 
 		float checkedge=-dot(normalize(position),normal);
 		//if(checkedge<0.1f) out_Color=vec4(0,0,0,1);
 
+		
+
+
 		if(depth1>1.05f*lin_depth || depth1<0.95f*lin_depth || angle1<0.7f||
 		depth2>1.05f*lin_depth || depth2<0.95f*lin_depth ||angle2<0.7f||
 		depth3>1.05f*lin_depth || depth3<0.95f*lin_depth ||angle3<0.7f||
-		depth4>1.05f*lin_depth || depth4<0.95f*lin_depth ||angle4<0.7f)out_Color=vec4(0,0,0,1);
+		depth4>1.05f*lin_depth || depth4<0.95f*lin_depth ||angle4<0.7f)
+			out_Color=vec4(0,0,0,1)
+		;
     }	
     return;
 }

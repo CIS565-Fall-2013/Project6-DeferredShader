@@ -14,7 +14,7 @@ Kd 0 1 0
 Ks 0 0 0
 
 newmtl blue
-Ka 0 0 0
+Ka 0 0 1
 Kd 0 0 1
 Ks 0 0 0
 
@@ -46,9 +46,4 @@ Ks 0 0 0
 newmtl lightgreen
 Ka 0 1 0
 Kd 0 1 0
-Ks 0 0 0
-
-newmtl lightblue
-Ka 0 0 1
-Kd 0 0 1
 Ks 0 0 0

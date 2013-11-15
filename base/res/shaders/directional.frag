@@ -104,6 +104,7 @@ void main() {
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
 
+	float diffuse = max(0.0, dot(normalize(light),normal));
     out_Color = vec4(color*u_LightIl*diffuse,1.0f);
 }	
 

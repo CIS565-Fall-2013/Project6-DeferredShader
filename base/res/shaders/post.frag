@@ -19,6 +19,8 @@ uniform sampler2D u_Posttex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
+uniform sampler2D u_Lightmaptex;
+
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 
@@ -63,10 +65,45 @@ float getRandomScalar(vec2 texcoords) {
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
+
+
+vec3 getBlurredLightMap(sampler2D lightTex, vec2 v_texCoord, int u_ScreenWidth, int u_ScreenHeight)
+{
+
+	float dx=2.0f/float(u_ScreenWidth);
+	float dy=2.0f/float(u_ScreenHeight);
+	vec2 tmpTexcord=v_texCoord;
+	float totalweight=0.0f;
+	float weight=0.0f;
+	vec3 totalcolor=vec3(0,0,0);
+
+
+	float blurradius=10.0f;
+	float blurdelta=1.0f;
+	float sigma=blurradius*1.24089642;
+	for(float i=-blurradius;i<=blurradius+0.1f;i+=blurdelta) for(float j=-blurradius;j<=blurradius+0.1f;j+=1.0f)
+	{
+		if(i*i+j*j>blurradius*blurradius)continue;
+		tmpTexcord=v_texCoord+vec2(i*dx,j*dy);
+		float thedist=i*dx*i*dx+j*dy*j*dy;
+		vec3 tmpColor=texture(lightTex,tmpTexcord).xyz;
+		
+		
+		weight=exp(-pow(thedist,1.0f)/2.0f/sigma/sigma)/(2*3.1415926*sigma*sigma);
+		totalweight+=weight;
+		//if(tmpColor.r<0.2f) continue;
+		totalcolor+=tmpColor*weight;
+	}
+	if(totalweight<0.0001f) return vec3(0,0,0);
+	return totalcolor;///totalweight;
+}
+
+
 const float occlusion_strength = 1.5f;
 void main() {
     
 	vec3 color = sampleCol(fs_Texcoord);
+	vec3 lightmap=getBlurredLightMap(u_Lightmaptex,fs_Texcoord,u_ScreenWidth, u_ScreenHeight);
 
 	vec2 tempTex;
 	tempTex=fs_Texcoord+vec2(1.0f/float(u_ScreenWidth),0.0f); vec3 color1=sampleCol(tempTex); 
@@ -78,7 +115,9 @@ void main() {
 	gray=1.0f;
     float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
     out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
-	out_Color=vec4((color*0.0f+(color1+color2+color3+color4)*0.25f),1.0);
+	//out_Color=vec4((color*0.0f+(color1+color2+color3+color4)*0.25f),1.0);
+	out_Color=vec4(color*0.5f+lightmap*3.5f,1.0f);
+	//out_Color=vec4(color,1.0f);
     return;
 }
 
