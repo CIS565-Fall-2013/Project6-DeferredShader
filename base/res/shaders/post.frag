@@ -10,11 +10,16 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define	DISPLAY_OUTLINE 6
+#define DISPLAY_TOON 7
 
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
+uniform int u_DisplayType;
+
+uniform sampler2D u_Normaltex;
 uniform sampler2D u_Posttex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
@@ -63,7 +68,7 @@ float getRandomScalar(vec2 texcoords) {
 vec3 evalElement(int x, int y, float n)
 {
 	vec2 offset = vec2(float(x)/u_ScreenWidth, float(y)/u_ScreenHeight);
-	return texture(u_Posttex, fs_Texcoord + offset).xyz * n;
+	return texture(u_Normaltex, fs_Texcoord + offset).xyz * n;
 }
 
 vec3 convolve3x3(float i11, float i12, float i13, float i21, float i22, float i23,
@@ -102,17 +107,25 @@ vec3 discretize(vec3 value, int numBins)
 const float occlusion_strength = 1.5f;
 void main() {
     vec3 color = sampleCol(fs_Texcoord);
-    /*
+	vec3 outlineColor = vec3(sobel() < 0.1);
+	vec3 discretizedColor = discretize(color, 10);
+	
+	if (u_DisplayType == DISPLAY_OUTLINE)
+	{
+		out_Color = vec4(outlineColor, 1.0);
+		return;
+	}
+
+	if (u_DisplayType == DISPLAY_TOON)
+	{
+		out_Color = vec4(outlineColor * discretizedColor, 1.0);
+		return;
+	}
+
 	float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
     float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
     out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
-	*/
-
-	vec3 outlineColor = vec3(sobel() < 0.2);
-	vec3 discretizedColor = discretize(color, 10);
-
-	out_Color = vec4(outlineColor * discretizedColor, 1.0);
-	//out_Color = vec4(texture(u_Posttex,fs_Texcoord+vec2(-1.0/u_ScreenWidth, -1.0/u_ScreenHeight)).xyz, 1);
+	
     return;
 }
 

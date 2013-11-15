@@ -709,6 +709,12 @@ void updateDisplayText(char * disp) {
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
             break;
+		case(DISPLAY_OUTLINE):
+			sprintf(disp, "Displaying Outlines");
+			break;
+		case(DISPLAY_TOON):
+			sprintf(disp, "Displaying Toon");
+			break;
     }
 }
 
@@ -754,7 +760,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_OUTLINE || display_type == DISPLAY_TOON)
     {
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -809,6 +815,12 @@ void display(void)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_TEXTURE_2D);
+
+	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
+
+	glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Normaltex"),1);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture);
@@ -921,6 +933,12 @@ void keyboard(unsigned char key, int x, int y) {
         case('5'):
             display_type = DISPLAY_LIGHTS;
             break;
+        case('6'):
+            display_type = DISPLAY_OUTLINE;
+            break;
+		case('7'):
+			display_type = DISPLAY_TOON;
+			break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;
