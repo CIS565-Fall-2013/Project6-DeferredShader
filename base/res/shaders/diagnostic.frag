@@ -10,6 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_SPECULAR  6
 
 
 /////////////////////////////////////
@@ -23,6 +24,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Shininesstex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -89,6 +91,11 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+float sampleShininess(vec2 texcoords) {
+    return texture(u_Shininesstex,texcoords).r;
+}
+
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
@@ -101,6 +108,7 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+	float shininess = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
 
@@ -117,6 +125,9 @@ void main() {
         case(DISPLAY_COLOR):
             out_Color = vec4(color, 1.0);
             break;
+		case(DISPLAY_SPECULAR):
+			out_Color = vec4( vec3(shininess),1.0);
+			break;
         case(DISPLAY_LIGHTS):
         case(DISPLAY_TOTAL):
             break;

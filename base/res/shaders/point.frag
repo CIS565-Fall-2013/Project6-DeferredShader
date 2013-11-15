@@ -11,7 +11,6 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 
-
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
@@ -23,6 +22,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Shininesstex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -79,6 +79,9 @@ vec3 getRandomNormal(vec2 texcoords) {
                 (texcoords.t)*(u_ScreenHeight)/sz.y)).rgb;
 }
 
+float sampleShininess(vec2 texcoords) {
+    return texture(u_Shininesstex,texcoords).r;
+}
 
 //Get a random scalar given a screen-space texture coordinate
 //Fetches from a random texture
@@ -112,14 +115,24 @@ void main() {
     else
     {
         //Put some code here to actually compute the light from the point light
+		float shininess = sampleShininess(fs_Texcoord);
 		float distSq = dot(posToLight,posToLight);
 		float radiusSq = lightRadius*lightRadius;
 
 		float attenuation = 1 - distSq/radiusSq;
 		float strength = u_LightIl*attenuation;
-		float diffuse = max(0.0, dot(normalize(posToLight),normal));
+		vec3 posToLightDir = normalize(posToLight);
+		float diffuse = max(0.0, dot(posToLightDir,normal));
+
+		vec3 reflect = 2*diffuse*normal - posToLightDir;
+		
+		float specular = pow( max(0.0,dot(normalize(reflect),normalize(-position))),shininess);
 		if (distSq<radiusSq)
+		{
 			out_Color = vec4(color*(strength*diffuse),1.0f);
+		    if (shininess >0.001f)
+				out_Color+= strength*vec4(specular*vec3(1.0),1.0f);
+		}
 		else
 			out_Color = vec4(vec3(0),1);
 
