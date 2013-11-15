@@ -67,7 +67,7 @@
     <None Include="..\..\..\res\shaders\shade.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="post2.frag">
+    <None Include="..\..\..\res\shaders\post2.frag">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

@@ -248,7 +248,8 @@ GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint postTexture = 0;
-GLuint FBO[2] = {0, 0};
+GLuint postTexture2 = 0;
+GLuint FBO[3] = {0, 0, 0};
 
 
 GLuint pass_prog;
@@ -256,6 +257,7 @@ GLuint point_prog;
 GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
+GLuint post2_prog;
 void initShader() {
 #ifdef WIN32
 	const char * pass_vert = "../../../res/shaders/pass.vert";
@@ -267,6 +269,7 @@ void initShader() {
 	const char * ambient_frag = "../../../res/shaders/ambient.frag";
 	const char * point_frag = "../../../res/shaders/point.frag";
 	const char * post_frag = "../../../res/shaders/post.frag";
+	const char * post2_frag = "../../../res/shaders/post2.frag";
 #else
 	const char * pass_vert = "../res/shaders/pass.vert";
 	const char * shade_vert = "../res/shaders/shade.vert";
@@ -324,6 +327,15 @@ void initShader() {
     glBindAttribLocation(post_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(post_prog, shaders);
+	/////////////////////////////////////////////////////////////////////////////
+	shaders = Utility::loadShaders(post_vert, post2_frag);
+
+	post2_prog = glCreateProgram();
+
+	glBindAttribLocation(post2_prog, quad_attributes::POSITION, "Position");
+	glBindAttribLocation(post2_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+	Utility::attachAndLinkProgram(post2_prog, shaders);
 }
 
 GLuint random_normal_tex;
@@ -481,6 +493,44 @@ void initFBO(int w, int h) {
 		checkFramebufferStatus(FBOstatus);
 	}
 
+	//Post Processing second pass
+	glActiveTexture(GL_TEXTURE10);
+
+	glGenTextures(1, &postTexture2);
+
+	//Set up post FBO
+	glBindTexture(GL_TEXTURE_2D, postTexture2);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+	// create a framebuffer object
+	glGenFramebuffers(1, &FBO[2]);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO[2]);
+
+	// Instruct openGL that we won't bind a color texture with the currently bound FBO
+	glReadBuffer(GL_BACK);
+	color_loc = glGetFragDataLocation(post_prog,"out_Color");
+	draw[color_loc] = GL_COLOR_ATTACHMENT0;
+	glDrawBuffers(1, draw);
+
+	// attach the texture to FBO depth attachment point
+	test = GL_COLOR_ATTACHMENT0;
+	glBindTexture(GL_TEXTURE_2D, postTexture2);
+	glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture2, 0);
+
+	// check FBO status
+	FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+		printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[1]\n");
+		checkFramebufferStatus(FBOstatus);
+	}
+
 	// switch back to window-system-provided framebuffer
 	glClear(GL_DEPTH_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0); // break previous binding
@@ -495,8 +545,10 @@ void freeFBO() {
     glDeleteTextures(1,&positionTexture);
     glDeleteTextures(1,&colorTexture);
     glDeleteTextures(1,&postTexture);
+	glDeleteTextures(1,&postTexture2);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
+	glDeleteFramebuffers(1,&FBO[2]);
 }
 
 
@@ -817,8 +869,14 @@ void display(void)
     glDisable(GL_BLEND);
 
     setTextures();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	/////////////////////////
+	bindFBO(2);
+	glDisable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	///////////////////////
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_TEXTURE_2D);
     glUseProgram(post_prog);
 
@@ -845,6 +903,34 @@ void display(void)
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
 	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
     draw_quad();
+	/////////////////////
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glEnable(GL_TEXTURE_2D);
+	glUseProgram(post2_prog);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, postTexture);
+	glUniform1i(glGetUniformLocation(post2_prog, "u_Posttex"),0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, postTexture2);
+	glUniform1i(glGetUniformLocation(post2_prog, "u_BlurPasstex"),1);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
+	glUniform1i(glGetUniformLocation(post2_prog, "u_Depthtex"),2);
+
+	glUniform1f(glGetUniformLocation(post2_prog, "u_Far"), FARP);
+	glUniform1f(glGetUniformLocation(post2_prog, "u_Near"), NEARP);
+
+
+	glUniform1i(glGetUniformLocation(post2_prog, "u_ScreenHeight"), height);
+	glUniform1i(glGetUniformLocation(post2_prog, "u_ScreenWidth"), width);
+	glUniform1i(glGetUniformLocation(post2_prog, "u_DisplayType"), display_type);
+	draw_quad();
 
     glEnable(GL_DEPTH_TEST);
     updateTitle();

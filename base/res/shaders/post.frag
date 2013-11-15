@@ -158,7 +158,7 @@ void main() {
 		
 		float horizontalOffset = -0.5*(kernelWidth-1);
 		float verticalOffset   = -horizontalOffset;
-		float deviation = 2;
+		float deviation = 6.0;
 		float[kernelWidth][kernelWidth] gaussianKernel;
 		float[kernelWidth][kernelWidth] input;
 		
