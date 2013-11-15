@@ -33,7 +33,14 @@ Here are the Keyboard Controls for the program:
 *"6": Display Ambient Occlusion Buffer  
 *"7": Display Toon Shaded Image  
 *"8": Display Full Lit Diffuse + Luminance-Based Specular Image  
-*"9": Display Image With Bloom/Glow
+*"9": Display Image With Bloom/Glow  
+*"Q": Move Camera Up
+*"Z": Move Camera Down
+*"W": Move Camera In
+*"S": Move Camera Out
+*"A": Move Camera Left
+*"D": Move Camera Right"
+*"X": Enable/Disable Scissor Test For Lighting
  
 ------------------------------------------------------------------------------------
 PART 1: Required Features
