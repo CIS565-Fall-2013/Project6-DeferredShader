@@ -93,12 +93,38 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+//convert from pixel coordinates to NDC (between 0 and 1) 
+vec2 pixToNDC(float pix_x, float pix_y){ 
+    return vec2( pix_x / u_ScreenWidth, pix_y / u_ScreenHeight);    
+}
+
+//assume the kernel is already FLIPPED
+vec3 convolveFlipped(mat3 kernel, float pix_x, float pix_y) {
+    //color 00 is the color at (0,0) of the kernel centered at (pix_x, pix_y)
+    //color xy is the color at (x, y) of the kernel centered at (pix_x, pix_y)
+    vec3 color_00 =  sampleCol(pixToNDC(pix_x-1,pix_y-1));
+    vec3 color_10 =  sampleCol(pixToNDC(pix_x,pix_y-1));
+    vec3 color_20 =  sampleCol(pixToNDC(pix_x+1,pix_y-1));
+
+    vec3 color_01 =  sampleCol(pixToNDC(pix_x-1,pix_y));
+    vec3 color_11 =  sampleCol(pixToNDC(pix_x,pix_y));
+    vec3 color_21 =  sampleCol(pixToNDC(pix_x+1,pix_y));
+
+    vec3 color_02 =  sampleCol(pixToNDC(pix_x-1,pix_y+1));
+    vec3 color_12 =  sampleCol(pixToNDC(pix_x,pix_y+1));
+    vec3 color_22 =  sampleCol(pixToNDC(pix_x+1,pix_y+1));
+
+    //ASSUMING THE KERNEL IS ALREAYD FLIPPED! 
+    vec3 finalColor = kernel[0][0]*color_00 + kernel[1][0]*color_10 + kernel[2][0]*color_20 + kernel[0][1]*color_01 + kernel[1][1]*color_11 + kernel[2][1]*color_21 + kernel[0][2]*color_02 + kernel[1][2]*color_12 + kernel[2][2]*color_22; 
+
+    return finalColor;
+}
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
 const float occlusion_strength = 1.5f;
 void main() {
-
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
     float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
 
@@ -123,10 +149,35 @@ void main() {
         } else {
             toonColor = 0.2 * color;
         }
+        vec4 final_color = vec4(toonColor*(strength + ambient),1.0f);
         /*vec4 cs_normal = u_View * u_Model * vec4(normal,1);//normal in camera space*/
         /*vec3 cam_view_dir = vec3(0, 0, -1);*/
         /*float norm_dot_dir = max(0.0, dot(normalize(cam_view_dir), -normalize(normal)));*/
-        out_Color = vec4(toonColor*(strength + ambient),1.0f);
+
+        float ss_x = fs_Texcoord.x * u_ScreenWidth;
+        float ss_y = fs_Texcoord.y * u_ScreenHeight;
+        //apply Sobel filter to find edges
+        mat3 xFilt = transpose(mat3(-1, 0, 1, 
+                                    -2, 0, 2,
+                                    -1, 0, 1));
+        mat3 yFilt = transpose(mat3(-1,-2,-1, 
+                                    0, 0, 0,
+                                    1, 2, 1));
+
+        vec3 GxRGB = convolveFlipped(xFilt, ss_x, ss_y);
+        vec3 GyRGB = convolveFlipped(yFilt, ss_x, ss_y);
+        //find average gradient in X and Y as a scalar, based on average of gradient in red, green, blue channels
+        float GxAvg = (1.0/3.0) * (GxRGB.r + GxRGB.g + GxRGB.b);
+        float GyAvg = (1.0/3.0) * (GyRGB.r + GyRGB.g + GyRGB.b);
+        float G = sqrt( GxAvg*GxAvg + GyAvg*GyAvg ); //magnitude of gradient
+
+        float threshold = 0.1;
+
+        if( G > threshold ){ //we are on an edge
+            out_Color = vec4(1, 1, 1, 1);
+        } else { //not an edge
+            out_Color = final_color;
+        }
         /*out_Color = vec4(norm_dot_dir, norm_dot_dir, norm_dot_dir, 1.0f);*/
         /*if( norm_dot_dir > 0.3) {*/
             /*out_Color = vec4(toonColor*(strength + ambient),1.0f);*/

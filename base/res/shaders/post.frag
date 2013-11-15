@@ -95,37 +95,38 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     /*float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));*/
     /*float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);*/
+    out_Color = vec4(color, 1);
 
-    float ss_x = fs_Texcoord.x * u_ScreenWidth;
-    float ss_y = fs_Texcoord.y * u_ScreenHeight;
+    /*float ss_x = fs_Texcoord.x * u_ScreenWidth;*/
+    /*float ss_y = fs_Texcoord.y * u_ScreenHeight;*/
 
-    //matrices are stored COLUMN MAJOR
-    /*mat3 basicBlur = mat3(1.0/9.0, 1.0/9.0, 1.0/9.0,*/
-                          /*1.0/9.0, 1.0/9.0, 1.0/9.0,*/
-                          /*1.0/9.0, 1.0/9.0, 1.0/9.0);*/
+    /*//matrices are stored COLUMN MAJOR*/
+    /*[>mat3 basicBlur = mat3(1.0/9.0, 1.0/9.0, 1.0/9.0,<]*/
+                          /*[>1.0/9.0, 1.0/9.0, 1.0/9.0,<]*/
+                          /*[>1.0/9.0, 1.0/9.0, 1.0/9.0);<]*/
     
-    //apply Sobel filter to find edges
-    mat3 xFilt = transpose(mat3(-1, 0, 1, 
-                                -2, 0, 2,
-                                -1, 0, 1));
-    mat3 yFilt = transpose(mat3(-1,-2,-1, 
-                                0, 0, 0,
-                                1, 2, 1));
+    /*//apply Sobel filter to find edges*/
+    /*mat3 xFilt = transpose(mat3(-1, 0, 1, */
+                                /*-2, 0, 2,*/
+                                /*-1, 0, 1));*/
+    /*mat3 yFilt = transpose(mat3(-1,-2,-1, */
+                                /*0, 0, 0,*/
+                                /*1, 2, 1));*/
 
-    vec3 GxRGB = convolveFlipped(xFilt, ss_x, ss_y);
-    vec3 GyRGB = convolveFlipped(yFilt, ss_x, ss_y);
-    //find average gradient in X and Y as a scalar, based on average of gradient in red, green, blue channels
-    float GxAvg = (1.0/3.0) * (GxRGB.r + GxRGB.g + GxRGB.b);
-    float GyAvg = (1.0/3.0) * (GyRGB.r + GyRGB.g + GyRGB.b);
-    float G = sqrt( GxAvg*GxAvg + GyAvg*GyAvg ); //magnitude of gradient
+    /*vec3 GxRGB = convolveFlipped(xFilt, ss_x, ss_y);*/
+    /*vec3 GyRGB = convolveFlipped(yFilt, ss_x, ss_y);*/
+    /*//find average gradient in X and Y as a scalar, based on average of gradient in red, green, blue channels*/
+    /*float GxAvg = (1.0/3.0) * (GxRGB.r + GxRGB.g + GxRGB.b);*/
+    /*float GyAvg = (1.0/3.0) * (GyRGB.r + GyRGB.g + GyRGB.b);*/
+    /*float G = sqrt( GxAvg*GxAvg + GyAvg*GyAvg ); //magnitude of gradient*/
 
-    float threshold = 0.1;
+    /*float threshold = 0.1;*/
 
-    if( G > threshold ){ //we are on an edge
-        out_Color = vec4(1, 1, 1, 1);
-    } else { //not an edge
-        out_Color = vec4(color, 1);
-    }
+    /*if( G > threshold ){ //we are on an edge*/
+        /*out_Color = vec4(1, 1, 1, 1);*/
+    /*} else { //not an edge*/
+        /*out_Color = vec4(color, 1);*/
+    /*}*/
     return;
 }
 
