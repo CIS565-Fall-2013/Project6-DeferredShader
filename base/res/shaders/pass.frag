@@ -2,8 +2,8 @@
 
 uniform float u_Far;
 uniform vec3 u_Color;
-
 uniform float u_isBloom;
+uniform vec3 u_Specular;
 
 in vec3 fs_Normal;
 in vec4 fs_Position;
@@ -13,7 +13,7 @@ out vec4 out_Normal;
 out vec4 out_Position;
 out vec4 out_Color;
 out vec4 out_BloomMap;
-out vec4 out_texCoord;
+out vec4 out_Specular;
 
 void main(void)
 {
@@ -26,5 +26,6 @@ void main(void)
 	}
 	else
 		out_BloomMap = vec4(0.0,0.0,0.0,1.0);
-	out_texCoord = vec4(fs_Texcoord.xy,0.0,1.0);
+	out_Specular = vec4(u_Specular,1.0);
+
 }

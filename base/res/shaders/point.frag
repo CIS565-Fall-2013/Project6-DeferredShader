@@ -25,7 +25,7 @@ uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 uniform sampler2D u_Bloomtex;
-
+uniform sampler2D u_Speculartex;
 uniform float u_Far;
 uniform float u_Near;
 uniform int u_DisplayType;
@@ -36,6 +36,7 @@ uniform int u_ScreenHeight;
 
 uniform vec4 u_Light;
 uniform float u_LightIl;
+uniform vec3 u_camPos;
 
 in vec2 fs_Texcoord;
 
@@ -127,7 +128,14 @@ void main() {
 		attenuation = attenuation / lightRadius + 1;
 		attenuation = 1.0/(attenuation * attenuation);
 		vec3 diffuseColor = Intensity * color * diffuse * u_lightColor * attenuation * isInradius;
-		out_Color = vec4(diffuseColor , 1.0);
+		//specular color
+		vec3 reflect = reflect(normalize(-lightVector),normal);
+		vec3 eyevector =normalize(u_camPos - position);
+		float specular = pow(dot(reflect,eyevector),3.0);
+		vec3 specularColor = vec3(0.0);
+		specularColor = specular * texture(u_Speculartex,fs_Texcoord).rgb;
+		
+		out_Color = vec4(diffuseColor + specularColor, 1.0);
 				
     }
     return;

@@ -23,7 +23,7 @@ uniform sampler2D u_Colortex;
 uniform sampler2D u_Bloomtex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Normaltex;
-
+uniform sampler2D u_Speculartex;
 uniform vec3 u_cameraPos; // eyePos
 
 uniform int u_ScreenWidth;

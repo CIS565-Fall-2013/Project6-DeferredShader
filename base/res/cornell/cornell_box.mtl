@@ -13,7 +13,7 @@ Ns 0
 newmtl green
 Ka 0 0 0
 Kd 0 1 0
-Ks 0 0 0
+Ks 1 1 1
 Ns 0
 
 newmtl blue
@@ -31,8 +31,8 @@ Ns 1.0
 newmtl lightblue
 Ka 0 0 0
 Kd 0 1 1
-ks 0 0 0
-Ns 0.0
+Ks 1 1 1
+Ns 0
 
 newmtl light
 Ka 20 20 20

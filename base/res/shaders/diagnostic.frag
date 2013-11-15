@@ -12,7 +12,7 @@
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_BLOOM 6
 #define DISPLAY_SIL 7
-#define DISPLAY_TEXCOORD 8
+#define DISPLAY_SPECULAR 8
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -27,7 +27,7 @@ uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 uniform sampler2D u_Bloomtex;
 uniform sampler2D u_Texcoordtex;
-
+uniform sampler2D u_Speculartex;
 uniform float u_Far;
 uniform float u_Near;
 uniform int u_OcclusionType;
@@ -122,8 +122,9 @@ void main() {
         case(DISPLAY_COLOR):
             out_Color = vec4(color, 1.0);
             break;	
-		case(DISPLAY_TEXCOORD):
-			out_Color = texture(u_Texcoordtex,fs_Texcoord);
+		case(DISPLAY_SPECULAR):
+			out_Color = texture(u_Speculartex,fs_Texcoord);
+			//out_Color = vec4(1.0,0.0,0.0,1.0);
 			break;
         case(DISPLAY_LIGHTS):
         case(DISPLAY_TOTAL):
