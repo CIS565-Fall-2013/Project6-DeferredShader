@@ -72,9 +72,9 @@ void main() {
     /*out_Color = vec4(color,1);*/
 
     float ss_x = fs_Texcoord.x * u_ScreenWidth;
-    float ss_y = fs_Texcoord.y * u_ScreenHeight;
+    float ss_y = u_ScreenHeight - fs_Texcoord.y * u_ScreenHeight;
 
-    if(ss_x > 640 && ss_y > 320){
+    if(ss_x > u_ScreenWidth/2 && ss_y > u_ScreenHeight/2){
         out_Color = vec4(fs_Texcoord.x, fs_Texcoord.y, 1, 0);
     } else {
         out_Color = vec4(1, 0, 0, 0);
