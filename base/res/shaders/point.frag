@@ -72,6 +72,12 @@ vec3 sampleCol(vec2 texcoords) {
     return texture(u_DiffColortex,texcoords).xyz;
 }
 
+
+//Helper function to automicatlly sample and unpack positions
+vec3 sampleSpecCol(vec2 texcoords) {
+    return texture(u_SpecColortex,texcoords).xyz;
+}
+
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
 vec3 getRandomNormal(vec2 texcoords) {

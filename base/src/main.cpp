@@ -834,8 +834,11 @@ void updateDisplayText(char * disp) {
 	case(DISPLAY_NORMAL):
 		sprintf(disp, "Displaying Normal");
 		break; 
-	case(DISPLAY_COLOR):
-		sprintf(disp, "Displaying Color");
+	case(DISPLAY_DIFFUSE):
+		sprintf(disp, "Displaying Diffuse Color");
+		break;
+	case (DISPLAY_SPECULAR):
+		sprintf(disp, "Displaying Specular Color");
 		break;
 	case(DISPLAY_POSITION):
 		sprintf(disp, "Displaying Position");
@@ -1054,8 +1057,8 @@ void keyboard(unsigned char key, int x, int y) {
 		display_type = DISPLAY_NORMAL;
 		break;
 	case('3'):
-		cout << "Display Color Debug Mode" << endl;
-		display_type = DISPLAY_COLOR;
+		cout << "Display Diffuse Debug Mode" << endl;
+		display_type = DISPLAY_DIFFUSE;
 		break;
 	case('4'):
 		cout << "Display Eye Space Position Debug Mode" << endl;
@@ -1064,6 +1067,10 @@ void keyboard(unsigned char key, int x, int y) {
 	case('5'):
 		cout << "Display Lights Debug Mode" << endl;
 		display_type = DISPLAY_LIGHTS;
+		break;
+	case('6'):
+		cout << "Display Specular Debug Mode" << endl;
+		display_type = DISPLAY_SPECULAR;
 		break;	
 	case('0'):
 		cout << "Full Rendering Mode" << endl;

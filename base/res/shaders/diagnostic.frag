@@ -7,9 +7,10 @@
 #define	DISPLAY_DEPTH 0
 #define	DISPLAY_NORMAL 1
 #define	DISPLAY_POSITION 2
-#define	DISPLAY_COLOR 3
+#define	DISPLAY_DIFFUSE 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_SPECULAR 6
 
 
 /////////////////////////////////////
@@ -73,6 +74,11 @@ vec3 sampleCol(vec2 texcoords) {
     return texture(u_DiffColortex,texcoords).xyz;
 }
 
+//Helper function to automicatlly sample and unpack positions
+vec3 sampleSpecCol(vec2 texcoords) {
+    return texture(u_SpecColortex,texcoords).xyz;
+}
+
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
 vec3 getRandomNormal(vec2 texcoords) {
@@ -102,6 +108,7 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+	vec3 specColor = sampleSpecCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
 
@@ -115,8 +122,11 @@ void main() {
         case(DISPLAY_POSITION):
             out_Color = vec4(abs(position) / u_Far,1.0f);
             break;
-        case(DISPLAY_COLOR):
+        case(DISPLAY_DIFFUSE):
             out_Color = vec4(color, 1.0);
+            break;
+        case(DISPLAY_SPECULAR):
+            out_Color = vec4(specColor, 1.0);
             break;
         case(DISPLAY_LIGHTS):
         case(DISPLAY_TOTAL):
