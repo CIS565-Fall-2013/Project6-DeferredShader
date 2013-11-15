@@ -36,17 +36,28 @@ Another tricky part of the toon shading is the edge detection. If using post-sha
  way to detect edge: compare the depth and the normal between itself and the G-Buffer around it. If an obvious difference is detected, than it will be shaded as the edge(color=0,0,0,1)
  
  And below is the Toon shading result
+ ![Toon Shading](https://github.com/heguanyu/Project6-DeferredShader/blob/master/img/toonshade.jpg?raw=true)
 -------------------------------------------------------------------------------
-CONTENTS:
+BLOOM SHADING
 -------------------------------------------------------------------------------
-The Project6 root directory contains the following subdirectories:
-	
-* base/
-  * PROJ_WIN/ contains the vs2010 project files
-  * PROJ_NIX/ contains makefile for building (tested on ubuntu 12.04 LTS)
-  * res/ contains resources including shader source and obj files
-  * src/ contains the c++ code for the project along with SOIL and tiny_obj_loader
-* shared32/ contains freeglut, glm, and glew.
+The Bloom shading is not that successful, and more likely to be a glow shading.
+
+I implement the bloom shading in the post-shading process: in the post fragment shader. So to implement this, I add a slot in the G-Buffer: the emission of the objects. I notice that the Ka(ambient) of the material
+ is the light that the object's emitting. (If it is a light or glowing object, then it is greater than (0,0,0), otherwise for normal object it is (0,0,0)). So in the pass shader, I put this emission information into
+  another texture(G Buffer slot). And I retrieve this information in 2 places:
+  
+ 1. In toon-shader, if a pixel is a light source, then it will take the edge test.
+ 
+ 2. In the post shader: I applied the Gaussian Blur function to make this effect. Gaussian Function is easy: 
+ 
+ float sigma=...; //tweak this number will tweak the sharpness of the Gaussian Blur
+ 
+ g=exp(-(dx*dx+dy*dy)/2.0f/sigma/sigma)/(2/PI/sigma/sigma)
+ 
+ One of the problem with Gaussian function is that it have to sample a lot of pixels around it, if the blur radius is large. To settle this problem, I increase the step size of the sampling so that the blurring
+  effect can expand to further place, and the sample rate per pixel was 21*21, in my program.
+
+Below is the blooming effect. I set the walls and blocks to be the light sources
 
 -------------------------------------------------------------------------------
 REQUIREMENTS:
