@@ -16,6 +16,7 @@
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
 uniform sampler2D u_Posttex;
+uniform sampler2D u_Normaltex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -86,13 +87,16 @@ vec2 computeGrad(vec2 texcoords, ivec2 texSize)
 		for (int j = 0 ; j < 3 ; ++j)
 		{
 			// get texture coordinates
-			float texOffsetS = float(i - 1) / float(u_ScreenWidth);
-			float texOffsetT = float(j - 1) / float(u_ScreenHeight);
+			float texOffsetS = float(i - 1) / float(texSize.x);
+			float texOffsetT = float(j - 1) / float(texSize.y);
+			vec3 color = texture(u_Normaltex, vec2(texOffsetS, texOffsetT) + texcoords).rgb;
+			//float colorFactor = length(abs(color));
+			// convert to grayscale since I am using the normal map
+			float colorFactor = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b; 
 			
-			float tempColor = length(texture(u_Posttex, vec2(texOffsetS, texOffsetT) + texcoords).rgb);
 			
-			gradX += mX[i][j] * tempColor;
-			gradY += mY[i][j] * tempColor;
+			gradX += mX[i][j] * colorFactor;
+			gradY += mY[i][j] * colorFactor;
 		}
 	}
 	
@@ -104,7 +108,7 @@ vec2 computeGrad(vec2 texcoords, ivec2 texSize)
 // sum of gradient in x and y direction
 float applySobelOperator(vec2 texcoords) 
 {
-	vec2 gradient = computeGrad(texcoords, textureSize(u_Posttex,0));
+	vec2 gradient = computeGrad(texcoords, textureSize(u_Normaltex,0));
 	return abs(gradient.x) + abs(gradient.y); // approx for greater efficiency
 }
 
@@ -127,7 +131,10 @@ void main() {
 		float gradMag = applySobelOperator(fs_Texcoord);
 		gradMag = clamp(gradMag, 0, 1.0);
 		float multiplier = 1.0 - gradMag;
+		//out_Color = vec4(abs(texture(u_Normaltex, fs_Texcoord).rgb), 1.0);
+		//out_Color = vec4(multiplier,multiplier,multiplier,1.0);
 		out_Color = vec4(multiplier,multiplier,multiplier,1.0) *  vec4(color, 1.0);
+		
 	}
 	else 
 	{

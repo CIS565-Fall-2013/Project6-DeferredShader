@@ -812,6 +812,10 @@ void display(void)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
+
+	glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Normaltex"),1);
     
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
