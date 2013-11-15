@@ -39,13 +39,13 @@ in vec2 fs_Texcoord;
 
 out vec4 out_Normal;
 out vec4 out_Position;
-out vec4 out_Color;
+out vec4 out_Diff_Color;
+out vec4 out_Spec_Color;
 
 void main(void)
 {
     out_Normal = vec4(normalize(fs_Normal),0.0f);
     out_Position = vec4(fs_Position.xyz,1.0f); //Tuck position into 0 1 range
-	
 	
 	if(u_hasMaskTex > 0)
 	{
@@ -62,26 +62,30 @@ void main(void)
 		diffuseColor *=vec4(texture(u_DiffTex,vec2(fs_Texcoord)).rgb,1.0);
 	}
 	
-	
 	if(u_hasBumpTex > 0)
 	{
 		//TODO: Do Bump Mapping Here
 		ivec2 size = textureSize2D(u_BumpTex,0);
 		
-	}
-	
-	
+	}	
 	
 	//Pass through diffuse color
-	out_Color = diffuseColor*vec4(u_Kd,1.0);
+	out_Diff_Color = diffuseColor*vec4(u_Kd,1.0);
 	 
 	if(u_PassthroughMode == HASTEX_OVERLAY){
-		out_Color += 0.9*vec4(u_hasMaskTex,u_hasDiffTex,u_hasBumpTex,0.0);
+		out_Diff_Color += 0.9*vec4(u_hasMaskTex,u_hasDiffTex,u_hasBumpTex,0.0);
 	}else if(u_PassthroughMode == TEXCOORDS_AS_DIFFUSE){
-		out_Color = vec4(fs_Texcoord.x, fs_Texcoord.y, 0.0, 1.0);
+		out_Diff_Color = vec4(fs_Texcoord.x, fs_Texcoord.y, 0.0, 1.0);
 	}else if(u_PassthroughMode == BUMP_AS_DIFFUSE){
-		out_Color = vec4(texture(u_BumpTex,vec2(fs_Texcoord)).rgb,1.0);
+		out_Diff_Color = vec4(texture(u_BumpTex,vec2(fs_Texcoord)).rgb,1.0);
 	}else if(u_PassthroughMode == MASK_OVERLAY){
-		out_Color = vec4(texture(u_MaskTex,vec2(fs_Texcoord)).rgb,1.0);
+		out_Diff_Color = vec4(texture(u_MaskTex,vec2(fs_Texcoord)).rgb,1.0);
 	}//ELSE NO_CHANGE
+	
+	//Pass through specular color
+	out_Spec_Color = vec4(u_Ks, 1.0);
+	if(u_hasSpecTex > 0)
+	{
+		out_Spec_Color *=vec4(texture(u_SpecTex,vec2(fs_Texcoord)).rgb,1.0);
+	}
 }

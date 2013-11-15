@@ -502,7 +502,8 @@ void initFBO(int w, int h) {
 	glReadBuffer(GL_NONE);
 	GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
 	GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
-	GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
+	GLint color_loc = glGetFragDataLocation(pass_prog,"out_Diff_Color");
+	//GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
 	GLenum draws [3];
 	draws[normal_loc] = GL_COLOR_ATTACHMENT0;
 	draws[position_loc] = GL_COLOR_ATTACHMENT1;
