@@ -656,6 +656,9 @@ void draw_mesh() {
 
 
     mat4 model = get_mesh_world();
+	/*model[0][0] = 2.0;
+	model[1][1] = 2.0;
+	model[2][2] = 2.0;*/
     mat4 view = cam.get_view();
     mat4 persp = perspective(45.0f,(float)width/(float)height,NEARP,FARP);
     mat4 inverse_transposed = transpose(inverse(view*model));
@@ -751,13 +754,13 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
     vec4 center = vp * vec4(pos, 1.0);
 
-    left = sc * left;
-    up = sc * up;
-    center = sc * center;
-
     left /= left.w;
     up /= up.w;
     center /= center.w;
+
+	left = sc * left;
+    up = sc * up;
+    center = sc * center;
 
     float hw = glm::distance(left, center);
     float hh = glm::distance(up, center);
@@ -794,7 +797,7 @@ void updateDisplayText(char * disp) {
 		case(DISPLAY_TONE):
 			sprintf(disp, "Displaying Tone");
 		case(DISPLAY_BLOOM):
-			sprintf(disp, "Displaying BLOOM");
+			sprintf(disp, "Displaying Bloom");
             break;
     }
 }
@@ -829,13 +832,10 @@ bool doIScissor = true;
 int time = 0;
 float l1z = 0.0f;
 float l2z = 5.0f;
-float l3z = 0.0f;
-
 
 float speed = 0.01f;
 float up1z = speed;
 float up2z = -speed;
-float up3z = speed;
 
 void display(void)
 {
@@ -883,7 +883,7 @@ void display(void)
 
 		int count = 0;
 		//float ly = -2.0;
-		for(float ly = - 1.0 ; ly >= -6.0; ly -= 2.0)
+		/*for(float ly = - 1.0 ; ly >= -6.0; ly -= 2.0)
 		for(float i = 0.1; i < 6.0; i+= 0.8)
 		{
 			if(count %2 == 0)
@@ -891,17 +891,11 @@ void display(void)
 			else
 				draw_light(vec3(i, ly, l2z), 1.0, sc, vp, NEARP);
 			count++;
-		}
+		}		*/
+        
+		draw_light(vec3(2.5, -2.5, 5.0), 5.0, sc, vp, NEARP);		
 
-		//light for cornell box
-		/*for(float i = 0.1; i <= 5.5; i+=0.5)
-			for(float j = -1.0; j >= -5.0; j-= 1.0)
-				for(float k = 1.0; k <= 5.0; k+=0.9)
-				{
-					draw_light(vec3(i, j, k), 0.5, sc, vp, NEARP);
-				}*/
-        //draw_light(vec3(2.5, -2.5, 5.0), 0.5, sc, vp, NEARP);
-		//draw_light(vec3(5.5, -2.5, 2.0), 0.5, sc, vp, NEARP);
+		//draw_light(vec3(10.0, -10.0, 10.0), 4000.0, sc, vp, NEARP);		
 
         glDisable(GL_SCISSOR_TEST);
 
@@ -922,18 +916,12 @@ void display(void)
         setup_quad(diagnostic_prog);
         draw_quad();
     }
-    glDisable(GL_BLEND);
+    //glDisable(GL_BLEND);
 
 
 	 //Stage 3 -- RENDER TO SCREEN		
     setTextures();
 	bindFBO(2);
-	glEnable(GL_BLEND);
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_ONE, GL_ONE);
-    glClear(GL_COLOR_BUFFER_BIT);
-
 	glUseProgram(post_prog);
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1135,6 +1123,8 @@ int main (int argc, char* argv[])
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
     width = 1280;
     height = 720;
+	 /*width = 1360;
+    height = 768;*/
     glutInitWindowSize(width,height);
     glutCreateWindow("CIS565 OpenGL Frame");
     glewInit();

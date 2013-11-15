@@ -129,7 +129,7 @@ void main() {
             //For sepcular color
             vec4 specular = sampleSpec(fs_Texcoord);
             vec3 viewDirection = normalize(position - vec3(0.0));
-            vec3 lightDirecion = normalize(position - light);
+            vec3 lightDirecion = normalize(light - position);
             vec3 specularColor;
              if (dot(normal, lightDirecion) < 0.0)
             {
@@ -140,8 +140,10 @@ void main() {
                 specularColor = vec3(specular.xyz) * pow(max(0.0, dot(reflect(lightDirecion, normal), viewDirection)), specular.w);
             }
 
-            specularColor = vec3(0.0);
-            out_Color = vec4(color * diffuse + specularColor, 1.0);
+            
+            out_Color = vec4(color * diffuse * 0.5 + specularColor * 0.7, 1.0);
+
+            //out_Color = vec4(color * diffuse * 0.5, 1.0);
 
             //Tone shading
             if(u_DisplayType == DISPLAY_TONE){
