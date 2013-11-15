@@ -54,10 +54,28 @@ predefined bucket values. The results are below.
 ![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/toon_side_by_side2.png)
 
 -------------------------------------------------------------------------------
-Additional G-Buffer
+Additional G-Buffer: Luminance Based Specularity
 -------------------------------------------------------------------------------
 
-![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/...png)
+For my implementation of an additional G-Buffer, I stored the luminance of each
+fragment computed as:  
+
+	L =  = 0.2126*color.r + 0.7152*color.g + 0.0722*color.b
+	
+Here is a visualization of the luminance on the cornell box scene:
+
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/luminance.png)
+
+Using this luminance buffer, I computed specular lighting for the scene in
+addition to the diffuse lighting calculations. I used the luminance value
+for each fragment as both the specular exponent and the specular coefficient.
+You can see the difference in lighting below, and notice that the specularity
+is not uniform across the scene. The specular lighting on the red surface
+is the least, since this surface had the lowest luminance value, while the
+specularity on the white surfaces is highest, since this surface had the
+highest luminance.
+
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/diffuse_vs_specular.png)
 
 ------------------------------------------------------------------------------------
 PART 2: Additional Features

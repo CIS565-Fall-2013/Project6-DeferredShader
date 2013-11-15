@@ -12,6 +12,7 @@
 #define	DISPLAY_LIGHTS 5
 #define	DISPLAY_AO 6
 #define	DISPLAY_TOON 7
+#define DISPLAY_SPEC 8
 
 
 /////////////////////////////////////
@@ -23,6 +24,7 @@ uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
+uniform sampler2D u_Glowtex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -73,6 +75,11 @@ vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
 }
 
+//Helper function to automicatlly sample and unpack positions
+vec3 sampleGlow(vec2 texcoords) {
+    return texture(u_Glowtex,texcoords).xyz;
+}
+
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
 vec3 getRandomNormal(vec2 texcoords) {
@@ -102,6 +109,8 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+	float glow = sampleGlow(fs_Texcoord).r;
+
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
 	out_Color = vec4(0, 0, 0, 0);
@@ -112,10 +121,10 @@ void main() {
 	else if (u_DisplayType == DISPLAY_TOON )
 	{
 		ivec2 sz = textureSize(u_Normaltex,0);
-		vec3 normal_up    = sampleNrm(vec2(fs_Texcoord.x+(2.0/sz.x), fs_Texcoord.y));
-		vec3 normal_down  = sampleNrm(vec2(fs_Texcoord.x-(2.0/sz.x), fs_Texcoord.y));
-		vec3 normal_right = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y+(2.0/sz.y)));
-		vec3 normal_left  = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y-(2.0/sz.y)));
+		vec3 normal_up    = sampleNrm(vec2(fs_Texcoord.x+(1.0/sz.x), fs_Texcoord.y));
+		vec3 normal_down  = sampleNrm(vec2(fs_Texcoord.x-(1.0/sz.x), fs_Texcoord.y));
+		vec3 normal_right = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y+(1.0/sz.y)));
+		vec3 normal_left  = sampleNrm(vec2(fs_Texcoord.x, fs_Texcoord.y-(1.0/sz.y)));
 
 		if ( dot(normal, normal_up)    <= 0.96 ||
 			 dot(normal, normal_down)  <= 0.96 ||
@@ -131,7 +140,7 @@ void main() {
 			float distFromLight = length(dirToLight);
 			if (distFromLight < lightRadius)
 			{
-				float I = max(0.0, dot(normal, dirToLight))*u_Light.w / (distFromLight / (lightRadius - distFromLight));
+				float I = max(0.0, dot(normal, normalize(dirToLight)))*u_Light.w / (distFromLight / (lightRadius - distFromLight));
 			
 				// toon shading
 				if		(I <= 0.05) { I = 0.1; }
@@ -150,9 +159,17 @@ void main() {
 		vec3 dirToLight = vec3(light.xyz - position.xyz);
 		float distFromLight = length(dirToLight);
 		if (distFromLight < lightRadius) {
-			float I = max(0.0, dot(normal, dirToLight))*u_Light.w / (distFromLight / (lightRadius - distFromLight));
-			out_Color += vec4(I);
-			out_Color *= 3.0*vec4(color,1.0);
+			float I = max(0.0, dot(normal, normalize(dirToLight)))*u_Light.w / (distFromLight / (lightRadius - distFromLight));
+			
+			float diffuse = max(0.0, dot(normalize(dirToLight),normal));
+
+			out_Color += diffuse*vec4(vec3(I), 1.0)*vec4(color, 1.0);
+			
+			if (u_DisplayType == DISPLAY_SPEC) {
+				vec3 specRefl = 2.0 * dot(normal, dirToLight) * normal - dirToLight;
+				float specular = clamp(pow(dot(-position, specRefl), glow), 0.0, 1.0);
+				out_Color += glow*glow*specular*vec4(vec3(I), 1.0)*vec4(color,1.0);
+			}			
 		} 
     }
 	
