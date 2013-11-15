@@ -103,7 +103,9 @@ rendered with no occlusion, while the ones on the right include HBAO.
 Light Bloom
 -------------------------------------------------------------------------------
 
-![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/...png)
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/bloom0.png)
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/bloom1.png)
+![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/bloom2.png)
 
 ------------------------------------------------------------------------------------
 PART 3: Performance Analysis
