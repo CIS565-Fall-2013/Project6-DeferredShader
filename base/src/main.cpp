@@ -80,6 +80,7 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
 
     out.texname = mesh.texname;
     out.color = mesh.color;
+	out.hasBloom = mesh.hasBloom;
     return out;
 }
 
@@ -162,6 +163,12 @@ void initMesh() {
                               shape.material.diffuse[1],
                               shape.material.diffuse[2]);
             mesh.texname = shape.material.diffuse_texname;
+
+			if(shape.material.name == "light")
+				mesh.hasBloom = 1.0;
+			else
+				mesh.hasBloom = 0.0;
+
             draw_meshes.push_back(uploadMesh(mesh));
             f=f+process;
         }
@@ -176,7 +183,7 @@ void initQuad() {
         {vec3(1,-1,0),vec2(1,0)},
         {vec3(1,1,0),vec2(1,1)}};
 
-    unsigned short indices[] = { 0,1,2,0,2,3};
+    unsigned short indices[] = { 0,1,2,0,2,3 };
 
     //Allocate vertex array
     //Vertex arrays encapsulate a set of generic vertex attributes and the buffers they are bound too
@@ -211,6 +218,7 @@ GLuint depthTexture = 0;
 GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
+GLuint bloomTexture = 0;
 GLuint postTexture = 0;
 GLuint FBO[2] = {0, 0};
 
@@ -220,6 +228,8 @@ GLuint point_prog;
 GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
+GLuint bloom_prog;
+
 void initShader() {
 #ifdef WIN32
 	const char * pass_vert = "../../../res/shaders/pass.vert";
@@ -231,6 +241,7 @@ void initShader() {
 	const char * ambient_frag = "../../../res/shaders/ambient.frag";
 	const char * point_frag = "../../../res/shaders/point.frag";
 	const char * post_frag = "../../../res/shaders/post.frag";
+	const char * bloom_frag = "../../../res/shaders/bloom.frag";
 #else
 	const char * pass_vert = "../res/shaders/pass.vert";
 	const char * shade_vert = "../res/shaders/shade.vert";
@@ -279,6 +290,15 @@ void initShader() {
 
     Utility::attachAndLinkProgram(point_prog, shaders);
 
+	shaders = Utility::loadShaders(shade_vert, bloom_frag);
+
+	 bloom_prog = glCreateProgram();
+
+    glBindAttribLocation(bloom_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(bloom_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(bloom_prog, shaders);
+
 	shaders = Utility::loadShaders(post_vert, post_frag);
 
     post_prog = glCreateProgram();
@@ -294,6 +314,7 @@ void freeFBO() {
     glDeleteTextures(1,&normalTexture);
     glDeleteTextures(1,&positionTexture);
     glDeleteTextures(1,&colorTexture);
+	glDeleteTextures(1,&bloomTexture);
     glDeleteTextures(1,&postTexture);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
@@ -366,6 +387,7 @@ void initFBO(int w, int h) {
     glGenTextures(1, &normalTexture);
     glGenTextures(1, &positionTexture);
     glGenTextures(1, &colorTexture);
+	glGenTextures(1, &bloomTexture);
 
     //Set up depth FBO
     glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -412,6 +434,17 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
+	//Set up bloom FBO
+    glBindTexture(GL_TEXTURE_2D, bloomTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
     // creatwwe a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
@@ -421,11 +454,13 @@ void initFBO(int w, int h) {
     GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-    GLenum draws [3];
+	GLint bloom_loc = glGetFragDataLocation(pass_prog,"out_Bloom");
+    GLenum draws [4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+	draws[bloom_loc] = GL_COLOR_ATTACHMENT3;
+    glDrawBuffers(4, draws);
 
     // attach the texture to FBO depth attachment point
     int test = GL_COLOR_ATTACHMENT0;
@@ -437,6 +472,8 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
     glBindTexture(GL_TEXTURE_2D, colorTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, bloomTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[bloom_loc], bloomTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -591,6 +628,7 @@ void draw_mesh() {
 
     for(int i=0; i<draw_meshes.size(); i++){
         glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
+		glUniform1f(glGetUniformLocation(pass_prog, "u_Bloom"), draw_meshes[i].hasBloom);
         glBindVertexArray(draw_meshes[i].vertex_array);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
         glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
@@ -642,6 +680,10 @@ void setup_quad(GLuint prog)
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
+
+	glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, bloomTexture);
+    glUniform1i(glGetUniformLocation(prog, "u_Bloomtex"),6);
 }
 
 void draw_quad() {
@@ -709,6 +751,9 @@ void updateDisplayText(char * disp) {
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
             break;
+		case(DISPLAY_BLOOM):
+            sprintf(disp, "Displaying Bloom");
+            break;
     }
 }
 
@@ -769,9 +814,9 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-			for(int i= 5.3 ; i > -5.3; i--){
-			for(int j= 5.3 ; j > -5.3 ; j--){
-				for(int k= 5.3 ; k > -5.3 ; k--){
+			for(int i= 5.3 ; i > 0; i--){
+			for(int j= 0 ; j > -5.3 ; j--){
+				for(int k= 5.3 ; k > 0 ; k--){
 					draw_light(vec3(0.3,j,k), 0.50, sc, vp, NEARP); //      //5.5, -2.5, 3.0
 					draw_light(vec3(5.3,j,k), 0.50, sc, vp, NEARP);
 					draw_light(vec3(i,j,5.3), 0.50, sc, vp, NEARP);
@@ -787,6 +832,9 @@ void display(void)
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
         draw_quad();
+
+		setup_quad(bloom_prog);
+		draw_quad();
     }
     else
     {
@@ -913,6 +961,9 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case('5'):
             display_type = DISPLAY_LIGHTS;
+            break;
+		case('6'):
+            display_type = DISPLAY_BLOOM;
             break;
         case('0'):
             display_type = DISPLAY_TOTAL;
