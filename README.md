@@ -7,21 +7,41 @@ Due Friday 11/15/2013
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
-NOTE:
+INTRODUCTION
 -------------------------------------------------------------------------------
-This project requires any graphics card with support for a modern OpenGL 
-pipeline. Any AMD, NVIDIA, or Intel card from the past few years should work 
-fine, and every machine in the SIG Lab and Moore 100 is capable of running 
-this project.
+This project is about deferred shading using glsl. In this deferred shading, the first-path shader is just as a common shader: the input is the meshes. When calculating the output, it do not shade the things like 
+ambient light, specular light or sth. Instead, it will output the normal, color, position and emission of the point that the pixel is shading on. 
+
+And on the second-path is the true shader(so it is deferred), where use these information, to calculation the final fragment color of each pixel. It is somewhat similar to ray-tracing, but using rasterization to 
+replace the ray intersection with the scene. 
+
+In the project, as required, I implemented both Toon shading and Blooming effect(actually more likely to be a glowing effect). 
 
 -------------------------------------------------------------------------------
-INTRODUCTION:
+TOON SHADING
 -------------------------------------------------------------------------------
-In this project, you will get introduced to the basics of deferred shading. You will write GLSL and OpenGL code to perform various tasks in a deferred lighting pipeline such as creating and writing to a G-Buffer.
+The toon shading happen in the shader, instead of post-shading processing. The toon shading is simple: So for each dot(light,normal), I do not use it directly. Instead, it will be clamped to the threshold above it.
+So in my program, 
+0.00-0.05->0.00
 
+0.05-0.25->0.25
+
+0.25-0.50->0.50
+
+0.50-0.75->0.75
+
+0.75-1.00->1.00
+
+Another tricky part of the toon shading is the edge detection. If using post-shading process, it can be done easily with Sobel matrix(just multiply the Sobel operator with the pixel color.) Instead, I introduced my own
+ way to detect edge: compare the depth and the normal between itself and the G-Buffer around it. If an obvious difference is detected, than it will be shaded as the edge(color=0,0,0,1)
+ 
+ And below is the Toon shading result
+ ![Toon Shading]
 -------------------------------------------------------------------------------
-CONTENTS:
+BLOOM SHADING
 -------------------------------------------------------------------------------
+The Bloom shading is not that successful, and more likely
+
 The Project6 root directory contains the following subdirectories:
 	
 * base/
