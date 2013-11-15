@@ -34,12 +34,12 @@ Here are the Keyboard Controls for the program:
 *"7": Display Toon Shaded Image  
 *"8": Display Full Lit Diffuse + Luminance-Based Specular Image  
 *"9": Display Image With Bloom/Glow  
-*"Q": Move Camera Up
-*"Z": Move Camera Down
-*"W": Move Camera In
-*"S": Move Camera Out
-*"A": Move Camera Left
-*"D": Move Camera Right"
+*"Q": Move Camera Up  
+*"Z": Move Camera Down  
+*"W": Move Camera In  
+*"S": Move Camera Out  
+*"A": Move Camera Left  
+*"D": Move Camera Right"  
 *"X": Enable/Disable Scissor Test For Lighting
  
 ------------------------------------------------------------------------------------
