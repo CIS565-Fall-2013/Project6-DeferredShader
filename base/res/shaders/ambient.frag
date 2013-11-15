@@ -121,7 +121,9 @@ void main() {
             toonColor = 0.2 * color;
         }
         /*out_Color = vec4(color*(strength*diffuse + ambient),1.0f);*/
-        out_Color = vec4(toonColor*(strength + ambient),1.0f);
+        /*out_Color = vec4(toonColor*(strength + ambient),1.0f);*/
+        float norm_dot_dir = max(0.0, dot(u_viewDir, normal));
+        out_Color = vec4(norm_dot_dir, norm_dot_dir, norm_dot_dir, 1.0f);
     }	
     return;
 }
