@@ -99,7 +99,7 @@ void main() {
     /*out_Color = vec4(color,1);*/
 
     float ss_x = fs_Texcoord.x * u_ScreenWidth;
-    float ss_y = u_ScreenHeight - fs_Texcoord.y * u_ScreenHeight;
+    float ss_y = fs_Texcoord.y * u_ScreenHeight;
 
     //matrices are stored COLUMN MAJOR
     mat3 basicBlur = mat3(1.0/9.0, 1.0/9.0, 1.0/9.0,
