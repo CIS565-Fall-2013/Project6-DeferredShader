@@ -724,6 +724,9 @@ void updateDisplayText(char * disp) {
 		case(DISPLAY_BLOOM):
 			sprintf(disp, "Displaying Bloom Effect");
 			break;
+		case(DISPLAY_AA):
+			sprintf(disp, "Display Diffuse + AA");
+			break;
     }
 }
 
@@ -769,7 +772,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE); // This sums the outputs of the http://www.opengl.org/sdk/docs/man/xhtml/glBlendFunc.xml
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON)
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON || display_type == DISPLAY_BLOOM)
     {
         setup_quad(point_prog); // used to render the light source and compute light from point light
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -933,6 +936,9 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		case('7'):
 			display_type = DISPLAY_BLOOM;
+			break;
+		case('8'):
+			display_type = DISPLAY_AA;
 			break;
         case('0'):
             display_type = DISPLAY_TOTAL;

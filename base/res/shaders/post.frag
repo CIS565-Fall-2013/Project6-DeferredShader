@@ -12,6 +12,7 @@
 #define	DISPLAY_LIGHTS 5
 #define	DISPLAY_TOON 6
 #define	DISPLAY_BLOOM 7
+#define	DISPLAY_AA 7
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -113,6 +114,31 @@ float applySobelOperator(vec2 texcoords)
 	return abs(gradient.x) + abs(gradient.y); // approx for greater efficiency
 }
 
+vec3 applyGaussianFilter(vec2 texcoords)
+{
+	mat3 gausFilter = mat3 (
+			0.0668, 0.1248, 0.0668,
+			0.1248, 0.2332, 0.1248,
+			0.0668, 0.1248, 0.0668
+	);
+	
+	vec3 result = vec3(0,0,0);
+	
+	for (int i = 0 ; i < 3 ; ++i)
+	{
+		for (int j = 0 ; j < 3 ; ++j)
+		{
+			ivec2 texSize = textureSize(u_Posttex, 0);
+			float texOffsetS = float(i - 1) / float(texSize.x);
+			float texOffsetT = float(j - 1) / float(texSize.y);
+			vec3 color = texture(u_Posttex, texcoords + vec2(texOffsetS, texOffsetT)).rgb;
+			result += gausFilter[i][j] * color;
+		}
+	}
+	
+	return result;
+}
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
@@ -125,6 +151,7 @@ void main() {
 		float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
 		float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
 		out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+		out_Color = vec4(color, 1.0);
 	}
 	else if (u_DisplayType == DISPLAY_TOON)
 	{
@@ -135,11 +162,12 @@ void main() {
 		//out_Color = vec4(abs(texture(u_Normaltex, fs_Texcoord).rgb), 1.0);
 		//out_Color = vec4(multiplier,multiplier,multiplier,1.0);
 		out_Color = vec4(multiplier,multiplier,multiplier,1.0) *  vec4(color, 1.0);
-		
 	}
 	else if (u_DisplayType == DISPLAY_BLOOM)
 	{
-	
+		vec3 bloomColor = clamp(applyGaussianFilter(fs_Texcoord), 0, 1);
+		out_Color = vec4(bloomColor,1.0);
+		//out_Color = vec4(abs(texture(u_Posttex, fs_Texcoord).rgb), 1.0);
 	}
 	else 
 	{
