@@ -9,6 +9,8 @@
 
 #include "tiny_obj_loader.h"
 
+bool useToon = false;
+
 class Camera {
 public:
     Camera(glm::vec3 start_pos, glm::vec3 start_dir, glm::vec3 up) : 

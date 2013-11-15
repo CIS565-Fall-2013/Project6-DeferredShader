@@ -788,6 +788,11 @@ void display(void)
         setup_quad(ambient_prog);
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
+        if(useToon){
+            glUniform1i(glGetUniformLocation(ambient_prog, "u_UseToon"), 1);
+        } else {
+            glUniform1i(glGetUniformLocation(ambient_prog, "u_UseToon"), 0);
+        } 
 
         //calculate the view direction of the camera so we can give it to our shader.
         vec3 inclin = glm::gtx::rotate_vector::rotate(cam.start_dir,cam.ry,cam.start_left);
@@ -936,6 +941,9 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case('r'):
             initShader();
+            break;
+        case('t'):
+            useToon = !useToon;
             break;
     }
 

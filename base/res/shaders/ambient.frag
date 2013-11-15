@@ -32,6 +32,8 @@ uniform int u_DisplayType;
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 
+uniform int u_UseToon;
+
 uniform vec4 u_Light;
 uniform float u_LightIl;
 uniform vec3 u_viewDir; //view direction for contours
@@ -149,7 +151,12 @@ void main() {
         } else {
             toonColor = 0.2 * color;
         }
-        vec4 final_color = vec4(toonColor*(strength + ambient),1.0f);
+        vec4 final_color = vec4(0.0);
+        if(u_UseToon == 1){
+            final_color = vec4(toonColor*(strength + ambient),1.0f);
+        } else { //use phong
+            final_color = vec4(diffuse*color*(strength + ambient),1.0f);
+        }
         /*vec4 cs_normal = u_View * u_Model * vec4(normal,1);//normal in camera space*/
         /*vec3 cam_view_dir = vec3(0, 0, -1);*/
         /*float norm_dot_dir = max(0.0, dot(normalize(cam_view_dir), -normalize(normal)));*/

@@ -60,32 +60,32 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
-//convert from pixel coordinates to NDC (between 0 and 1) 
-vec2 pixToNDC(float pix_x, float pix_y){ 
-    return vec2( pix_x / u_ScreenWidth, pix_y / u_ScreenHeight);    
-}
+/*//convert from pixel coordinates to NDC (between 0 and 1) */
+/*vec2 pixToNDC(float pix_x, float pix_y){ */
+    /*return vec2( pix_x / u_ScreenWidth, pix_y / u_ScreenHeight);    */
+/*}*/
 
-//assume the kernel is already FLIPPED
-vec3 convolveFlipped(mat3 kernel, float pix_x, float pix_y) {
-    //color 00 is the color at (0,0) of the kernel centered at (pix_x, pix_y)
-    //color xy is the color at (x, y) of the kernel centered at (pix_x, pix_y)
-    vec3 color_00 =  sampleCol(pixToNDC(pix_x-1,pix_y-1));
-    vec3 color_10 =  sampleCol(pixToNDC(pix_x,pix_y-1));
-    vec3 color_20 =  sampleCol(pixToNDC(pix_x+1,pix_y-1));
+/*//assume the kernel is already FLIPPED*/
+/*vec3 convolveFlipped(mat3 kernel, float pix_x, float pix_y) {*/
+    /*//color 00 is the color at (0,0) of the kernel centered at (pix_x, pix_y)*/
+    /*//color xy is the color at (x, y) of the kernel centered at (pix_x, pix_y)*/
+    /*vec3 color_00 =  sampleCol(pixToNDC(pix_x-1,pix_y-1));*/
+    /*vec3 color_10 =  sampleCol(pixToNDC(pix_x,pix_y-1));*/
+    /*vec3 color_20 =  sampleCol(pixToNDC(pix_x+1,pix_y-1));*/
 
-    vec3 color_01 =  sampleCol(pixToNDC(pix_x-1,pix_y));
-    vec3 color_11 =  sampleCol(pixToNDC(pix_x,pix_y));
-    vec3 color_21 =  sampleCol(pixToNDC(pix_x+1,pix_y));
+    /*vec3 color_01 =  sampleCol(pixToNDC(pix_x-1,pix_y));*/
+    /*vec3 color_11 =  sampleCol(pixToNDC(pix_x,pix_y));*/
+    /*vec3 color_21 =  sampleCol(pixToNDC(pix_x+1,pix_y));*/
 
-    vec3 color_02 =  sampleCol(pixToNDC(pix_x-1,pix_y+1));
-    vec3 color_12 =  sampleCol(pixToNDC(pix_x,pix_y+1));
-    vec3 color_22 =  sampleCol(pixToNDC(pix_x+1,pix_y+1));
+    /*vec3 color_02 =  sampleCol(pixToNDC(pix_x-1,pix_y+1));*/
+    /*vec3 color_12 =  sampleCol(pixToNDC(pix_x,pix_y+1));*/
+    /*vec3 color_22 =  sampleCol(pixToNDC(pix_x+1,pix_y+1));*/
 
-    //ASSUMING THE KERNEL IS ALREAYD FLIPPED! 
-    vec3 finalColor = kernel[0][0]*color_00 + kernel[1][0]*color_10 + kernel[2][0]*color_20 + kernel[0][1]*color_01 + kernel[1][1]*color_11 + kernel[2][1]*color_21 + kernel[0][2]*color_02 + kernel[1][2]*color_12 + kernel[2][2]*color_22; 
+    /*//ASSUMING THE KERNEL IS ALREAYD FLIPPED! */
+    /*vec3 finalColor = kernel[0][0]*color_00 + kernel[1][0]*color_10 + kernel[2][0]*color_20 + kernel[0][1]*color_01 + kernel[1][1]*color_11 + kernel[2][1]*color_21 + kernel[0][2]*color_02 + kernel[1][2]*color_12 + kernel[2][2]*color_22; */
 
-    return finalColor;
-}
+    /*return finalColor;*/
+/*}*/
 
 ///////////////////////////////////
 // MAIN
