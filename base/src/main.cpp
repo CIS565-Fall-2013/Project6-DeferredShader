@@ -25,6 +25,10 @@ using namespace glm;
 const float PI = 3.14159f;
 
 int width, height;
+bool diffuseMappingEnabled = true;
+bool specularMappingEnabled = true;
+bool bumpMappingEnabled = true;
+bool maskingEnabled = true;
 
 device_mesh_t uploadMesh(const mesh_t & mesh) {
 	device_mesh_t out;
@@ -691,15 +695,15 @@ void draw_mesh() {
 		glUniform1i(glGetUniformLocation(pass_prog, "u_MaskTex"),3);
 
 		//Bind texture flags
-		glUniform1i(glGetUniformLocation(pass_prog, "u_hasDiffTex"), (draw_meshes[i].diff_texid > 0)?1:0);
-		glUniform1i(glGetUniformLocation(pass_prog, "u_hasSpecTex"), (draw_meshes[i].spec_texid > 0)?1:0);
-		glUniform1i(glGetUniformLocation(pass_prog, "u_hasBumpTex"), (draw_meshes[i].bump_texid > 0)?1:0);
-		if(draw_meshes[i].mask_texid > 0){
-			glUniform1i(glGetUniformLocation(pass_prog, "u_hasMaskTex"), 1);
-		}else{
-			glUniform1i(glGetUniformLocation(pass_prog, "u_hasMaskTex"), 0);
+		glUniform1i(glGetUniformLocation(pass_prog, "u_hasDiffTex"), 
+			(diffuseMappingEnabled && draw_meshes[i].diff_texid > 0)?1:0);
+		glUniform1i(glGetUniformLocation(pass_prog, "u_hasSpecTex"), 
+			(specularMappingEnabled && draw_meshes[i].spec_texid > 0)?1:0);
+		glUniform1i(glGetUniformLocation(pass_prog, "u_hasBumpTex"), 
+			(bumpMappingEnabled && draw_meshes[i].bump_texid > 0)?1:0);
+		glUniform1i(glGetUniformLocation(pass_prog, "u_hasMaskTex"), 
+			(maskingEnabled && draw_meshes[i].mask_texid > 0)?1:0);
 
-		}
 		glBindVertexArray(draw_meshes[i].vertex_array);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
 		glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
@@ -1075,6 +1079,48 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	case('p'):
 		cout << "Position: " << cam.pos.x << "," << cam.pos.y << "," << cam.z << endl;
+		break;
+
+	case('D'):
+		cout << "Turning Diffuse Mapping ";
+		diffuseMappingEnabled ^= true;
+		if(diffuseMappingEnabled)
+		{
+			cout << "On" << endl;
+		}else{
+			cout << "Off" << endl;
+		}
+		break;
+		
+	case('S'):
+		cout << "Turning Specular Mapping ";
+		specularMappingEnabled ^= true;
+		if(specularMappingEnabled)
+		{
+			cout << "On" << endl;
+		}else{
+			cout << "Off" << endl;
+		}
+		break;
+	case('B'):
+		cout << "Turning Bump Mapping ";
+		bumpMappingEnabled ^= true;
+		if(bumpMappingEnabled)
+		{
+			cout << "On" << endl;
+		}else{
+			cout << "Off" << endl;
+		}
+		break;
+	case('M'):
+		cout << "Turning Masking ";
+		maskingEnabled ^= true;
+		if(maskingEnabled)
+		{
+			cout << "On" << endl;
+		}else{
+			cout << "Off" << endl;
+		}
 		break;
 	}
 
