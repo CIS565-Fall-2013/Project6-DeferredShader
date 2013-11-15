@@ -1,6 +1,6 @@
 ﻿<ProjectSettingsModel DefinitionId="a218e900-1199-4ab1-a767-7976786f04d4" DisplayName="Nexus Project User Settings" xmlns="clr-namespace:Ark.PropertyModel;assembly=Ark">
     <SettingsPointModel DefinitionId="3eb7ba04-016d-475e-b0ff-daa5f0e59a08" DisplayName="Launch">
-        <Property Name="Arguments" Value="mesh=&quot;..\..\..\res\cornell\cornell_box.obj&quot;" />
+        <Property Name="Arguments" Value="mesh=&quot;..\..\..\res\crytek-sponza\sponza.obj&quot;" />
         <Property Name="WorkingDirectory" Value="C:\Users\Collin Boots\Documents\GIT\GitHub\Deferred-Shading\base\PROJ_WIN\P6\P6" />
     </SettingsPointModel>
 </ProjectSettingsModel>

@@ -80,7 +80,16 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
 	glBindVertexArray(0);
 
 	out.diff_texid = mesh.diff_texid;
-	out.color = mesh.color;
+	out.spec_texid = mesh.spec_texid;
+	out.bump_texid = mesh.bump_texid;
+	out.mask_texid = mesh.mask_texid;
+
+	out.Ka = mesh.Ka;
+	out.Kd = mesh.Kd;
+	out.Ks = mesh.Ks;
+
+	out.spec_exp = mesh.spec_exp;
+
 	return out;
 }
 
@@ -93,7 +102,7 @@ string m_Path;//Path to bbj file for texture loading.
 map<string, GLuint> textureIdMap;
 
 
-GLuint loadTexture(string textureName)
+GLuint loadTexture(string textureName, GLint filteringMethod)
 {
 	//Check if texture alread loaded. 
 	if(textureName.length() > 0){
@@ -107,10 +116,15 @@ GLuint loadTexture(string textureName)
 			//If not loaded already, load texture
 			string textureFullPath = m_Path + textureName;
 			cout << "Loading Texture: " << textureFullPath << endl;
-			texId = (unsigned int)SOIL_load_OGL_texture(textureFullPath.c_str(),0,0,0);
+			texId = (unsigned int)SOIL_load_OGL_texture(textureFullPath.c_str(),SOIL_LOAD_AUTO,SOIL_CREATE_NEW_ID,SOIL_FLAG_INVERT_Y);
+			if( 0 == texId )
+			{
+				printf( "SOIL loading error: '%s'\n", SOIL_last_result() );
+			}
+
 			glBindTexture(GL_TEXTURE_2D, texId);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filteringMethod);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filteringMethod);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			glBindTexture(GL_TEXTURE_2D, 0);
@@ -195,11 +209,37 @@ void initMesh() {
 				mesh.indices.push_back(point++);
 			}
 
-			mesh.color = vec3(shape.material.diffuse[0],
+			mesh.Ka =vec3(shape.material.ambient[0],
+				shape.material.ambient[1],
+				shape.material.ambient[2]);
+			mesh.Kd =vec3(shape.material.diffuse[0],
 				shape.material.diffuse[1],
 				shape.material.diffuse[2]);
+			mesh.Ks =vec3(shape.material.specular[0],
+				shape.material.specular[1],
+				shape.material.specular[2]);
 
-			mesh.diff_texid = loadTexture(shape.material.diffuse_texname);
+			mesh.spec_exp = shape.material.shininess;
+
+			mesh.diff_texid = loadTexture(shape.material.diffuse_texname, GL_LINEAR);
+			mesh.spec_texid = loadTexture(shape.material.specular_texname, GL_LINEAR);
+			map<string, string>::iterator it = shape.material.unknown_parameter.find("map_bump");
+
+			if(it != shape.material.unknown_parameter.end()){
+				string mapPath = it->second;
+				mesh.bump_texid = loadTexture(mapPath, GL_LINEAR);
+			}else{
+				mesh.bump_texid = 0;
+			}
+
+			it = shape.material.unknown_parameter.find("map_d");
+			if(it != shape.material.unknown_parameter.end()){
+				string mapPath = it->second;
+				mesh.mask_texid = loadTexture(mapPath, GL_NEAREST);
+			}else{
+				mesh.mask_texid = 0;
+			}
+
 			draw_meshes.push_back(uploadMesh(mesh));
 			f=f+process;
 		}
@@ -628,16 +668,35 @@ void draw_mesh() {
 	glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_InvTrans") ,1,GL_FALSE,&inverse_transposed[0][0]);
 
 	for(int i=0; i<draw_meshes.size(); i++){
-		//TODO: BIND Textures here
-		glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
+		glUniform3fv(glGetUniformLocation(pass_prog, "u_Ka"), 1, &(draw_meshes[i].Ka[0]));
+		glUniform3fv(glGetUniformLocation(pass_prog, "u_Kd"), 1, &(draw_meshes[i].Kd[0]));
+		glUniform3fv(glGetUniformLocation(pass_prog, "u_Ks"), 1, &(draw_meshes[i].Ks[0]));
+		glUniform1f(glGetUniformLocation(pass_prog, "u_specExp"), draw_meshes[i].spec_exp);
 
-		//Diffuse texture
+		//Load textures
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, draw_meshes[i].diff_texid);
-		GLuint loc = glGetUniformLocation(pass_prog, "u_DiffTex");
-		//cout << loc << endl;
-		glUniform1i(loc,0);
+		glUniform1i(glGetUniformLocation(pass_prog, "u_DiffTex"),0);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, draw_meshes[i].spec_texid);
+		glUniform1i(glGetUniformLocation(pass_prog, "u_SpecTex"),1);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, draw_meshes[i].bump_texid);
+		glUniform1i(glGetUniformLocation(pass_prog, "u_BumpTex"),2);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, draw_meshes[i].mask_texid);
+		glUniform1i(glGetUniformLocation(pass_prog, "u_MaskTex"),3);
 
+		//Bind texture flags
+		glUniform1i(glGetUniformLocation(pass_prog, "u_hasDiffTex"), (draw_meshes[i].diff_texid > 0)?1:0);
+		glUniform1i(glGetUniformLocation(pass_prog, "u_hasSpecTex"), (draw_meshes[i].spec_texid > 0)?1:0);
+		glUniform1i(glGetUniformLocation(pass_prog, "u_hasBumpTex"), (draw_meshes[i].bump_texid > 0)?1:0);
+		if(draw_meshes[i].mask_texid > 0){
+			glUniform1i(glGetUniformLocation(pass_prog, "u_hasMaskTex"), 1);
+		}else{
+			glUniform1i(glGetUniformLocation(pass_prog, "u_hasMaskTex"), 0);
+
+		}
 		glBindVertexArray(draw_meshes[i].vertex_array);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
 		glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
