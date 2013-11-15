@@ -212,6 +212,7 @@ GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint postTexture = 0;
+GLuint glowmaskTexture = 0;
 GLuint FBO[2] = {0, 0};
 
 
@@ -366,6 +367,7 @@ void initFBO(int w, int h) {
     glGenTextures(1, &normalTexture);
     glGenTextures(1, &positionTexture);
     glGenTextures(1, &colorTexture);
+	glGenTextures (1, &glowmaskTexture);
 
     //Set up depth FBO
     glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -412,7 +414,15 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
+    //Set up glowmap FBO
+    glBindTexture(GL_TEXTURE_2D, glowmaskTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+	
+	// creatwwe a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
 
@@ -421,11 +431,15 @@ void initFBO(int w, int h) {
     GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-    GLenum draws [3];
+    GLint glowmask_loc = glGetFragDataLocation(pass_prog,"out_GlowMask");
+
+	GLenum draws [4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+	draws[glowmask_loc] = GL_COLOR_ATTACHMENT3;
+
+	glDrawBuffers(4, draws);
 
     // attach the texture to FBO depth attachment point
     int test = GL_COLOR_ATTACHMENT0;
@@ -437,6 +451,8 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
     glBindTexture(GL_TEXTURE_2D, colorTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, glowmaskTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[glowmask_loc], glowmaskTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -460,6 +476,7 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+	glGenerateMipmap (GL_TEXTURE_2D);
 
     // creatwwe a framebuffer object
     glGenFramebuffers(1, &FBO[1]);
@@ -593,7 +610,12 @@ void draw_mesh() {
         glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
         glBindVertexArray(draw_meshes[i].vertex_array);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
-        glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
+        
+		float glowmask = 0.0f;
+		if (draw_meshes [i].texname == "light")
+			glowmask = 1.0f;
+		glUniform1f (glGetUniformLocation (pass_prog, "glowmask"), glowmask);
+		glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
     }
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
@@ -642,6 +664,10 @@ void setup_quad(GLuint prog)
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
+
+	glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, glowmaskTexture);
+    glUniform1i(glGetUniformLocation(prog, "u_GlowMask"),6);
 }
 
 void draw_quad() {
@@ -709,6 +735,9 @@ void updateDisplayText(char * disp) {
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
             break;
+		case DISPLAY_GLOWMASK:
+			sprintf (disp, "Displaying Glow Mask");
+			break;
     }
 }
 
@@ -807,6 +836,9 @@ void display(void)
         draw_quad();
     }
     glDisable(GL_BLEND);
+	glActiveTexture (GL_TEXTURE9);
+	glBindTexture (GL_TEXTURE_2D, postTexture);
+	glGenerateMipmap (GL_TEXTURE_2D);
 
     //Stage 3 -- RENDER TO SCREEN
     setTextures();
@@ -820,7 +852,11 @@ void display(void)
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
     
-    glActiveTexture(GL_TEXTURE4);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, glowmaskTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_GlowMask"),1);
+
+	glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glUniform1i(glGetUniformLocation(post_prog, "u_RandomNormaltex"),4);
     
@@ -926,6 +962,9 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case('5'):
             display_type = DISPLAY_LIGHTS;
+            break;
+        case('6'):
+            display_type = DISPLAY_GLOWMASK;
             break;
         case('0'):
             display_type = DISPLAY_TOTAL;
