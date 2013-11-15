@@ -40,12 +40,12 @@ typedef struct {
 } mesh_t;
 
 typedef struct {
-	unsigned int vertex_array;
-	unsigned int vbo_indices;
+	unsigned int vertex_array;	
 	unsigned int num_indices;
 	unsigned int vbo_vertices;
 	unsigned int vbo_normals;
 	unsigned int vbo_texcoords;
+	unsigned int vbo_indices;
     glm::vec3 color;
     std::string texname;
 } device_mesh_t;
@@ -83,7 +83,9 @@ enum Display {
     DISPLAY_POSITION = 2,
     DISPLAY_COLOR = 3,
     DISPLAY_TOTAL = 4,
-    DISPLAY_LIGHTS = 5
+    DISPLAY_LIGHTS = 5,
+	DISPLAY_TOON = 6,
+	DISPLAY_BLOOM = 7
 };
 
 char* loadFile(char *fname, GLint &fSize);

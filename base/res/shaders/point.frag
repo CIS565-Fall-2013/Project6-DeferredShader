@@ -10,6 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define	DISPLAY_TOON 6
+#define	DISPLAY_BLOOM 7
 
 
 /////////////////////////////////////
@@ -27,6 +29,7 @@ uniform sampler2D u_RandomScalartex;
 uniform float u_Far;
 uniform float u_Near;
 uniform int u_DisplayType;
+
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
@@ -102,15 +105,25 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
+	float strength = u_LightIl;
     out_Color = vec4(0,0,0,1.0);
-    if( u_DisplayType == DISPLAY_LIGHTS )
-    {
-        //Put some code here to visualize the fragment associated with this point light
-    }
-    else
-    {
-        //Put some code here to actually compute the light from the point light
-    }
+	switch (u_DisplayType) {
+        case(DISPLAY_DEPTH):
+        case(DISPLAY_NORMAL):
+        case(DISPLAY_POSITION):
+        case(DISPLAY_COLOR):
+            break;
+        case(DISPLAY_LIGHTS):
+			if(distance(light, position) < lightRadius)
+				out_Color = vec4(1,0,0,1.0);
+			break;
+		case(DISPLAY_TOON):
+		case(DISPLAY_BLOOM):
+			break;
+        case(DISPLAY_TOTAL):
+			out_Color = vec4(color * clamp(dot(normalize(normal), normalize(light-position)), 0.0, 1.0), 1.0);
+            break;
+    }	
     return;
 }
 

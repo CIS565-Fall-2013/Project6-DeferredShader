@@ -10,6 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define	DISPLAY_TOON 6
+#define	DISPLAY_BLOOM 7
 
 
 /////////////////////////////////////
@@ -26,8 +28,8 @@ uniform sampler2D u_RandomScalartex;
 
 uniform float u_Far;
 uniform float u_Near;
-uniform int u_OcclusionType;
 uniform int u_DisplayType;
+uniform int u_OcclusionType;
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
@@ -101,15 +103,29 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+	float quantizer = 1.0;
     vec3 light = u_Light.xyz;
     float strength = u_Light.w;
+	float ambient = u_LightIl;
+	float diffuse;
     if (lin_depth > 0.99f) {
-        out_Color = vec4(vec3(0.0), 1.0);
-    } else {
-        float ambient = u_LightIl;
-        float diffuse = max(0.0, dot(normalize(light),normal));
-        out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
-    }	
+        color = vec3(0.0);
+    } else {      
+        diffuse = clamp(dot(normalize(normal), normalize(light)), 0.0, 1.0);
+        color *= strength*diffuse + ambient;
+    }
+	if(u_DisplayType == DISPLAY_TOON)
+	{
+		if(diffuse > 0.0 && diffuse < 0.2)	quantizer = 0.1;
+		if(diffuse > 0.2 && diffuse < 0.4)	quantizer = 0.3;
+		if(diffuse > 0.4 && diffuse < 0.6)	quantizer = 0.5;
+		if(diffuse > 0.6 && diffuse < 0.8)	quantizer = 0.7;
+		if(diffuse > 0.8 && diffuse < 1.0)	quantizer = 0.9;
+
+		color *= quantizer;
+	}
+	out_Color = vec4(color, 1.0);
+	
     return;
 }
 

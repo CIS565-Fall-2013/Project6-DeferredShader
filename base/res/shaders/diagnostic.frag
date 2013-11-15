@@ -10,6 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define	DISPLAY_TOON 6
+#define	DISPLAY_BLOOM 7
 
 
 /////////////////////////////////////
@@ -26,8 +28,8 @@ uniform sampler2D u_RandomScalartex;
 
 uniform float u_Far;
 uniform float u_Near;
-uniform int u_OcclusionType;
 uniform int u_DisplayType;
+uniform int u_OcclusionType;
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
@@ -118,6 +120,8 @@ void main() {
             out_Color = vec4(color, 1.0);
             break;
         case(DISPLAY_LIGHTS):
+		case(DISPLAY_TOON):
+		case(DISPLAY_BLOOM):
         case(DISPLAY_TOTAL):
             break;
     }	

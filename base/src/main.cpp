@@ -84,6 +84,42 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
 }
 
 
+void checkFramebufferStatus(GLenum framebufferStatus) {
+    switch (framebufferStatus) {
+        case GL_FRAMEBUFFER_COMPLETE_EXT: break;
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
+                                          printf("Attachment Point Unconnected\n");
+                                          break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
+                                          printf("Missing Attachment\n");
+                                          break;
+        case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
+                                          printf("Dimensions do not match\n");
+                                          break;
+        case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
+                                          printf("Formats\n");
+                                          break;
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
+                                          printf("Draw Buffer\n");
+                                          break;
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
+                                          printf("Read Buffer\n");
+                                          break;
+        case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
+                                          printf("Unsupported Framebuffer Configuration\n");
+                                          break;
+        default:
+                                          printf("Unkown Framebuffer Object Failure\n");
+                                          break;
+    }
+}
+#pragma region initializations
+
+void init() {
+	glEnable(GL_DEPTH_TEST);
+	glClearColor(0.0f, 0.0f, 0.0f,1.0f);
+}
+
 int num_boxes = 3;
 const int DUMP_SIZE = 1024;
 
@@ -95,7 +131,7 @@ void initMesh() {
         tinyobj::shape_t shape = *it;
         int totalsize = shape.mesh.indices.size() / 3;
         int f = 0;
-        while(f<totalsize){
+        while(f<totalsize){ // divide large meshes into meshes with maximum 10000 faces
             mesh_t mesh;
             int process = std::min(10000, totalsize-f);
             int point = 0;
@@ -172,9 +208,9 @@ void initMesh() {
 device_mesh2_t device_quad;
 void initQuad() {
     vertex2_t verts [] = { {vec3(-1,1,0),vec2(0,1)},
-        {vec3(-1,-1,0),vec2(0,0)},
-        {vec3(1,-1,0),vec2(1,0)},
-        {vec3(1,1,0),vec2(1,1)}};
+						   {vec3(-1,-1,0),vec2(0,0)},
+						   {vec3(1,-1,0),vec2(1,0)},
+						   {vec3(1,1,0),vec2(1,1)}};
 
     unsigned short indices[] = { 0,1,2,0,2,3};
 
@@ -242,16 +278,17 @@ void initShader() {
 	const char * point_frag = "../res/shaders/point.frag";
 	const char * post_frag = "../res/shaders/post.frag";
 #endif
-	Utility::shaders_t shaders = Utility::loadShaders(pass_vert, pass_frag);
+	/////////////////////////////////////////////////////////////////////////////
+	Utility::shaders_t shaders = Utility::loadShaders(pass_vert, pass_frag); // create, source and compile
 
-    pass_prog = glCreateProgram();
+    pass_prog = glCreateProgram(); 
 
     glBindAttribLocation(pass_prog, mesh_attributes::POSITION, "Position");
     glBindAttribLocation(pass_prog, mesh_attributes::NORMAL, "Normal");
     glBindAttribLocation(pass_prog, mesh_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(pass_prog,shaders);
-
+	/////////////////////////////////////////////////////////////////////////////
 	shaders = Utility::loadShaders(shade_vert, diagnostic_frag);
 
     diagnostic_prog = glCreateProgram();
@@ -260,7 +297,7 @@ void initShader() {
     glBindAttribLocation(diagnostic_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(diagnostic_prog, shaders);
-
+	/////////////////////////////////////////////////////////////////////////////
 	shaders = Utility::loadShaders(shade_vert, ambient_frag);
 
     ambient_prog = glCreateProgram();
@@ -269,7 +306,7 @@ void initShader() {
     glBindAttribLocation(ambient_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(ambient_prog, shaders);
-
+	/////////////////////////////////////////////////////////////////////////////
 	shaders = Utility::loadShaders(shade_vert, point_frag);
 
     point_prog = glCreateProgram();
@@ -278,7 +315,7 @@ void initShader() {
     glBindAttribLocation(point_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(point_prog, shaders);
-
+	/////////////////////////////////////////////////////////////////////////////
 	shaders = Utility::loadShaders(post_vert, post_frag);
 
     post_prog = glCreateProgram();
@@ -288,47 +325,6 @@ void initShader() {
 
     Utility::attachAndLinkProgram(post_prog, shaders);
 }
-
-void freeFBO() {
-    glDeleteTextures(1,&depthTexture);
-    glDeleteTextures(1,&normalTexture);
-    glDeleteTextures(1,&positionTexture);
-    glDeleteTextures(1,&colorTexture);
-    glDeleteTextures(1,&postTexture);
-    glDeleteFramebuffers(1,&FBO[0]);
-    glDeleteFramebuffers(1,&FBO[1]);
-}
-
-void checkFramebufferStatus(GLenum framebufferStatus) {
-    switch (framebufferStatus) {
-        case GL_FRAMEBUFFER_COMPLETE_EXT: break;
-        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
-                                          printf("Attachment Point Unconnected\n");
-                                          break;
-        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
-                                          printf("Missing Attachment\n");
-                                          break;
-        case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
-                                          printf("Dimensions do not match\n");
-                                          break;
-        case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
-                                          printf("Formats\n");
-                                          break;
-        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
-                                          printf("Draw Buffer\n");
-                                          break;
-        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
-                                          printf("Read Buffer\n");
-                                          break;
-        case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
-                                          printf("Unsupported Framebuffer Configuration\n");
-                                          break;
-        default:
-                                          printf("Unkown Framebuffer Object Failure\n");
-                                          break;
-    }
-}
-
 
 GLuint random_normal_tex;
 GLuint random_scalar_tex;
@@ -340,155 +336,172 @@ void initNoise() {
 	const char * rand_norm_png = "../res/random_normal.png";
 	const char * rand_png = "../res/random.png";
 #endif
-	random_normal_tex = (unsigned int)SOIL_load_OGL_texture(rand_norm_png,0,0,0);
-    glBindTexture(GL_TEXTURE_2D, random_normal_tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glBindTexture(GL_TEXTURE_2D, 0);
+	random_normal_tex = (unsigned int)SOIL_load_OGL_texture(rand_norm_png,0,0,0); // generate texture, bind texture, upload data
+	glBindTexture(GL_TEXTURE_2D, random_normal_tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	random_scalar_tex = (unsigned int)SOIL_load_OGL_texture(rand_png,0,0,0);
-    glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
+
 
 void initFBO(int w, int h) {
-    GLenum FBOstatus;
+	GLenum FBOstatus;
 
-    glActiveTexture(GL_TEXTURE9);
+	glActiveTexture(GL_TEXTURE9); // why this texture unit?
 
-    glGenTextures(1, &depthTexture);
-    glGenTextures(1, &normalTexture);
-    glGenTextures(1, &positionTexture);
-    glGenTextures(1, &colorTexture);
+	glGenTextures(1, &depthTexture);
+	glGenTextures(1, &normalTexture);
+	glGenTextures(1, &positionTexture);
+	glGenTextures(1, &colorTexture);
 
-    //Set up depth FBO
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
+	//Set up depth FBO
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
-    //Set up normal FBO
-    glBindTexture(GL_TEXTURE_2D, normalTexture);
+	//Set up normal FBO
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    //Set up position FBO
-    glBindTexture(GL_TEXTURE_2D, positionTexture);
+	//Set up position FBO
+	glBindTexture(GL_TEXTURE_2D, positionTexture);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    //Set up color FBO
-    glBindTexture(GL_TEXTURE_2D, colorTexture);
+	//Set up color FBO
+	glBindTexture(GL_TEXTURE_2D, colorTexture);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
-    glGenFramebuffers(1, &FBO[0]);
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
+	// create a framebuffer object
+	glGenFramebuffers(1, &FBO[0]);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
 
-    // Instruct openGL that we won't bind a color texture with the currently bound FBO
-    glReadBuffer(GL_NONE);
-    GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
-    GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
-    GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-    GLenum draws [3];
-    draws[normal_loc] = GL_COLOR_ATTACHMENT0;
-    draws[position_loc] = GL_COLOR_ATTACHMENT1;
-    draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+	// Instruct openGL that we won't bind a color texture with the currently bound FBO
+	glReadBuffer(GL_NONE);
+	GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal"); // how can you be sure this is 0?
+	GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
+	GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
+	GLenum draws [3];
+	draws[normal_loc] = GL_COLOR_ATTACHMENT0;
+	draws[position_loc] = GL_COLOR_ATTACHMENT1;
+	draws[color_loc] = GL_COLOR_ATTACHMENT2;
+	glDrawBuffers(3, draws);
 
-    // attach the texture to FBO depth attachment point
-    int test = GL_COLOR_ATTACHMENT0;
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
-    glBindTexture(GL_TEXTURE_2D, normalTexture);    
-    glFramebufferTexture(GL_FRAMEBUFFER, draws[normal_loc], normalTexture, 0);
-    glBindTexture(GL_TEXTURE_2D, positionTexture);    
-    glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
-    glBindTexture(GL_TEXTURE_2D, colorTexture);    
-    glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
+	// attach the texture to FBO depth attachment point
+	int test = GL_COLOR_ATTACHMENT0;
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);    
+	glFramebufferTexture(GL_FRAMEBUFFER, draws[normal_loc], normalTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, positionTexture);    
+	glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, colorTexture);    
+	glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
 
-    // check FBO status
-    FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
-        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[0]\n");
-        checkFramebufferStatus(FBOstatus);
-    }
+	// check FBO status
+	FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+		printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[0]\n");
+		checkFramebufferStatus(FBOstatus);
+	}
 
-    //Post Processing buffer!
-    glActiveTexture(GL_TEXTURE9);
+	//Post Processing buffer!
+	glActiveTexture(GL_TEXTURE9);
 
-    glGenTextures(1, &postTexture);
+	glGenTextures(1, &postTexture);
 
-    //Set up post FBO
-    glBindTexture(GL_TEXTURE_2D, postTexture);
+	//Set up post FBO
+	glBindTexture(GL_TEXTURE_2D, postTexture);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
-    glGenFramebuffers(1, &FBO[1]);
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
+	// create a framebuffer object
+	glGenFramebuffers(1, &FBO[1]);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
 
-    // Instruct openGL that we won't bind a color texture with the currently bound FBO
-    glReadBuffer(GL_BACK);
-    color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
-    GLenum draw[1];
-    draw[color_loc] = GL_COLOR_ATTACHMENT0;
-    glDrawBuffers(1, draw);
+	// Instruct openGL that we won't bind a color texture with the currently bound FBO
+	glReadBuffer(GL_BACK);
+	color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
+	GLenum draw[1];
+	draw[color_loc] = GL_COLOR_ATTACHMENT0;
+	glDrawBuffers(1, draw);
 
-    // attach the texture to FBO depth attachment point
-    test = GL_COLOR_ATTACHMENT0;
-    glBindTexture(GL_TEXTURE_2D, postTexture);
-    glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
+	// attach the texture to FBO depth attachment point
+	test = GL_COLOR_ATTACHMENT0;
+	glBindTexture(GL_TEXTURE_2D, postTexture);
+	glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
 
-    // check FBO status
-    FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
-        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[1]\n");
-        checkFramebufferStatus(FBOstatus);
-    }
+	// check FBO status
+	FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+		printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[1]\n");
+		checkFramebufferStatus(FBOstatus);
+	}
 
-    // switch back to window-system-provided framebuffer
-    glClear(GL_DEPTH_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+	// switch back to window-system-provided framebuffer
+	glClear(GL_DEPTH_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0); // break previous binding
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+#pragma endregion
+
+void freeFBO() {
+    glDeleteTextures(1,&depthTexture);
+    glDeleteTextures(1,&normalTexture);
+    glDeleteTextures(1,&positionTexture);
+    glDeleteTextures(1,&colorTexture);
+    glDeleteTextures(1,&postTexture);
+    glDeleteFramebuffers(1,&FBO[0]);
+    glDeleteFramebuffers(1,&FBO[1]);
+}
+
+
+
+
 
 void bindFBO(int buf) {
     glDisable(GL_TEXTURE_2D);
@@ -564,84 +577,43 @@ mat4x4 get_mesh_world() {
     vec3 tilt(1.0f,0.0f,0.0f);
     //mat4 translate_mat = glm::translate(glm::vec3(0.0f,.5f,0.0f));
     mat4 tilt_mat = glm::rotate(mat4(), 90.0f, tilt);
-    mat4 scale_mat = glm::scale(mat4(), vec3(0.01));
+   // mat4 scale_mat = glm::scale(mat4(), vec3(0.01));
+	mat4 scale_mat = mat4(1.0);
     return tilt_mat * scale_mat; //translate_mat;
 }
 
 
+
+#pragma region drawing functions
+
 float FARP;
 float NEARP;
 void draw_mesh() {
-    FARP = 100.0f;
-    NEARP = 0.1f;
+	FARP = 100.0f;
+	NEARP = 0.1f;
 
-    glUseProgram(pass_prog);
-
-
-    mat4 model = get_mesh_world();
-    mat4 view = cam.get_view();
-    mat4 persp = perspective(45.0f,(float)width/(float)height,NEARP,FARP);
-    mat4 inverse_transposed = transpose(inverse(view*model));
-
-    glUniform1f(glGetUniformLocation(pass_prog, "u_Far"), FARP);
-    glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_Model"),1,GL_FALSE,&model[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_View"),1,GL_FALSE,&view[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_Persp"),1,GL_FALSE,&persp[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_InvTrans") ,1,GL_FALSE,&inverse_transposed[0][0]);
-
-    for(int i=0; i<draw_meshes.size(); i++){
-        glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
-        glBindVertexArray(draw_meshes[i].vertex_array);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
-        glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
-    }
-    glBindVertexArray(0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
-}
+	glUseProgram(pass_prog);
 
 
-enum Display display_type = DISPLAY_TOTAL;
+	mat4 model = get_mesh_world();
+	mat4 view = cam.get_view();
+	mat4 persp = perspective(45.0f,(float)width/(float)height,NEARP,FARP);
+	mat4 inverse_transposed = transpose(inverse(view*model));
 
-void setup_quad(GLuint prog)
-{
-    glUseProgram(prog);
-    glEnable(GL_TEXTURE_2D);
+	glUniform1f(glGetUniformLocation(pass_prog, "u_Far"), FARP);
+	glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_Model"),1,GL_FALSE,&model[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_View"),1,GL_FALSE,&view[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_Persp"),1,GL_FALSE,&persp[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_InvTrans") ,1,GL_FALSE,&inverse_transposed[0][0]);
 
-    mat4 persp = perspective(45.0f,(float)width/(float)height,NEARP,FARP);
-    vec4 test(-2,0,10,1);
-    vec4 testp = persp * test;
-    vec4 testh = testp / testp.w;
-    vec2 coords = vec2(testh.x, testh.y) / 2.0f + 0.5f;
-    glUniform1i(glGetUniformLocation(prog, "u_ScreenHeight"), height);
-    glUniform1i(glGetUniformLocation(prog, "u_ScreenWidth"), width);
-    glUniform1f(glGetUniformLocation(prog, "u_Far"), FARP);
-    glUniform1f(glGetUniformLocation(prog, "u_Near"), NEARP);
-    glUniform1i(glGetUniformLocation(prog, "u_DisplayType"), display_type);
-    glUniformMatrix4fv(glGetUniformLocation(prog, "u_Persp"),1, GL_FALSE, &persp[0][0] );
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
-    glUniform1i(glGetUniformLocation(prog, "u_Depthtex"),0);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, normalTexture);
-    glUniform1i(glGetUniformLocation(prog, "u_Normaltex"),1);
-    
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, positionTexture);
-    glUniform1i(glGetUniformLocation(prog, "u_Positiontex"),2);
-    
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, colorTexture);
-    glUniform1i(glGetUniformLocation(prog, "u_Colortex"),3);
-    
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, random_normal_tex);
-    glUniform1i(glGetUniformLocation(prog, "u_RandomNormaltex"),4);
-    
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
-    glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
+	for(int i=0; i<draw_meshes.size(); i++){
+		glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
+		glBindVertexArray(draw_meshes[i].vertex_array);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
+		glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
+	}
+	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 }
 
 void draw_quad() {
@@ -665,17 +637,21 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
     glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
 
+	// world to clip
     vec4 left = vp * vec4(pos + radius*cam.start_left, 1.0);
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
     vec4 center = vp * vec4(pos, 1.0);
 
+	// perspective division
+	left /= left.w;
+	up /= up.w;
+	center /= center.w;
+
+	// NDC to window coordinates
     left = sc * left;
     up = sc * up;
     center = sc * center;
-
-    left /= left.w;
-    up /= up.w;
-    center /= center.w;
+	
 
     float hw = glm::distance(left, center);
     float hh = glm::distance(up, center);
@@ -687,6 +663,48 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
 
     glScissor(x, y, 2*r, 2*r);
     draw_quad();
+}
+
+#pragma endregion
+
+enum Display display_type = DISPLAY_TOTAL;
+
+void setup_quad(GLuint prog)
+{
+	glUseProgram(prog);
+	glEnable(GL_TEXTURE_2D);
+
+	mat4 persp = perspective(45.0f,(float)width/(float)height,NEARP,FARP);
+	glUniform1i(glGetUniformLocation(prog, "u_ScreenHeight"), height);
+	glUniform1i(glGetUniformLocation(prog, "u_ScreenWidth"), width);
+	glUniform1f(glGetUniformLocation(prog, "u_Far"), FARP);
+	glUniform1f(glGetUniformLocation(prog, "u_Near"), NEARP);
+	glUniform1i(glGetUniformLocation(prog, "u_DisplayType"), display_type);
+	glUniformMatrix4fv(glGetUniformLocation(prog, "u_Persp"),1, GL_FALSE, &persp[0][0] );
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
+	glUniform1i(glGetUniformLocation(prog, "u_Depthtex"),0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glUniform1i(glGetUniformLocation(prog, "u_Normaltex"),1);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, positionTexture);
+	glUniform1i(glGetUniformLocation(prog, "u_Positiontex"),2);
+
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, colorTexture);
+	glUniform1i(glGetUniformLocation(prog, "u_Colortex"),3);
+
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, random_normal_tex);
+	glUniform1i(glGetUniformLocation(prog, "u_RandomNormaltex"),4);
+
+	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
+	glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
 }
 
 void updateDisplayText(char * disp) {
@@ -708,6 +726,10 @@ void updateDisplayText(char * disp) {
             break;
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
+		case(DISPLAY_TOON):
+			sprintf(disp, "Displaying Toon Shading");
+		case(DISPLAY_BLOOM):
+			sprintf(disp, "Displaying Blooming");
             break;
     }
 }
@@ -738,13 +760,15 @@ void updateTitle() {
     }
 }
 
+#pragma region callbacks
+
 bool doIScissor = true;
 void display(void)
 {
     // clear the screen
     bindFBO(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    draw_mesh();
+    draw_mesh();  // not writing to screen, but to G-buffer
 
     setTextures();
     bindFBO(1);
@@ -753,7 +777,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON || display_type == DISPLAY_BLOOM)
     {
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -768,13 +792,12 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
-
+        draw_light(vec3(3.0, -3.0, 5.0), 1.0, sc, vp, NEARP); // -----------> draw_quad
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 
         dir_light = normalize(dir_light);
-        dir_light.w = 0.3;
+        dir_light.w = 0.3; // ???????
         float strength = 0.09;
         setup_quad(ambient_prog);
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
@@ -905,6 +928,12 @@ void keyboard(unsigned char key, int x, int y) {
         case('5'):
             display_type = DISPLAY_LIGHTS;
             break;
+		case('6'):
+			display_type = DISPLAY_TOON;
+			break;
+		case('7'):
+			display_type = DISPLAY_BLOOM;
+			break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;
@@ -920,11 +949,9 @@ void keyboard(unsigned char key, int x, int y) {
         cam.adjust(0,0,0,tx,ty,tz);
     }
 }
+#pragma endregion
 
-void init() {
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(0.0f, 0.0f, 0.0f,1.0f);
-}
+
 
 int main (int argc, char* argv[])
 {
