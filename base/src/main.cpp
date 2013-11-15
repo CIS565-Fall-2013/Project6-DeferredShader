@@ -212,8 +212,11 @@ GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint postTexture = 0;
-GLuint FBO[2] = {0, 0};
 
+// Additional G-Buffer
+GLuint sobelTexture = 0;
+
+GLuint FBO[2] = {0, 0};
 
 GLuint pass_prog;
 GLuint point_prog;
@@ -249,6 +252,7 @@ void initShader() {
     glBindAttribLocation(pass_prog, mesh_attributes::POSITION, "Position");
     glBindAttribLocation(pass_prog, mesh_attributes::NORMAL, "Normal");
     glBindAttribLocation(pass_prog, mesh_attributes::TEXCOORD, "Texcoord");
+    //glBindAttribLocation(pass_prog, mesh_attributes::ID, "id");
 
     Utility::attachAndLinkProgram(pass_prog,shaders);
 
@@ -295,6 +299,8 @@ void freeFBO() {
     glDeleteTextures(1,&positionTexture);
     glDeleteTextures(1,&colorTexture);
     glDeleteTextures(1,&postTexture);
+    // Additional G-Buffer
+    glDeleteTextures(1,&sobelTexture);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
 }
@@ -367,6 +373,9 @@ void initFBO(int w, int h) {
     glGenTextures(1, &positionTexture);
     glGenTextures(1, &colorTexture);
 
+    // Additional G-Buffer
+    glGenTextures(1, &sobelTexture);
+
     //Set up depth FBO
     glBindTexture(GL_TEXTURE_2D, depthTexture);
 
@@ -412,6 +421,17 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
+    //Set up sobel FBO
+    glBindTexture(GL_TEXTURE_2D, sobelTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
     // creatwwe a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
@@ -421,11 +441,16 @@ void initFBO(int w, int h) {
     GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-    GLenum draws [3];
+    // Additional G-Buffer
+    GLint sobel_loc = glGetFragDataLocation(pass_prog,"out_Sobel");
+
+    GLenum draws [4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+    //cout << sobel_loc << endl;
+    draws[sobel_loc] = GL_COLOR_ATTACHMENT3;
+    glDrawBuffers(4, draws);
 
     // attach the texture to FBO depth attachment point
     int test = GL_COLOR_ATTACHMENT0;
@@ -437,6 +462,10 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
     glBindTexture(GL_TEXTURE_2D, colorTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
+
+    // Additional G-Buffer 
+    glBindTexture(GL_TEXTURE_2D, sobelTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[sobel_loc], sobelTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -461,21 +490,25 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
+    // create a framebuffer object
     glGenFramebuffers(1, &FBO[1]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_BACK);
     color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
+    //normal_loc = glGetFragDataLocation(ambient_prog,"out_Normal");
     GLenum draw[1];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
+    //draw[normal_loc] = GL_COLOR_ATTACHMENT1;
     glDrawBuffers(1, draw);
 
     // attach the texture to FBO depth attachment point
     test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
+    //glBindTexture(GL_TEXTURE_2D, normalTexture);    
+    //glFramebufferTexture(GL_FRAMEBUFFER, draw[normal_loc], normalTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -601,6 +634,7 @@ void draw_mesh() {
 
 
 enum Display display_type = DISPLAY_TOTAL;
+int bloom_enable = 0;
 
 void setup_quad(GLuint prog)
 {
@@ -617,6 +651,7 @@ void setup_quad(GLuint prog)
     glUniform1f(glGetUniformLocation(prog, "u_Far"), FARP);
     glUniform1f(glGetUniformLocation(prog, "u_Near"), NEARP);
     glUniform1i(glGetUniformLocation(prog, "u_DisplayType"), display_type);
+    glUniform1i(glGetUniformLocation(prog, "u_BloomEnable"), bloom_enable);
     glUniformMatrix4fv(glGetUniformLocation(prog, "u_Persp"),1, GL_FALSE, &persp[0][0] );
 
     glActiveTexture(GL_TEXTURE0);
@@ -642,6 +677,11 @@ void setup_quad(GLuint prog)
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
+
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, sobelTexture);
+    glUniform1i(glGetUniformLocation(prog, "u_sobeltex"),6);
+
 }
 
 void draw_quad() {
@@ -805,10 +845,21 @@ void display(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_TEXTURE_2D);
 
+    glUniform1f(glGetUniformLocation(post_prog, "u_Far"), FARP);
+    glUniform1f(glGetUniformLocation(post_prog, "u_Near"), NEARP);
+    
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
     
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Depthtex"),1);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Normaltex"),2);
+
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glUniform1i(glGetUniformLocation(post_prog, "u_RandomNormaltex"),4);
@@ -916,12 +967,22 @@ void keyboard(unsigned char key, int x, int y) {
         case('5'):
             display_type = DISPLAY_LIGHTS;
             break;
+        case('6'):
+            display_type = DISPLAY_ID;
+            break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;
         case('x'):
             doIScissor ^= true;
             break;
+	case('b'):
+	    if ( bloom_enable == 0 ) {
+	      bloom_enable = 1;
+	    } else {
+	      bloom_enable = 0;
+	    }
+	    break;
         case('r'):
             initShader();
             break;

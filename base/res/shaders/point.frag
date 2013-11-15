@@ -21,6 +21,7 @@ uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
+uniform sampler2D u_idtex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -38,9 +39,6 @@ in vec2 fs_Texcoord;
 
 out vec4 out_Color;
 ///////////////////////////////////////
-
-
-
 
 uniform float zerothresh = 1.0f;
 uniform float falloff = 0.1f;
@@ -103,6 +101,9 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
+
+    out_Color = vec4(0,0,0,1.0);
+					
     out_Color = vec4(0,0,0,1.0);
     if( u_DisplayType == DISPLAY_LIGHTS )
     {

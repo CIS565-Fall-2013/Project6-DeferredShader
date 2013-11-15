@@ -35,8 +35,8 @@ typedef struct {
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> texcoords;
 	std::vector<unsigned short> indices;
-    std::string texname;
-    glm::vec3 color;
+	std::string texname;
+	glm::vec3 color;
 } mesh_t;
 
 typedef struct {
@@ -67,7 +67,8 @@ namespace mesh_attributes {
 	enum {
 		POSITION,
 		NORMAL,
-        TEXCOORD
+		TEXCOORD,
+		ID
 	};
 }
 namespace quad_attributes {
@@ -83,7 +84,8 @@ enum Display {
     DISPLAY_POSITION = 2,
     DISPLAY_COLOR = 3,
     DISPLAY_TOTAL = 4,
-    DISPLAY_LIGHTS = 5
+    DISPLAY_LIGHTS = 5,
+    DISPLAY_ID = 6
 };
 
 char* loadFile(char *fname, GLint &fSize);

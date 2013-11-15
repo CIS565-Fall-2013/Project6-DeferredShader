@@ -21,6 +21,7 @@ uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
+uniform sampler2D u_idtex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -38,10 +39,9 @@ uniform float u_LightIl;
 in vec2 fs_Texcoord;
 
 out vec4 out_Color;
+out vec4 out_Normal;
+
 ///////////////////////////////////////
-
-
-
 
 uniform float zerothresh = 1.0f;
 uniform float falloff = 0.1f;
@@ -110,6 +110,7 @@ void main() {
         float diffuse = max(0.0, dot(normalize(light),normal));
         out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
     }	
+    out_Normal = vec4( normal, 0.0 );
     return;
 }
 
