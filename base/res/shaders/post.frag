@@ -60,10 +60,14 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
-float convolveWithFilter(mat3 testFilter) {
-    
-    float ss_x = fs_Texcoord.x * u_ScreenWidth;
-    float ss_y = u_ScreenHeight - fs_Texcoord.y * u_ScreenHeight;
+//convert from pixel coordinates to NDC (between 0 and 1) 
+vec2 pixToNDC(float pix_x, float pix_y){ 
+    return vec2( pix_x / u_ScreenWidth, pix_y / u_ScreenHeight);    
+}
+
+float convolve(mat3 kernel, float pix_x, float pix_y) {
+    //color 00 is the color at (0,0) of the kernel centered at (pix_x, pix_y)
+    /*float color_00 =  sampleCol(*/
     return -1;
 }
 
@@ -84,7 +88,7 @@ void main() {
     //matrices are stored COLUMN MAJOR
     mat3 basicBlur = mat3(1.0/9.0, 1.0/9.0, 1.0/9.0,
                           1.0/9.0, 1.0/9.0, 1.0/9.0,
-                          1.0/9.0, 1.0/9.0, 1/0/9.0);
+                          1.0/9.0, 1.0/9.0, 1.0/9.0);
     /*if(ss_x > u_ScreenWidth/2 && ss_y > u_ScreenHeight/2){*/
         /*out_Color = vec4(fs_Texcoord.x, fs_Texcoord.y, 1, 0);*/
     /*} else {*/
