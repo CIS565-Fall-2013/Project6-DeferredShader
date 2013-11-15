@@ -2,7 +2,6 @@
 CIS565: Project 6: Deferred Shader
 -------------------------------------------------------------------------------
 Yuqin Shao
--------------------------------------------------------------------------------
 
 
 -------------------------------------------------------------------------------
@@ -13,8 +12,10 @@ Featurues:
 * Point light sources
 * Specular map slot added to G buffer
 * Separable convolution for bloom effects as well as performance evaluation listed below.
+* [Note] press 6 to show bloom effects, press 7 show toon shading, press 8 show specular map
 
-[Note] press 6 to show bloom effects, press 7 show toon shading, press 8 show specular map
+A vedio demo could be found here http://youtu.be/BtFBi01tdqA 
+
 
 -------------------------------------------------------------------------------
 Screen Shots
