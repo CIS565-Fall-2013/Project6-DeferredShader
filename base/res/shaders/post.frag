@@ -16,6 +16,7 @@
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
 uniform sampler2D u_Posttex;
+uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -68,7 +69,23 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
     float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
-    out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+
+    int blur_range = 10;
+    vec3 blur_val = vec3( 0.0, 0.0, 0.0 );  
+    // Super-duper Naive implementation of bloom
+    for ( int i=0; i < blur_range; i++ ) {
+      for ( int j=0; j < blur_range; j++ ) {
+	float x = fs_Texcoord.x+(i-blur_range/2)/float(u_ScreenWidth);
+	float y = fs_Texcoord.y+(j-blur_range/2)/float(u_ScreenHeight);
+	vec3 sample_color = texture(u_Colortex,vec2(x,y)).xyz;
+	if ( sample_color.g > 0.1 && sample_color.r < 0.1)
+	  blur_val += sample_color/float(blur_range);
+      }
+    }
+      
+    //out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+    out_Color = vec4(color+blur_val, 1.0);
+     
     return;
 }
 
