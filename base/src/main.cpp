@@ -25,7 +25,7 @@ const float PI = 3.14159f;
 
 int width, height;
 float inv_width, inv_height;
-bool bloomEnabled = true;
+bool bloomEnabled = true, toonEnabled = false;
 
 device_mesh_t uploadMesh(const mesh_t & mesh) {
     device_mesh_t out;
@@ -423,7 +423,8 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
-	
+	glGenerateMipmap (GL_TEXTURE_2D);
+
 	// creatwwe a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
@@ -478,7 +479,6 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
-	glGenerateMipmap (GL_TEXTURE_2D);
 
     // creatwwe a framebuffer object
     glGenFramebuffers(1, &FBO[1]);
@@ -765,6 +765,10 @@ void updateTitle() {
 			strcat (disp, " Bloom ON");
 		else
 			strcat (disp, " Bloom OFF");
+
+		if (toonEnabled)
+			strcat (disp, " Toon Shaded");
+
         sprintf(title, "CIS565 OpenGL Frame | %s FPS: %4.2f", disp, frame*1000.0/(currenttime-timebase));
         //sprintf(title, "CIS565 OpenGL Frame | %4.2f FPS", frame*1000.0/(currenttime-timebase));
         glutSetWindowTitle(title);
@@ -780,6 +784,9 @@ void display(void)
     bindFBO(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     draw_mesh();
+	glActiveTexture (GL_TEXTURE9);
+	glBindTexture (GL_TEXTURE_2D, glowmaskTexture);
+	glGenerateMipmap (GL_TEXTURE_2D);
 
     // Stage 2 -- RENDER TO P-BUFFER
     setTextures();
@@ -809,6 +816,7 @@ void display(void)
 		glm::vec3 red = glm::vec3 (1,0,0);
 		glm::vec3 blue = glm::vec3 (0,0,1);
 
+		glUniform1i (glGetUniformLocation (point_prog, "u_toonOn"), toonEnabled);
 		glUniform3fv (glGetUniformLocation(point_prog, "u_LightCol"), 1, &(yellow[0]));
 		draw_light(vec3(5.4, -0.5, 3.0), 1.0, sc, vp, NEARP);
 		draw_light(vec3(0.2, -0.5, 3.0), 1.0, sc, vp, NEARP);
@@ -842,9 +850,6 @@ void display(void)
         draw_quad();
     }
     glDisable(GL_BLEND);
-	glActiveTexture (GL_TEXTURE9);
-	glBindTexture (GL_TEXTURE_2D, postTexture);
-	glGenerateMipmap (GL_TEXTURE_2D);
 
     //Stage 3 -- RENDER TO SCREEN
     setTextures();
@@ -988,6 +993,10 @@ void keyboard(unsigned char key, int x, int y) {
 		case 'B':
 			bloomEnabled = !bloomEnabled;
             break;
+		case 't':
+		case 'T':
+			toonEnabled = !toonEnabled;
+			break;
     }
 
     if (abs(tx) > 0 ||  abs(tz) > 0 || abs(ty) > 0) {

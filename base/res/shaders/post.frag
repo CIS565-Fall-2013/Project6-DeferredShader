@@ -89,14 +89,14 @@ void main()
 			for (int i = -1; i < 2; ++i)
 			{
 				int j = -1;
-				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 2).xyz * GaussianMat [i+1].x);
+				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 3).xyz * GaussianMat [i+1].x);
 				++ j;
-				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 2).xyz * GaussianMat [i+1].y);
+				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 3).xyz * GaussianMat [i+1].y);
 				++ j;
-				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 2).xyz * GaussianMat [i+1].z);
+				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 3).xyz * GaussianMat [i+1].z);
 				++ j;
 			}  
-			color += bloomColour;  
+			color += color*bloomColour;  
 //		}
 	}
 //    float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));

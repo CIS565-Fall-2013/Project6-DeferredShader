@@ -35,6 +35,8 @@ uniform vec4 u_Light;
 uniform vec3 u_LightCol;
 uniform float u_LightIl;
 
+uniform bool u_toonOn;
+
 in vec2 fs_Texcoord;
 
 out vec4 out_Color;
