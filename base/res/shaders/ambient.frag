@@ -123,15 +123,18 @@ void main() {
         } else {
             toonColor = 0.2 * color;
         }
+        /*vec4 cs_normal = u_View * u_Model * vec4(normal,1);//normal in camera space*/
+        /*vec3 cam_view_dir = vec3(0, 0, -1);*/
+        /*float norm_dot_dir = max(0.0, dot(normalize(cam_view_dir), -normalize(normal)));*/
+        out_Color = vec4(toonColor*(strength + ambient),1.0f);
+        /*out_Color = vec4(norm_dot_dir, norm_dot_dir, norm_dot_dir, 1.0f);*/
+        /*if( norm_dot_dir > 0.3) {*/
+            /*out_Color = vec4(toonColor*(strength + ambient),1.0f);*/
+        /*} else {*/
+            /*out_Color = vec4(1.0f, 1.0f, 1.0f, 1.0f); */
+        /*}*/
         /*out_Color = vec4(color*(strength*diffuse + ambient),1.0f);*/
         /*out_Color = vec4(toonColor*(strength + ambient),1.0f);*/
-        vec4 cs_normal = u_View * u_Model * vec4(normal,1);//normal in camera space
-        vec3 cam_view_dir = vec3(0, 0, -1);
-        /*float norm_dot_dir = max(0.0, dot(cam_view_dir, -cs_normal.xyz));*/
-        float norm_dot_dir = max(0.0, dot(normalize(cam_view_dir), -normalize(normal)));
-        out_Color = vec4(norm_dot_dir, norm_dot_dir, norm_dot_dir, 1.0f);
-        /*out_Color = vec4(-normalize(u_viewDir), 1.0f);*/
-        /*out_Color = vec4(1.0, 1.0, 1.0, 1.0);*/
     }	
     return;
 }
