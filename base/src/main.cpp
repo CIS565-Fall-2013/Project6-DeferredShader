@@ -769,13 +769,27 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-		glm::vec3 yellow = glm::vec3 (0,1,1);
+		glm::vec3 yellow = glm::vec3 (1,1,0);
 		glm::vec3 orange = glm::vec3 (0.89,0.44,0.1);
-		glUniform3fv (glGetUniformLocation(ambient_prog, "u_Light"), 1, &(yellow[0]));
-        draw_light(vec3(5.2, -2.5, 3.0), 0.85, sc, vp, NEARP);
-        draw_light(vec3(5.2, -0.5, 3.0), 0.85, sc, vp, NEARP);
-        draw_light(vec3(5.2, -4.5, 3.0), 0.85, sc, vp, NEARP);
+		glm::vec3 red = glm::vec3 (1,0,0);
+		glm::vec3 blue = glm::vec3 (0,0,1);
 
+		glUniform3fv (glGetUniformLocation(point_prog, "u_LightCol"), 1, &(yellow[0]));
+		draw_light(vec3(5.4, -0.5, 3.0), 1.0, sc, vp, NEARP);
+		draw_light(vec3(0.2, -0.5, 3.0), 1.0, sc, vp, NEARP);
+		glUniform3fv (glGetUniformLocation(point_prog, "u_LightCol"), 1, &(orange[0]));
+        draw_light(vec3(5.4, -2.5, 3.0), 1.0, sc, vp, NEARP);
+		draw_light(vec3(0.2, -2.5, 3.0), 1.0, sc, vp, NEARP);
+		glUniform3fv (glGetUniformLocation(point_prog, "u_LightCol"), 1, &(yellow[0]));
+		draw_light(vec3(5.4, -4.5, 3.0), 1.0, sc, vp, NEARP);
+		draw_light(vec3(0.2, -4.5, 3.0), 1.0, sc, vp, NEARP);
+		
+		glUniform3fv (glGetUniformLocation(point_prog, "u_LightCol"), 1, &(red[0]));
+		draw_light(vec3(2.5, -1.2, 0.5), 2.5, sc, vp, NEARP);
+		
+		glUniform3fv (glGetUniformLocation(point_prog, "u_LightCol"), 1, &(blue[0]));
+		draw_light(vec3(2.5, -5.0, 4.2), 2.5, sc, vp, NEARP);
+		
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 

@@ -32,6 +32,7 @@ uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 
 uniform vec4 u_Light;
+uniform vec3 u_LightCol;
 uniform float u_LightIl;
 
 in vec2 fs_Texcoord;
@@ -106,13 +107,13 @@ void main() {
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
-		out_Color = vec4 (1.0, 0.0, 0.0, 1.0);
+		out_Color = vec4 (u_LightCol, 1.0);
     }
     else
     {
 		float distLight = length (light-position);
 		float decay = max (1 - (distLight / lightRadius), 0);
-		vec3 finalColour = (color * u_LightIl * clamp (dot (normalize (normal), (light-position)/distLight), 0.0, 1.0)) * decay;
+		vec3 finalColour = (color * u_LightCol * u_LightIl * clamp (dot (normalize (normal), (light-position)/distLight), 0.0, 1.0)) * decay;
 		out_Color = vec4 (finalColour, 1.0);		// Because light and normal are both in view space.
     }
     return;
