@@ -30,6 +30,14 @@ public:
 
 std::vector<tinyobj::shape_t> shapes;
 
+typedef struct{
+	glm::vec3 pos;
+	float strength;
+	float radius;
+} light_t;
+
+std::vector<light_t> lights;
+
 typedef struct {
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec3> normals;
@@ -83,7 +91,8 @@ enum Display {
     DISPLAY_POSITION = 2,
     DISPLAY_COLOR = 3,
     DISPLAY_TOTAL = 4,
-    DISPLAY_LIGHTS = 5
+    DISPLAY_LIGHTS = 5,
+	DISPLAY_SPECULAR = 6
 };
 
 char* loadFile(char *fname, GLint &fSize);
@@ -93,6 +102,7 @@ void initShade();
 void initPass();
 
 void initMesh();
+void initLights();
 device_mesh_t uploadMesh(const mesh_t & mesh);
 
 void display(void);

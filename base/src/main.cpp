@@ -654,8 +654,7 @@ void draw_quad() {
     glBindVertexArray(0);
 }
 
-void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
-    float radius = strength;
+void draw_light(vec3 pos, float strength, float radius, mat4 sc, mat4 vp, float NEARP) {
     vec4 light = cam.get_view() * vec4(pos, 1.0); 
     if( light.z > NEARP)
     {
@@ -669,13 +668,15 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
     vec4 center = vp * vec4(pos, 1.0);
 
-    left = sc * left;
-    up = sc * up;
-    center = sc * center;
 
     left /= left.w;
     up /= up.w;
     center /= center.w;
+
+
+    left = sc * left;
+    up = sc * up;
+    center = sc * center;
 
     float hw = glm::distance(left, center);
     float hh = glm::distance(up, center);
@@ -768,8 +769,11 @@ void display(void)
                        0.0, 0.5, 0.0, 0.0,
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
-
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+		
+		for(int i=0; i<lights.size();++i)
+		{
+			draw_light(lights[i].pos, lights[i].strength,lights[i].radius, sc, vp, NEARP);
+		}
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
@@ -929,6 +933,42 @@ void init() {
     glClearColor(0.0f, 0.0f, 0.0f,1.0f);
 }
 
+void initLights()
+{
+	
+	float stepX = 1.0f;
+	float stepY = 1.0f;
+	
+	float min = 0.01f;
+	float max = 5.3f;
+
+	for(float i=min; i<max;i=i+stepX)
+		for(float j=min; j<max; j=j+stepY)
+		{
+			light_t l;
+			l.pos = glm::vec3(i+1,-j,min);
+			l.strength = 0.5;
+			l.radius = 0.5;
+			lights.push_back(l);
+
+			l.pos = glm::vec3(i+1,-j,max);
+			lights.push_back(l);
+
+			l.pos = glm::vec3(min,-i,j);
+			lights.push_back(l);
+
+			l.pos = glm::vec3(max,-i,j);
+			lights.push_back(l);
+
+			//l.pos = glm::vec3(i,-min,j);
+			//lights.push_back(l);
+
+			l.pos = glm::vec3(i,-max,j);
+			l.radius = 0.2;
+			lights.push_back(l);
+		}
+}
+
 int main (int argc, char* argv[])
 {
     bool loadedScene = false;
@@ -979,7 +1019,7 @@ int main (int argc, char* argv[])
     init();
     initMesh();
     initQuad();
-
+	initLights();
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);	

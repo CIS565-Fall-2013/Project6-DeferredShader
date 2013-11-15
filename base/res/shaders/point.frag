@@ -102,14 +102,27 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
-    out_Color = vec4(0,0,0,1.0);
+	vec3 posToLight = light-position;
+
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
+		out_Color = vec4(light,1.0f);
     }
     else
     {
         //Put some code here to actually compute the light from the point light
+		float distSq = dot(posToLight,posToLight);
+		float radiusSq = lightRadius*lightRadius;
+
+		float attenuation = 1 - distSq/radiusSq;
+		float strength = u_LightIl*attenuation;
+		float diffuse = max(0.0, dot(normalize(posToLight),normal));
+		if (distSq<radiusSq)
+			out_Color = vec4(color*(strength*diffuse),1.0f);
+		else
+			out_Color = vec4(vec3(0),1);
+
     }
     return;
 }
