@@ -6,8 +6,8 @@ uniform mat4x4 u_View;
 uniform mat4x4 u_Persp;
 uniform mat4x4 u_InvTrans;
 
-in  vec3 Position;
-in  vec3 Normal;
+in vec3 Position;
+in vec3 Normal;
 
 out vec3 fs_Normal;
 out vec4 fs_Position;

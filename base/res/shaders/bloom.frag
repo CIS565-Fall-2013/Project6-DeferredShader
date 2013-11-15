@@ -11,7 +11,10 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_BLOOM 6
+#define DISPLAY_TOON 7
 
+#define M_PI 3.14159265358
+#define sigma 1.00		//standard deviation of distribution
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -24,6 +27,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Bloomtex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -39,8 +43,6 @@ in vec2 fs_Texcoord;
 
 out vec4 out_Color;
 ///////////////////////////////////////
-
-
 
 
 uniform float zerothresh = 1.0f;
@@ -72,6 +74,11 @@ vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
 }
 
+//sampe and unpack illumination (ka) from texture
+vec3 sampleIllum(vec2 texcoords) {
+	return texture(u_Bloomtex, texcoords).xyz;
+}
+
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
 vec3 getRandomNormal(vec2 texcoords) {
@@ -89,26 +96,34 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
-
-//testing bloom texture
-vec3 getBloomColor(vec3 fragColor) {
+//for gaussian blurring
+const float coeff = 1.0 / sqrt(2.0 * M_PI * sigma * sigma);
+float gaussian (float x, float y) {
 	
-	if(fragColor.r < 0.1 && fragColor.g > 0.1 && fragColor.b > 0.1) {
-		//return vec3(0.0);
-	}
+	float exponent = exp(-(x*x) / (2.0 * sigma * sigma));
+	return coeff * exponent;
+}
 
+//blurring glowmap
+vec3 blur() {
+	
 	vec3 accumColor = vec3(0);
+	float stepX = 2.0/u_ScreenWidth;
+	float stepY = 2.0/u_ScreenHeight;
 
-	for (int i = -3; i < 3; ++i){
-		for (int j = -3; j < 3; ++j){
+	for (int i = -4; i < 5; ++i){
+		for (int j = -4; j < 5 ; ++j){
 			
-			vec2 offsetPos = fs_Texcoord + vec2(i, j)*0.01;
-			accumColor += sampleCol(offsetPos) * 0.01;
+			float dX = i * stepX;
+			float dY = j * stepY;
+			float blur = gaussian(dX, dY);
+			//vec3 illum = vec3(blur);
+			vec3 illum = 0.15 * blur*sampleIllum(fs_Texcoord + vec2(dX, dY));
+			accumColor += illum;
 		}
 	}
 	
 	return accumColor;
-
 }
 
 ///////////////////////////////////
@@ -125,15 +140,15 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
 
-	vec3 lightDir= normalize(light - position);
-    
-	float lightRadius = u_Light.w;
-    out_Color = vec4(0,0,0,1.0);
-  
-  	if ( u_DisplayType == DISPLAY_BLOOM) {
-		out_Color.x = 1.0;
-	}
-	
+	//calculate diffuse
+	vec3 lightDir = normalize(light - position);
+	out_Color.xyz = u_LightIl * max(0.0, dot(lightDir, normal)) * color;
+
+	//calculate glow
+	vec3 glowCol = blur() * color;
+	//out_Color.xyz = lightDir;
+	out_Color.xyz = min(out_Color.xyz + glowCol, 1.0);
+
     return;
 }
 

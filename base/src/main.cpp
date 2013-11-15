@@ -75,11 +75,13 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size()*sizeof(GLushort), 
             &mesh.indices[0], GL_STATIC_DRAW);
     out.num_indices = mesh.indices.size();
-    //Unplug Vertex Array
+	    //Unplug Vertex Array
     glBindVertexArray(0);
 
     out.texname = mesh.texname;
     out.color = mesh.color;
+	out.illum = mesh.illum;
+
     return out;
 }
 
@@ -162,7 +164,15 @@ void initMesh() {
                               shape.material.diffuse[1],
                               shape.material.diffuse[2]);
             mesh.texname = shape.material.diffuse_texname;
-            draw_meshes.push_back(uploadMesh(mesh));
+			
+			//for bloom, reading in Ka
+			mesh.illum = vec3(shape.material.ambient[0],
+							  shape.material.ambient[1],
+							  shape.material.ambient[2]);
+			mesh.illum = clamp(mesh.illum, 0.0, 1.0);
+			//cout<<mesh.illum[0]<<" "<<mesh.illum[1]<<" "<<mesh.illum[2]<<endl;
+			
+			draw_meshes.push_back(uploadMesh(mesh));
             f=f+process;
         }
     }
@@ -183,7 +193,6 @@ void initQuad() {
     //Different vertex array per mesh.
     glGenVertexArrays(1, &(device_quad.vertex_array));
     glBindVertexArray(device_quad.vertex_array);
-
 
     //Allocate vbos for data
     glGenBuffers(1,&(device_quad.vbo_data));
@@ -212,10 +221,11 @@ GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint postTexture = 0;
-GLuint FBO[2] = {0, 0};
 
 //add bloom g buffer
 GLuint bloomTexture = 0;
+
+GLuint FBO[2] = {0, 0};
 
 GLuint pass_prog;
 GLuint point_prog;
@@ -368,6 +378,7 @@ void initFBO(int w, int h) {
     glGenTextures(1, &normalTexture);
     glGenTextures(1, &positionTexture);
     glGenTextures(1, &colorTexture);
+	glGenTextures(1, &bloomTexture);
 
     //Set up depth FBO
     glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -414,7 +425,18 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
+	//set up illum in FBO
+	glBindTexture(GL_TEXTURE_2D, bloomTexture);
+	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+    // create a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
 
@@ -423,11 +445,14 @@ void initFBO(int w, int h) {
     GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-    GLenum draws [3];
+	GLint illum_loc = glGetFragDataLocation(pass_prog, "out_Illum");
+
+    GLenum draws [4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+	draws[illum_loc] = GL_COLOR_ATTACHMENT3;
+    glDrawBuffers(4, draws);
 
     // attach the texture to FBO depth attachment point
     int test = GL_COLOR_ATTACHMENT0;
@@ -439,6 +464,9 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
     glBindTexture(GL_TEXTURE_2D, colorTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
+	
+	glBindTexture(GL_TEXTURE_2D, bloomTexture);
+	glFramebufferTexture(GL_FRAMEBUFFER, draws[illum_loc], bloomTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -512,7 +540,6 @@ void setTextures() {
 }
 
 
-
 Camera cam(vec3(2.5, 5, 2),
         normalize(vec3(0,-1,0)),
         normalize(vec3(0,0,1)));
@@ -579,7 +606,6 @@ void draw_mesh() {
 
     glUseProgram(pass_prog);
 
-
     mat4 model = get_mesh_world();
     mat4 view = cam.get_view();
     mat4 persp = perspective(45.0f,(float)width/(float)height,NEARP,FARP);
@@ -593,6 +619,9 @@ void draw_mesh() {
 
     for(int i=0; i<draw_meshes.size(); i++){
         glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
+
+		glUniform3fv(glGetUniformLocation(pass_prog, "u_Illum"), 1, &(draw_meshes[i].illum[0]));
+
         glBindVertexArray(draw_meshes[i].vertex_array);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
         glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
@@ -644,6 +673,10 @@ void setup_quad(GLuint prog)
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
+
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D, bloomTexture);
+	glUniform1i(glGetUniformLocation(prog, "u_Bloomtex"), 6);
 }
 
 void draw_quad() {
@@ -717,7 +750,7 @@ void updateDisplayText(char * disp) {
 			sprintf(disp, "Displaying Bloom");
 			break;
 		case(DISPLAY_TOON):
-			sprintf(disp, "Displaying Bloom");
+			sprintf(disp, "Displaying Toon");
 			break;
     }
 }
@@ -763,7 +796,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-	if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_BLOOM)
+	if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL) 
     {
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -782,9 +815,7 @@ void display(void)
 		glm::vec3 lightPos (0.0, 0.0, 0.0);	
 
 		for (int i = 0; i < 16; ++i) {
-			
 			for (int j = 0; j < 16; ++j) {
-				
 				for (int k = 0; k < 16; ++k) {
 					draw_light(lightPos, 0.5, sc, vp, NEARP);
 					lightPos.z += 0.85f; 
@@ -811,9 +842,22 @@ void display(void)
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
         draw_quad();
 
-		//add bloom shader
     }
-	else if (display_type == DISPLAY_TOON){
+	else if (display_type == DISPLAY_BLOOM) {
+		
+		//pass in light info
+		vec4 light(2.5, -2.5, 5.0, 1.0);
+        light = cam.get_view() * light; 
+		float strength = 0.7;
+		
+		//add bloom shader
+		setup_quad(bloom_prog);
+		glUniform4fv(glGetUniformLocation(bloom_prog, "u_Light"), 1, &(light[0]));
+		glUniform1f(glGetUniformLocation(bloom_prog, "u_LightIl"), strength);
+		draw_quad();
+		
+	}
+	else if (display_type == DISPLAY_TOON) {
 		setup_quad(toon_prog);
 		
 		vec4 light(2.5, -1.5, 5.0, 1.0);
@@ -822,7 +866,6 @@ void display(void)
 		//send light position to shader
 		glUniform4fv(glGetUniformLocation(toon_prog, "u_Light"), 1, &(light[0]));
 		draw_quad();
-
 	}
     else
     {

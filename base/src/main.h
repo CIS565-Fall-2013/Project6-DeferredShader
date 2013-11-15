@@ -37,6 +37,7 @@ typedef struct {
 	std::vector<unsigned short> indices;
     std::string texname;
     glm::vec3 color;
+	glm::vec3 illum;
 } mesh_t;
 
 typedef struct {
@@ -48,6 +49,7 @@ typedef struct {
 	unsigned int vbo_texcoords;
     glm::vec3 color;
     std::string texname;
+	glm::vec3 illum; //ka from material file
 } device_mesh_t;
 
 typedef struct {
