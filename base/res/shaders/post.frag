@@ -11,6 +11,7 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 #define	DISPLAY_TOON 6
+#define	DISPLAY_BLOOM 7
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -135,6 +136,10 @@ void main() {
 		//out_Color = vec4(multiplier,multiplier,multiplier,1.0);
 		out_Color = vec4(multiplier,multiplier,multiplier,1.0) *  vec4(color, 1.0);
 		
+	}
+	else if (u_DisplayType == DISPLAY_BLOOM)
+	{
+	
 	}
 	else 
 	{

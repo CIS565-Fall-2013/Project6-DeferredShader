@@ -666,10 +666,10 @@ void draw_quad() {
 void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     float radius = strength;
     vec4 light = cam.get_view() * vec4(pos, 1.0); 
-    if( light.z > NEARP)
-    {
-        return;
-    }
+    //if( light.z > NEARP)
+    //{
+    //    return;
+    //}
     light.w = radius;
     glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
     glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
@@ -720,6 +720,9 @@ void updateDisplayText(char * disp) {
             break;
 		case(DISPLAY_TOON):
 			sprintf(disp, "Displaying Toon Shading");
+			break;
+		case(DISPLAY_BLOOM):
+			sprintf(disp, "Displaying Bloom Effect");
 			break;
     }
 }
@@ -927,6 +930,9 @@ void keyboard(unsigned char key, int x, int y) {
             break;
 		case('6'):
 			display_type = DISPLAY_TOON;
+			break;
+		case('7'):
+			display_type = DISPLAY_BLOOM;
 			break;
         case('0'):
             display_type = DISPLAY_TOTAL;

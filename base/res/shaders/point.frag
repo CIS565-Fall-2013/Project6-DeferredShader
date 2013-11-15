@@ -143,7 +143,7 @@ void main() {
 		else
 		{
 			float diffuse = max(0.0, dot(normalize(light-position),normal));
-		    out_Color = vec4(diffuse*color,1.0f);
+			out_Color = vec4(diffuse*color,1.0f);
 		}
     }
     return;
