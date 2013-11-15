@@ -24,6 +24,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Bloomtex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -105,7 +106,7 @@ void main() {
     float lightRadius = u_Light.w;
     vec3 light_dir = normalize(position - light);
     float light_dist = distance(position, light);
-    out_Color = vec4(0.0, 0.0, 0.0, 1.0);
+    //out_Color = vec4(0.0, 0.0, 0.0, 1.0);
 
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
@@ -118,13 +119,30 @@ void main() {
         //Put some code here to actually compute the light from the point light, using light attenuation formula from http://imdoingitwrong.wordpress.com/2011/01/31/light-attenuation/
         // Attenuation
         float d     = max(light_dist - lightRadius, 0.0);
-        float ratio = d / lightRadius;
+        float ratio = light_dist / lightRadius;
         float denom = ratio + 1.0;
-        float attenuation = 1 / (denom * denom) ;
+        float attenuation = 1.7 / (denom * denom) * max(1.0 - d, 0.0);
 
         // Diffuse with attenuation
         float diffuse = max(dot(normal, -light_dir), 0.0);
-        out_Color     = vec4(diffuse * color * attenuation, 1.0);
+        out_Color = vec4(color * diffuse * attenuation, 1.0);
+
+        if (u_DisplayType == DISPLAY_TOON) {
+            if (light_dist < lightRadius) {
+                if (diffuse >= 0.95)
+                    diffuse = 1.0;
+                else if (diffuse >= 0.9)
+                    diffuse = 0.8;
+                else if (diffuse >= 0.75)
+                    diffuse = 0.75;
+                else if (diffuse >= 0.5)
+                    diffuse = 0.5;
+                else
+                    diffuse = 0.3;
+            out_Color = vec4(color * diffuse, 1.0);
+            } else
+            out_Color = vec4(0.0, 0.0, 0.0, 1.0);
+        }
     }
     return;
 }

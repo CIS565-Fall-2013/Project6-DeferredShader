@@ -461,7 +461,7 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
+    // create a framebuffer object
     glGenFramebuffers(1, &FBO[1]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
 
@@ -775,7 +775,14 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(5.2, -2.5, 3.0), 8.5, sc, vp, NEARP);
+//        draw_light(vec3(2.5, -2.5, 5.0), 0.5, sc, vp, NEARP);
+        for (float x = 0.2; x <= 7; x += 1) {
+            for(float y = 0.0; y <= 7; y += 1) {
+                for(float z = 0.2; z <= 7; z += 1) {
+                    draw_light(vec3(x, -y, z), 0.5, sc, vp, NEARP);
+                }
+            }
+        }
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
