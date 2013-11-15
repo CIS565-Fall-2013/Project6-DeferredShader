@@ -60,7 +60,7 @@ Additional G-Buffer: Luminance Based Specularity
 For my implementation of an additional G-Buffer, I stored the luminance of each
 fragment computed as:  
 
-	L =  = 0.2126*color.r + 0.7152*color.g + 0.0722*color.b
+	L = 0.2126*color.r + 0.7152*color.g + 0.0722*color.b
 	
 Here is a visualization of the luminance on the cornell box scene:
 
@@ -100,7 +100,7 @@ rendered with no occlusion, while the ones on the right include HBAO.
 ![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/occlusion_demo.png)
 
 -------------------------------------------------------------------------------
-Who Knows What This Will Be
+Light Bloom
 -------------------------------------------------------------------------------
 
 ![Image](https://raw.github.com/rarietta/Project6-DeferredShader/master/readme_imgs/...png)
@@ -109,11 +109,14 @@ Who Knows What This Will Be
 PART 3: Performance Analysis
 ====================================================================================
 
-
+There is no performance analysis happening here.
 
 ------------------------------------------------------------------------------------
 ACKNOWLEDGMENTS:
 ====================================================================================
+
+As noted above, Horizon Based Ambient Occlusion was adapted from an NVidia
+presentation found here: http://www.nvidia.com/object/siggraph-2008-HBAO.html
 
 This project was built on a basic framework provided by Patrick Cozzi and Liam
 Boone for CIS 565 at The University of Pennsylvania, Fall 2013.
