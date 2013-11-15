@@ -235,7 +235,7 @@ void initMesh() {
 			it = shape.material.unknown_parameter.find("map_d");
 			if(it != shape.material.unknown_parameter.end()){
 				string mapPath = it->second;
-				mesh.mask_texid = loadTexture(mapPath, GL_NEAREST);
+				mesh.mask_texid = loadTexture(mapPath, GL_LINEAR);
 			}else{
 				mesh.mask_texid = 0;
 			}
@@ -647,6 +647,8 @@ mat4x4 get_mesh_world() {
 }
 
 
+enum Display display_type = DISPLAY_TOTAL;
+enum Passthrough passthrough_type = NO_CHANGE;
 float FARP;
 float NEARP;
 void draw_mesh() {
@@ -666,6 +668,7 @@ void draw_mesh() {
 	glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_View"),1,GL_FALSE,&view[0][0]);
 	glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_Persp"),1,GL_FALSE,&persp[0][0]);
 	glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_InvTrans") ,1,GL_FALSE,&inverse_transposed[0][0]);
+	glUniform1i(glGetUniformLocation(pass_prog,"u_PassthroughMode"), passthrough_type);
 
 	for(int i=0; i<draw_meshes.size(); i++){
 		glUniform3fv(glGetUniformLocation(pass_prog, "u_Ka"), 1, &(draw_meshes[i].Ka[0]));
@@ -705,8 +708,6 @@ void draw_mesh() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 }
 
-
-enum Display display_type = DISPLAY_TOTAL;
 
 void setup_quad(GLuint prog)
 {
@@ -1033,10 +1034,30 @@ void keyboard(unsigned char key, int x, int y) {
 	case('5'):
 		cout << "Display Lights Debug Mode" << endl;
 		display_type = DISPLAY_LIGHTS;
-		break;
+		break;	
 	case('0'):
 		cout << "Full Rendering Mode" << endl;
 		display_type = DISPLAY_TOTAL;
+		break;
+	case('t'):
+		cout << "Passthrough Texture Coordinates as Diffuse Color" << endl;
+		passthrough_type = TEXCOORDS_AS_DIFFUSE;
+		break;
+	case('c'):
+		cout << "Passthrough Diffuse Color as Diffuse Color" << endl;
+		passthrough_type = NO_CHANGE;
+		break;
+	case('h'):
+		cout << "Has Texture Overlay" << endl;
+		passthrough_type = HASTEX_OVERLAY;
+		break;
+	case('b'):
+		cout << "Bump Texture as Diffuse Color" << endl;
+		passthrough_type = BUMP_AS_DIFFUSE;
+		break;
+	case('m'):
+		cout << "Mask Texture as Diffuse Color" << endl;
+		passthrough_type = MASK_OVERLAY;
 		break;
 	case('x'):
 		cout << "Turning Scissor Test ";

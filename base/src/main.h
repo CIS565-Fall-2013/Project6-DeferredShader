@@ -103,6 +103,15 @@ enum Display {
 	DISPLAY_LIGHTS = 5
 };
 
+
+enum Passthrough {
+	NO_CHANGE = 0,
+	HASTEX_OVERLAY = 1,
+	TEXCOORDS_AS_DIFFUSE = 2,
+	BUMP_AS_DIFFUSE = 3,
+	MASK_OVERLAY = 4
+};
+
 char* loadFile(char *fname, GLint &fSize);
 void printShaderInfoLog(GLint shader);
 void printLinkInfoLog(GLint prog);
