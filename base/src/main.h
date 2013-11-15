@@ -87,7 +87,8 @@ enum Display {
     DISPLAY_TOTAL = 4,
     DISPLAY_LIGHTS = 5,
 	DISPLAY_BLOOM = 6,
-	DISPLAY_SIL = 7
+	DISPLAY_SIL = 7,
+	DISPLAY_TEXCOORD = 8
 };
 
 char* loadFile(char *fname, GLint &fSize);

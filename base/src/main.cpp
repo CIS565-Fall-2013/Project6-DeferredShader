@@ -222,6 +222,7 @@ GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint postTexture = 0;
 //
+//GLuint texcoordTexture = 0;
 GLuint bloomMap = 0;
 GLuint verblurTexture = 0;
 GLuint horblurTexture = 0;
@@ -347,6 +348,7 @@ void freeFBO() {
 	glDeleteTextures(1,&blurTexture);
 	glDeleteTextures(1,&verblurTexture);
 	glDeleteTextures(1,&horblurTexture);
+	//glDeleteTextures(1,&texcoordTexture);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
 	//
@@ -415,13 +417,23 @@ void initNoise() {
 void initFBO(int w, int h) {
     GLenum FBOstatus;
 
-    glActiveTexture(GL_TEXTURE14);
+    glActiveTexture(GL_TEXTURE15);
 
     glGenTextures(1, &depthTexture);
     glGenTextures(1, &normalTexture);
     glGenTextures(1, &positionTexture);
     glGenTextures(1, &colorTexture);
 	glGenTextures(1, &bloomMap);
+	//glGenTextures(1,&texcoordTexture);
+
+	//glBindTexture(GL_TEXTURE_2D,texcoordTexture);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	//glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
     //Set up depth FBO
     glBindTexture(GL_TEXTURE_2D, depthTexture);
 
@@ -488,11 +500,13 @@ void initFBO(int w, int h) {
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
 	GLint bloom_loc = glGetFragDataLocation(pass_prog,"out_BloomMap");
+	//GLint texcoord_loc = glGetFragDataLocation(pass_prog,"out_texCoord");
     GLenum draws [4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
 	draws[bloom_loc] = GL_COLOR_ATTACHMENT3;
+	//draws[texcoord_loc] = GL_COLOR_ATTACHMENT4;
     glDrawBuffers(4, draws);
 
     // attach the texture to FBO depth attachment point
@@ -507,6 +521,8 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
 	glBindTexture(GL_TEXTURE_2D,bloomMap);
 	glFramebufferTexture(GL_FRAMEBUFFER, draws[bloom_loc], bloomMap, 0);
+	/*glBindTexture(GL_TEXTURE_2D,texcoordTexture);
+	glFramebufferTexture(GL_FRAMEBUFFER, draws[texcoord_loc], texcoordTexture, 0);*/
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -516,7 +532,7 @@ void initFBO(int w, int h) {
     }
 
 	/////////////
-	glActiveTexture(GL_TEXTURE14);
+	glActiveTexture(GL_TEXTURE15);
 	glGenTextures(1,&horblurTexture);
 	glGenFramebuffers(1,&FBO[1]);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
@@ -542,7 +558,7 @@ void initFBO(int w, int h) {
 		checkFramebufferStatus(FBOstatus);
 	}
 	/////////////////////////////////////////////////////////////////////////////
-	glActiveTexture(GL_TEXTURE14);
+	glActiveTexture(GL_TEXTURE15);
 	glGenTextures(1,&blurTexture);
 	glGenTextures(1,&verblurTexture);
 
@@ -583,7 +599,7 @@ void initFBO(int w, int h) {
 	}
 	/////////////////////////////////////////////////////////////////////////////
     //Post Processing buffer!
-    glActiveTexture(GL_TEXTURE14);
+    glActiveTexture(GL_TEXTURE15);
 
     glGenTextures(1, &postTexture);
 
@@ -786,7 +802,9 @@ void setup_quad(GLuint prog)
 	glBindTexture(GL_TEXTURE_2D,bloomMap);
 	glUniform1i(glGetUniformLocation(prog, "u_Bloomtex"),6);
 
-
+	//glActiveTexture(GL_TEXTURE10);
+	//glBindTexture(GL_TEXTURE_2D,texcoordTexture);
+	//glUniform1i(glGetUniformLocation(prog, "u_Texcoordtex"),10);
 }
 
 void draw_quad() {
@@ -858,6 +876,9 @@ void updateDisplayText(char * disp) {
 		case(DISPLAY_BLOOM):
 			sprintf(disp,"Displaying Bloom");
 			break;
+		case(DISPLAY_SIL):
+			sprintf(disp,"Displaying Toon Shading");
+			break;
     }
 }
 
@@ -918,10 +939,13 @@ void display(void)
                        0.0, 0.5, 0.0, 0.0,
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
-
+		float radius = 2;
 		draw_light(vec3(3.0, -3.5, 5.0), 2.50, sc, vp, NEARP,vec3(1.0,1.0,1.0));
-        draw_light(vec3(5.5, -2.5, 1.0),0.5, sc, vp, NEARP,vec3(1.0,1.0,0.0));
-		draw_light(vec3(5.5, -2.5, 2.0),3.5, sc, vp, NEARP,vec3(1.0,1.0,0.0));		
+		draw_light(vec3(5.5, -2.5, 1.0),radius, sc, vp, NEARP,vec3(1.0,1.0,0.0));
+		draw_light(vec3(5.5, -2.5, 3.5),radius, sc, vp, NEARP,vec3(1.0,1.0,0.0));
+		/*draw_light(vec3(5.5, -2.5, 2.0),radius, sc, vp, NEARP,vec3(1.0,1.0,0.0));		
+		draw_light(vec3(5.5, -2.5, 2.5),radius, sc, vp, NEARP,vec3(1.0,1.0,0.0));	
+		draw_light(vec3(5.5, -2.5, 3.0),radius, sc, vp, NEARP,vec3(1.0,1.0,0.0));*/
 
         glDisable(GL_SCISSOR_TEST);
 
@@ -1153,6 +1177,9 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		case('7'):
 			display_type = DISPLAY_SIL;
+			break;
+		case('8'):
+			display_type = DISPLAY_TEXCOORD;
 			break;
         case('0'):
             display_type = DISPLAY_TOTAL;

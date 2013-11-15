@@ -7,11 +7,13 @@ uniform float u_isBloom;
 
 in vec3 fs_Normal;
 in vec4 fs_Position;
+in vec2 fs_Texcoord;
 
 out vec4 out_Normal;
 out vec4 out_Position;
 out vec4 out_Color;
 out vec4 out_BloomMap;
+out vec4 out_texCoord;
 
 void main(void)
 {
@@ -24,4 +26,5 @@ void main(void)
 	}
 	else
 		out_BloomMap = vec4(0.0,0.0,0.0,1.0);
+	out_texCoord = vec4(fs_Texcoord.xy,0.0,1.0);
 }
