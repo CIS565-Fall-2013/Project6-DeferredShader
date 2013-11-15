@@ -37,7 +37,8 @@ uniform float u_LightIl;
 
 in vec2 fs_Texcoord;
 
-out vec4 out_Color;
+out vec4 out_Color; // diffuse only
+out vec4 out_Spec;
 ///////////////////////////////////////
 
 

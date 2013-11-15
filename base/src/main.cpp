@@ -210,9 +210,9 @@ GLuint depthTexture = 0;
 GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
+GLuint specTexture = 0;
 GLuint postTexture = 0;
 GLuint FBO[2] = {0, 0};
-
 
 GLuint pass_prog;
 GLuint point_prog;
@@ -247,7 +247,7 @@ void initShader() {
 
     glBindAttribLocation(pass_prog, mesh_attributes::POSITION, "Position");
     glBindAttribLocation(pass_prog, mesh_attributes::NORMAL, "Normal");
-    glBindAttribLocation(pass_prog, mesh_attributes::TEXCOORD, "Texcoord");
+    //glBindAttribLocation(pass_prog, mesh_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(pass_prog,shaders);
 
@@ -420,6 +420,7 @@ void initFBO(int w, int h) {
     GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
+	
     GLenum draws [3];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
@@ -446,13 +447,25 @@ void initFBO(int w, int h) {
         checkFramebufferStatus(FBOstatus);
     }
 
-    //Post Processing buffer!
+    //Post Processing buffer! These are input textures to post.frag. Values are filled by the previous stage in the pipeline
     glActiveTexture(GL_TEXTURE9);
 
     glGenTextures(1, &postTexture);
+	glGenTextures(1, &specTexture);
 
     //Set up post FBO
     glBindTexture(GL_TEXTURE_2D, postTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+	//Set up spec FBO
+	glBindTexture(GL_TEXTURE_2D, specTexture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -468,16 +481,21 @@ void initFBO(int w, int h) {
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
 	// LOOK: For FBO[1], the output texture is being set at ambient_prog's out_Color
-    glReadBuffer(GL_BACK);
+    //glReadBuffer(GL_BACK);
+	glReadBuffer(GL_NONE);
     color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
-    GLenum draw[1];
+	GLint spec_loc = glGetFragDataLocation(ambient_prog, "out_Spec");
+    GLenum draw[2];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
+	//draw[spec_loc] = GL_COLOR_ATTACHMENT1;
     glDrawBuffers(1, draw);
 
-    // attach the texture to FBO depth attachment point
+    // attach the texture to FBO color attachment point
     test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, specTexture);
+	glFramebufferTexture(GL_FRAMEBUFFER, draw[spec_loc], specTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
