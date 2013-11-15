@@ -1,49 +1,23 @@
 -------------------------------------------------------------------------------
 CIS565: Project 6: Deferred Shader
 -------------------------------------------------------------------------------
-Fall 2013
--------------------------------------------------------------------------------
-Due Friday 11/15/2013
+
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
-NOTE:
--------------------------------------------------------------------------------
-This project requires any graphics card with support for a modern OpenGL 
-pipeline. Any AMD, NVIDIA, or Intel card from the past few years should work 
-fine, and every machine in the SIG Lab and Moore 100 is capable of running 
-this project.
 
--------------------------------------------------------------------------------
-INTRODUCTION:
--------------------------------------------------------------------------------
-In this project, you will get introduced to the basics of deferred shading. You will write GLSL and OpenGL code to perform various tasks in a deferred lighting pipeline such as creating and writing to a G-Buffer.
+* Point Lights
 
--------------------------------------------------------------------------------
-CONTENTS:
--------------------------------------------------------------------------------
-The Project6 root directory contains the following subdirectories:
-	
-* base/
-  * PROJ_WIN/ contains the vs2010 project files
-  * PROJ_NIX/ contains makefile for building (tested on ubuntu 12.04 LTS)
-  * res/ contains resources including shader source and obj files
-  * src/ contains the c++ code for the project along with SOIL and tiny_obj_loader
-* shared32/ contains freeglut, glm, and glew.
+* Bloom 
 
--------------------------------------------------------------------------------
-REQUIREMENTS:
--------------------------------------------------------------------------------
+* Toon shading
 
-In this project, you are given code for:
-* Loading .obj files
-* Rendering to a minimal G buffer:
-  * Depth
-  * Normal
-  * Color
-  * Eye space position
-* Rendering simple ambient and directional lighting to texture
-* Example post process shader to add a vignette
+To implement toon shading, I used a Sobel filter for basic edge detection. To 
+create cel shading effect, I simply find the dot product between the normal and the
+vector from the position to the light, and shade it based on 
+
+* Screen Space Ambient Occlusion
+
 
 You are required to implement:
 * Either of the following effects
@@ -95,16 +69,8 @@ performance differences.
 -------------------------------------------------------------------------------
 THIRD PARTY CODE POLICY
 -------------------------------------------------------------------------------
-* Use of any third-party code must be approved by asking on the Google groups.  
-  If it is approved, all students are welcome to use it.  Generally, we approve 
-  use of third-party code that is not a core part of the project.  For example, 
-  for the ray tracer, we would approve using a third-party library for loading 
-  models, but would not approve copying and pasting a CUDA function for doing 
-  refraction.
-* Third-party code must be credited in README.md.
-* Using third-party code without its approval, including using another 
-  student's code, is an academic integrity violation, and will result in you 
-  receiving an F for the semester.
+* For screen space ambient occlusion, I used the base code from project 5 of the
+CIS565 fall 2012 class. 
 
 -------------------------------------------------------------------------------
 SELF-GRADING

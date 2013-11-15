@@ -814,9 +814,9 @@ void display(void)
 		//set up more lights
 		glm::vec3 lightPos (0.0, 0.0, 0.0);	
 
-		for (int i = 0; i < 16; ++i) {
-			for (int j = 0; j < 16; ++j) {
-				for (int k = 0; k < 16; ++k) {
+		for (int i = 0; i < 8; ++i) {
+			for (int j = 0; j < 8; ++j) {
+				for (int k = 0; k < 8; ++k) {
 					draw_light(lightPos, 0.5, sc, vp, NEARP);
 					lightPos.z += 0.85f; 
 				}

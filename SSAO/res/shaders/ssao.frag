@@ -114,9 +114,9 @@ float occlusionWithRegularSamples(vec2 texcoord, vec3 position, vec3 normal) {
 	float occlusion = 0.0;
 
 	//sample on 4*4 grid
-	for (int i = -2; i < 2; ++i) {
-		for (int j = -2; j < 2; ++j) {
-			vec2 offset = REGULAR_SAMPLE_STEP * vec2(i, j) + texcoord;
+	for (int i = -1; i < 3; ++i) {
+		for (int j = -1; j < 3; ++j) {
+			vec2 offset = 0.5 * REGULAR_SAMPLE_STEP * vec2(i, j) + texcoord;
 			//get the occlusion on fragment from this sample
 			occlusion += gatherOcclusion(normal, position, sampleNrm(offset), samplePos(offset));
 		}
@@ -146,7 +146,7 @@ vec2 poissonDisk[NUM_SS_SAMPLES] = vec2[](
 	vec2( 0.14383161, -0.14100790)
 );
 
-const float SS_RADIUS = 0.02f;
+const float SS_RADIUS = 0.01f;
 float occlusionWithPoissonSSSamples(vec2 texcoord, vec3 position, vec3 normal) {
 
 	float occlusion = 0.0;
@@ -190,7 +190,7 @@ vec3 poissonSphere[NUM_WS_SAMPLES] = vec3[](
 
 
 
-const float SPHERE_RADIUS = 0.3f;
+const float SPHERE_RADIUS = 0.2f;
 float occlusionWithWorldSpaceSamples(vec2 texcoord, vec3 position, vec3 normal) {
 
 	float occlusion = 0.0;
@@ -200,24 +200,26 @@ float occlusionWithWorldSpaceSamples(vec2 texcoord, vec3 position, vec3 normal) 
 
 	for (int i = 0; i < NUM_WS_SAMPLES; ++i) {
 		vec3 point = SPHERE_RADIUS * poissonSphere[i];
-
-		 //point = reflect( poissonSphere[i]*0.3, reflectnormal );
-   //             point = point * sign( dot( point, normal ) ) + position;
-   //             vec4 screen = u_Persp * vec4( point, 1.0 );
-   //             screen = screen / screen.w * 0.5 + 0.5;
-   //             vec2 pos = screen.xy;
-   //     }
-
 		//reflect point across plane defined by normal
 
 		//reflect point across plane of normal
 		point = reflect(point, randNorm);
+		
+		//constrain points in hemisphere
+		if (dot(normal, normalize(point)) < 0)
+			point *= -1.0;
+
 		point += position;
-		//transform point to screen space
+		//transform point to clipping space
 		vec4 screenCoord = u_Persp * vec4(point, 1.0);
 		screenCoord.xyz /= screenCoord.w;
-		screenCoord.xyz = screenCoord.xyz*0.5 + vec3(0.5);
-		
+
+		//transform to screen space
+		screenCoord.x = screenCoord.x*0.5 + (0.5);
+		screenCoord.y = screenCoord.y*0.5 + (0.5);
+		//screenCoord.x = (screenCoord.x+1.0) * (u_ScreenWidth/2.0);
+		//screenCoord.y = (-screenCoord.y+1.0) * (u_ScreenHeight/2.0);
+
 		//find occlusion
 		vec2 offset = screenCoord.xy;
 		occlusion += gatherOcclusion( normal, position, sampleNrm(offset), samplePos(offset));

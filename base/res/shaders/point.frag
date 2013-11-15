@@ -121,8 +121,7 @@ void main() {
     {
         //Put some code here to actually compute the light from the point light
 		float diffuse = max(0.0, dot(lightDir, normalize(normal)));
-		
-		out_Color.xyz = dist* u_LightIl* diffuse* color;
+		out_Color.xyz = dist* u_LightIl* diffuse* color + 0.05*dist*vec3(1.0);
     }
     return;
 }
