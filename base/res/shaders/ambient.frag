@@ -108,6 +108,7 @@ void main() {
     } else {
         float ambient = u_LightIl;
         float diffuse = max(0.0, dot(normalize(light),normal));
+        //based on tutorial at http://www.lighthouse3d.com/tutorials/glsl-tutorial/toon-shading-version-iii/
         out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
     }	
     return;
