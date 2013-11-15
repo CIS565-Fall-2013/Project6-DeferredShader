@@ -769,7 +769,20 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+		//draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+		for (int i = 0; i < 7; ++i)
+		{
+			float lightX = i + 0.15;
+			for (int j = 0; j < 6; ++j)
+			{
+				float lightY = j - 5.2;
+				for (int k = 0; k < 6; ++k)
+				{
+					float lightZ = k + 0.1;
+					draw_light(vec3(lightX, lightY, lightZ), 0.50, sc, vp, NEARP);
+				}
+			}
+		}
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
