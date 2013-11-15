@@ -24,7 +24,6 @@ uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
-uniform sampler2D u_Glowtex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -75,11 +74,6 @@ vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
 }
 
-//Helper function to automicatlly sample and unpack positions
-vec3 sampleGlow(vec2 texcoords) {
-    return texture(u_Glowtex,texcoords).xyz;
-}
-
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
 vec3 getRandomNormal(vec2 texcoords) {
@@ -109,17 +103,67 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
-	float glow = sampleGlow(fs_Texcoord).r;
 
+	// ambient light data
     vec3 light = u_Light.xyz;
-    float lightRadius = u_Light.w;
-	out_Color = vec4(0, 0, 0, 0);
-    if( u_DisplayType == DISPLAY_LIGHTS )
-    {
-		out_Color += vec4(0, 0, 0.4, 0);
-    }
-	else if (u_DisplayType == DISPLAY_TOON )
-	{
+    float strength = u_Light.w;
+
+	// computer SSAO (screen space ambient occlusion)
+	// float occl = sampleBlurredDepth(fs_Texcoord);
+
+	vec2 sz = textureSize(u_Positiontex, 0);
+	
+	float hup    = 0.0;	float tup    = 0.0;
+	float hdown  = 0.0;	float tdown  = 0.0;
+	float hleft  = 0.0;	float tleft  = 0.0;
+	float hright = 0.0;	float tright = 0.0;
+
+	for (float i = 1.0; i <= 6.0; i += 1.0) {
+
+		// neighbor positions
+		vec3 posUp   = samplePos(vec2(fs_Texcoord.s, fs_Texcoord.t + (1.0 / sz.y)));
+		vec3 posDown = samplePos(vec2(fs_Texcoord.s, fs_Texcoord.t - (1.0 / sz.y)));
+		vec3 posRight = samplePos(vec2(fs_Texcoord.s + (1.0 / sz.y), fs_Texcoord.t));
+		vec3 posLeft = samplePos(vec2(fs_Texcoord.s - (1.0 / sz.y), fs_Texcoord.t));
+	
+		// up occlusion
+		vec3 Hup = posUp - position;
+		vec3 Tup = cross(normal, vec3(0,1,0));
+		if (Hup.z > 0.01) {
+			hup += atan(Hup.z / length(Hup.xy)) / 6.0;
+			tup += atan(Tup.z / length(Tup.xy)) / 6.0;
+		}
+		
+		// down occlusion
+		vec3 Hdown = posDown - position;
+		vec3 Tdown = cross(normal, vec3(0,-1,0));
+		if (Hdown.z > 0.01) {
+			hdown += atan(Hdown.z / length(Hdown.xy)) / 6.0;
+			tdown += atan(Tdown.z / length(Tdown.xy)) / 6.0;
+		}
+	
+		// right occlusion
+		vec3 Hright = posRight - position;
+		vec3 Tright = cross(normal, vec3(1,0,0));
+		if (Hright.z > 0.01) {
+			hright += atan(Hright.z / length(Hright.xy)) / 6.0;
+			tright += atan(Tright.z / length(Tright.xy)) / 6.0;
+		}
+		
+		// left occlusion
+		vec3 Hleft = posLeft - position;
+		vec3 Tleft = cross(normal, vec3(-1,0,0));
+		if (Hleft.z > 0.01) {
+			hleft += atan(Hleft.z / length(Hleft.xy)) / 6.0;
+			tleft += atan(Tleft.z / length(Tleft.xy)) / 6.0;
+		}
+	}
+
+	// ambient occlusion term
+	float occl = (sin(hup) - sin(tup)) / 4.0 + (sin(hdown) - sin(tdown)) / 4.0 + (sin(hright) - sin(tright)) / 4.0 + (sin(hleft) - sin(tleft)) / 4.0;
+	
+    if( u_DisplayType == DISPLAY_TOON ) {
+
 		ivec2 sz = textureSize(u_Normaltex,0);
 		vec3 normal_up    = sampleNrm(vec2(fs_Texcoord.x+(1.0/sz.x), fs_Texcoord.y));
 		vec3 normal_down  = sampleNrm(vec2(fs_Texcoord.x-(1.0/sz.x), fs_Texcoord.y));
@@ -133,45 +177,22 @@ void main() {
 		{
 			out_Color = vec4(vec3(0), 1.0f);
 		}
-		
+
 		else
 		{
-			vec3 dirToLight = vec3(light.xyz - position.xyz);
-			float distFromLight = length(dirToLight);
-			if (distFromLight < lightRadius)
-			{
-				float I = max(0.0, dot(normal, normalize(dirToLight)))*u_Light.w / (distFromLight / (lightRadius - distFromLight));
+			float ambient = u_LightIl;
+			float diffuse = max(0.0, dot(normalize(light),normal));
 			
-				// toon shading
-				if		(I <= 0.05) { I = 0.1; }
-				else if (I <= 0.10) { I = 0.3; }
-				else if (I <= 0.15) { I = 0.5; }
-				else if (I <= 0.20) { I = 0.7; }
-				else			    { I = 0.9; }
-
-				out_Color += vec4(I);
-				out_Color *= vec4(color, 1.0);
-			}
+			// toon shading of ambient
+			if		(diffuse <= 0.1) { diffuse = 0.2; }
+			else if (diffuse <= 0.3) { diffuse = 0.4; }
+			else if (diffuse <= 0.5) { diffuse = 0.6; }
+			else if (diffuse <= 0.7) { diffuse = 0.8; }
+			else					 { diffuse = 1.0; }
+			
+			out_Color = vec4(color*(strength*diffuse + ambient*(1.0-occl)),1.0f);
 		}
 	}
-    else
-    {
-		vec3 dirToLight = vec3(light.xyz - position.xyz);
-		float distFromLight = length(dirToLight);
-		if (distFromLight < lightRadius) {
-			float I = max(0.0, dot(normal, normalize(dirToLight)))*u_Light.w / (distFromLight / (lightRadius - distFromLight));
-			
-			float diffuse = max(0.0, dot(normalize(dirToLight),normal));
-
-			out_Color += diffuse*vec4(vec3(I), 1.0)*vec4(color, 1.0);
-			
-			if (u_DisplayType == DISPLAY_SPEC) {
-				vec3 specRefl = 2.0 * dot(normal, dirToLight) * normal - dirToLight;
-				float specular = clamp(pow(dot(-position, specRefl), glow), 0.0, 1.0);
-				out_Color += glow*glow*specular*vec4(vec3(I), 1.0)*vec4(color,1.0);
-			}			
-		} 
-    }
 	
     return;
 }
