@@ -184,7 +184,6 @@ void initQuad() {
     glGenVertexArrays(1, &(device_quad.vertex_array));
     glBindVertexArray(device_quad.vertex_array);
 
-
     //Allocate vbos for data
     glGenBuffers(1,&(device_quad.vbo_data));
     glGenBuffers(1,&(device_quad.vbo_indices));
@@ -765,7 +764,7 @@ void display(void)
     glEnable(GL_BLEND); // enable alpha value calculations
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_ONE, GL_ONE); // http://www.opengl.org/sdk/docs/man/xhtml/glBlendFunc.xml
+    glBlendFunc(GL_ONE, GL_ONE); // This sums the outputs of the http://www.opengl.org/sdk/docs/man/xhtml/glBlendFunc.xml
     glClear(GL_COLOR_BUFFER_BIT);
     if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON)
     {
@@ -824,6 +823,7 @@ void display(void)
 
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
+	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
     draw_quad();
 
     glEnable(GL_DEPTH_TEST);

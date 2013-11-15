@@ -88,6 +88,23 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+// Get toon color, given the current color and intensity of the light on the surface
+vec3 getToonColor(float intensity, vec3 color)
+{
+	vec3 toonColor = vec3(0,0,0);
+	
+	if (intensity > 0.95)
+		toonColor = color;
+	else if (intensity > 0.5)
+		toonColor = 0.6 * color;
+	else if (intensity > 0.25)
+		toonColor = 0.4 * color;
+	else
+		toonColor = 0.2 * color;
+		
+	return toonColor;
+}
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
@@ -114,16 +131,7 @@ void main() {
 	else if (u_DisplayType == DISPLAY_TOON)
 	{
 		float intensity = max(0.0, dot(normalize(toLight),normal));
-		vec3 toonColor = vec3(0,0,0);
-		if (intensity > 0.95)
-			toonColor = color;
-		else if (intensity > 0.5)
-			toonColor = 0.6 * color;
-		else if (intensity > 0.25)
-			toonColor = 0.4 * color;
-		else
-			toonColor = 0.2 * color;
-
+		vec3 toonColor = getToonColor(intensity, color);
 		out_Color = vec4(toonColor, 1.0f);
 	}
     else 
@@ -140,4 +148,3 @@ void main() {
     }
     return;
 }
-
