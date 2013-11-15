@@ -19,6 +19,23 @@ as calculating screen space ambient occlusion and rendering the scene using
 a toon shader (or "cel shader"). 
 
 ------------------------------------------------------------------------------------
+NOTES:
+====================================================================================
+
+Here are the Keyboard Controls for the program:
+
+*"0": Display Full Lit Diffuse Image  
+*"1": Display Z-Depth Buffer  
+*"2": Display Normals Buffer  
+*"3": Display Color Buffer  
+*"4": Display Camera Space Position Buffer  
+*"5": Display Lights Visualization  
+*"6": Display Ambient Occlusion Buffer  
+*"7": Display Toon Shaded Image  
+*"8": Display Full Lit Diffuse + Luminance-Based Specular Image  
+*"9": Display Image With Bloom/Glow
+ 
+------------------------------------------------------------------------------------
 PART 1: Required Features
 ====================================================================================
 
