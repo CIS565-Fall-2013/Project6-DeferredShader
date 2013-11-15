@@ -786,8 +786,20 @@ void display(void)
                        0.0, 0.5, 0.0, 0.0,
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
-
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+#if MULTI_LIGHTS == 1
+		for (float x = -4 ; x <= 4 ; x = x + 1.5)
+		{
+			for (float y = -1 ; y <= 1 ; y = y + 1.5)
+			{
+				for (float z = -5 ; z <= 2 ; z = z + 1.5)
+				{
+					draw_light(vec3(2.5 + x, -2.5 + y, 5.0 + z), 0.50, sc, vp, NEARP);
+				}
+			}
+		}
+#else
+		draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+#endif
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
