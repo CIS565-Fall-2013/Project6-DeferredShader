@@ -143,10 +143,10 @@ void main() {
 		for (float i = -sz/2; i <= sz/2; i += 1.0) {
 				int index = int(i) + sz/2;
 				accum += gaussKernel[index] 
-							 * (1.0 - sampleGlow(vec2(fs_Texcoord.s + (i/glowWidth.x), fs_Texcoord.t)))
+							 * sampleGlow(vec2(fs_Texcoord.s + (i/glowWidth.x), fs_Texcoord.t))
 							 * sampleCol(vec2(fs_Texcoord.s + (i/glowWidth.x), fs_Texcoord.t));
 				accum += gaussKernel[index] 
-							 * (1.0 - sampleGlow(vec2(fs_Texcoord.s, fs_Texcoord.t + (i/glowWidth.y))))
+							 * sampleGlow(vec2(fs_Texcoord.s, fs_Texcoord.t + (i/glowWidth.y)))
 							 * sampleCol(vec2(fs_Texcoord.s, fs_Texcoord.t + (i/glowWidth.y)));
 		}
 
