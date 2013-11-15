@@ -15,6 +15,7 @@
 #define	DISPLAY_OCCLUSION 3
 #define	DISPLAY_TOTAL 4
 
+#define M_PI 3.14159265358
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -92,21 +93,37 @@ float getRandomScalar(vec2 texcoords) {
 
 //Estimate occlusion based on a point and a sampled occluder
 //Design this function based on specified constraints
-float gatherOcclusion( vec3 pt_normal,
-	vec3 pt_position,
-	vec3 occluder_normal,
-	vec3 occluder_position) {
+float gatherOcclusion( vec3 pt_normal, vec3 pt_position, vec3 occluder_normal, vec3 occluder_position) {
 
-	return -1.0f;///IMPLEMENT THIS
+	//distance constraint
+	float dist = 1.0 / (1.0 + distance(pt_position, occluder_position));
+
+	//planarrity test, clamp between 0 and 1
+	float planar = min(1.0 - dot(pt_normal, occluder_normal), 1.0);
+
+	//overhead 
+	float overhead = dot(normalize(occluder_position - pt_position), pt_normal);
+	overhead = max(0.0, overhead);	//clamp between 0 and 1
+
+	return dist * planar * overhead;///IMPLEMENT THIS
 }
 
 const float REGULAR_SAMPLE_STEP = 0.012f;
-float occlusionWithRegularSamples(vec2 texcoord, 
-	vec3 position,
-    vec3 normal) {
-	return -1.0f; //IMPLEMENT THIS
-}
+float occlusionWithRegularSamples(vec2 texcoord, vec3 position, vec3 normal) {
 
+	float occlusion = 0.0;
+
+	//sample on 4*4 grid
+	for (int i = -2; i < 2; ++i) {
+		for (int j = -2; j < 2; ++j) {
+			vec2 offset = REGULAR_SAMPLE_STEP * vec2(i, j) + texcoord;
+			//get the occlusion on fragment from this sample
+			occlusion += gatherOcclusion(normal, position, sampleNrm(offset), samplePos(offset));
+		}
+	}
+
+	return occlusion / 16.0f; //IMPLEMENT THIS
+}
 
 //Disk of samples for the SS sampling
 #define NUM_SS_SAMPLES 16
@@ -130,10 +147,24 @@ vec2 poissonDisk[NUM_SS_SAMPLES] = vec2[](
 );
 
 const float SS_RADIUS = 0.02f;
-float occlusionWithPoissonSSSamples(vec2 texcoord, 
-	vec3 position,
-    vec3 normal) {
-	return -1.0f; //IMPLEMENT THIS
+float occlusionWithPoissonSSSamples(vec2 texcoord, vec3 position, vec3 normal) {
+
+	float occlusion = 0.0;
+	
+	for (int i = 0; i < NUM_SS_SAMPLES; ++i) {
+		//random number between 0 and 2PI
+		float rand = 2.0 * M_PI * getRandomScalar(texcoord);
+		vec2 point = SS_RADIUS * poissonDisk[i];
+
+		//roate point around origin with rand radians
+		vec2 offset;
+		offset.s = cos(rand) * point.s - sin(rand) * point.t;
+		offset.t = sin(rand) * point.s + cos(rand) * point.t; 
+		offset += texcoord;
+		occlusion += gatherOcclusion(normal, position, sampleNrm(offset), samplePos(offset));
+	}
+
+	return occlusion/float(NUM_SS_SAMPLES); //IMPLEMENT THIS
 }
 
 
@@ -160,10 +191,40 @@ vec3 poissonSphere[NUM_WS_SAMPLES] = vec3[](
 
 
 const float SPHERE_RADIUS = 0.3f;
-float occlusionWithWorldSpaceSamples(vec2 texcoord,
-	vec3 position,
-	vec3 normal) {
-	return -1.0f; //IMPLEMENT THIS
+float occlusionWithWorldSpaceSamples(vec2 texcoord, vec3 position, vec3 normal) {
+
+	float occlusion = 0.0;
+
+	//get random normal 
+	vec3 randNorm = getRandomNormal(texcoord);
+
+	for (int i = 0; i < NUM_WS_SAMPLES; ++i) {
+		vec3 point = SPHERE_RADIUS * poissonSphere[i];
+
+		 //point = reflect( poissonSphere[i]*0.3, reflectnormal );
+   //             point = point * sign( dot( point, normal ) ) + position;
+   //             vec4 screen = u_Persp * vec4( point, 1.0 );
+   //             screen = screen / screen.w * 0.5 + 0.5;
+   //             vec2 pos = screen.xy;
+   //     }
+
+		//reflect point across plane defined by normal
+
+		//reflect point across plane of normal
+		point = reflect(point, randNorm);
+		point += position;
+		//transform point to screen space
+		vec4 screenCoord = u_Persp * vec4(point, 1.0);
+		screenCoord.xyz /= screenCoord.w;
+		screenCoord.xyz = screenCoord.xyz*0.5 + vec3(0.5);
+		
+		//find occlusion
+		vec2 offset = screenCoord.xy;
+		occlusion += gatherOcclusion( normal, position, sampleNrm(offset), samplePos(offset));
+
+	}
+
+	return occlusion / float(NUM_WS_SAMPLES); //IMPLEMENT THIS
 }
 
 //////////////////////////////////////

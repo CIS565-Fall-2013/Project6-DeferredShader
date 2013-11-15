@@ -108,8 +108,8 @@ float gaussian (float x, float y) {
 vec3 blur() {
 	
 	vec3 accumColor = vec3(0);
-	float stepX = 5.0/u_ScreenWidth;
-	float stepY = 5.0/u_ScreenHeight;
+	float stepX = 3.0/u_ScreenWidth;
+	float stepY = 3.0/u_ScreenHeight;
 
 	for (int i = -3; i < 4; ++i){
 		for (int j = -3; j < 4 ; ++j){
@@ -120,7 +120,7 @@ vec3 blur() {
 			vec2 offset = fs_Texcoord + vec2(dX, dY);
 			vec3 illumCol = sampleCol(offset); 
 
-			vec3 illum = 0.2 * blur * sampleIllum(offset) * illumCol;
+			vec3 illum = 0.1 * blur * sampleIllum(offset) * illumCol;
 			accumColor += illum;
 		}
 	}
