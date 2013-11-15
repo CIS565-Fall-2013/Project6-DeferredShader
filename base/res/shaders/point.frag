@@ -115,7 +115,24 @@ void main() {
     {
 		float distLight = length (light-position);
 		float decay = max (1 - (distLight / lightRadius), 0);
-		vec3 finalColour = (color * u_LightCol * u_LightIl * clamp (dot (normalize (normal), (light-position)/distLight), 0.0, 1.0)) * decay;
+		float clampedDotPdt = clamp (dot (normalize (normal), (light-position)/distLight), 0.0, 1.0);
+
+		if (u_toonOn)
+		{
+			if (clampedDotPdt == 1.0)
+				clampedDotPdt = 1.0;
+			else if (clampedDotPdt >= 0.8)
+				clampedDotPdt = 0.8;
+			else if (clampedDotPdt >= 0.6)
+				clampedDotPdt = 0.6;
+			else if (clampedDotPdt >= 0.4)
+				clampedDotPdt = 0.4;
+			else if (clampedDotPdt >= 0.2)
+				clampedDotPdt = 0.2;
+			else
+				clampedDotPdt = 0.0;
+		}
+		vec3 finalColour = (color * u_LightCol * u_LightIl * clampedDotPdt) * decay;
 		out_Color = vec4 (finalColour, 1.0);		// Because light and normal are both in view space.
     }
     return;
