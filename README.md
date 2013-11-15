@@ -3,28 +3,46 @@ CIS565: Project 6: Deferred Shader
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
-
+Features:
 -------------------------------------------------------------------------------
 
 * Point Lights
 
+![alt text](./renders/point_lights.jpg "point lights")
+
 * Bloom 
+
+![alt text](./renders/bloom_shader.jpg "bloom")
+
+For the bloom effect, I created an additional G buffer to store the materials with 
+bloom. Materials with Ka greater than 0 are assigned a value of 1, while materials with
+a Ka of 0 and therefore doesn't glow are assigned a value of 0. I then apply a simple
+Gaussian blur to the map and do an additive blend between the base color of the material
+and the glow.
 
 * Toon shading
 
-To implement toon shading, I used a Sobel filter for basic edge detection. To 
+For toon shading, I used a Sobel filter for basic edge detection. To 
 create cel shading effect, I simply find the dot product between the normal and the
-vector from the position to the light, and shade it based on 
+vector from the position to the light, and shade it based on the angle between these
+2 vectors. 
+
+![alt text](./renders/toon_shader.jpg "toon")
+
+![alt text](./renders/toon_shader_2.jpg "toon")
 
 * Screen Space Ambient Occlusion
 
+I based my implementation off of last year's GLSL project. 
 
-You are required to implement:
-* Either of the following effects
-  * Bloom (feel free to use [GPU Gems](http://http.developer.nvidia.com/GPUGems/gpugems_ch21.html) as a rough guide)
-  * "Toon" Shading (with basic silhouetting)
-* Point light sources
-* An additional G buffer slot and some effect showing it off
+![alt text](./renders/regular_grid.jpg "grid")
+
+![alt text](./renders/poisson_disk.jpg "poisson")
+
+![alt text](./renders/no_occlusion.jpg "diffuse only")
+
+![alt text](./renders/diffuse_occlusion.jpg "diffuse with occlusion")
+
 
 **NOTE**: Implementing separable convolution will require another link in your pipeline and will count as an extra feature if you do performance analysis with a standard one-pass 2D convolution. The overhead of rendering and reading from a texture _may_ offset the extra computations for smaller 2D kernels.
 

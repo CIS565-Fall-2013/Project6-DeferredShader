@@ -33,6 +33,7 @@ uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 
 uniform vec4 u_Light;
+uniform vec3 u_CamPosition;
 
 in vec2 fs_Texcoord;
 
@@ -127,6 +128,11 @@ void main() {
 
 	//calculate magnitude of gradient, if s is high, there is an edge, else, no edge
 	float s = sqrt(dot(Dx, Dx) + dot(Dy, Dy));
+
+	//vec3 eyeDir = normalize(u_CamPosition - position);
+	
+	//if (dot(eyeDir, normal) < 0.0)
+	//	s += 0.0;
 
 	//toon shading based on normals
 	vec3 lightDir = normalize(u_Light.xyz - position);

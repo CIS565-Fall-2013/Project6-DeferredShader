@@ -108,7 +108,7 @@ float gatherOcclusion( vec3 pt_normal, vec3 pt_position, vec3 occluder_normal, v
 	return dist * planar * overhead;///IMPLEMENT THIS
 }
 
-const float REGULAR_SAMPLE_STEP = 0.012f;
+const float REGULAR_SAMPLE_STEP = 0.008f;
 float occlusionWithRegularSamples(vec2 texcoord, vec3 position, vec3 normal) {
 
 	float occlusion = 0.0;

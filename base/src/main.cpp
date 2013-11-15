@@ -812,17 +812,17 @@ void display(void)
                        0.5, 0.5, 0.0, 1.0);
 
 		//set up more lights
-		glm::vec3 lightPos (0.0, 0.0, 0.0);	
+		glm::vec3 lightPos (0.1, 0.0, 0.1);	
 
 		for (int i = 0; i < 8; ++i) {
-			for (int j = 0; j < 8; ++j) {
+			for (int j = 0; j < 12; ++j) {
 				for (int k = 0; k < 8; ++k) {
 					draw_light(lightPos, 0.5, sc, vp, NEARP);
 					lightPos.z += 0.85f; 
 				}
 
-				lightPos.z = 0.0f;
-				lightPos.y -= 0.85f;
+				lightPos.z = 0.1f;
+				lightPos.y -= 0.5f;
 			}
 
 			lightPos.y = 0.0f;
@@ -860,11 +860,17 @@ void display(void)
 	else if (display_type == DISPLAY_TOON) {
 		setup_quad(toon_prog);
 		
-		vec4 light(2.5, -1.5, 5.0, 1.0);
+		vec4 light(2.0, -0.5, 1.0, 1.0);
+		//vec4 light(2.5, -2.5, 5.0, 1.0);
 		light = cam.get_view() * light; 
 
 		//send light position to shader
 		glUniform4fv(glGetUniformLocation(toon_prog, "u_Light"), 1, &(light[0]));
+
+		//camera
+		vec3 camPos (cam.pos, cam.z);
+		glUniform4fv(glGetUniformLocation(toon_prog, "u_CamPosition"), 1, &(camPos[0]));
+
 		draw_quad();
 	}
     else

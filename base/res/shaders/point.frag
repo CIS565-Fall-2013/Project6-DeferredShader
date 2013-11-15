@@ -105,12 +105,11 @@ void main() {
     vec3 light = u_Light.xyz;
 
 	vec3 lightDir= normalize(light - position);
-    
 	float lightRadius = u_Light.w;
 
     out_Color = vec4(0,0,0,1.0);
   
-	float dist = clamp( 1.0 - length(position - light)/lightRadius, 0.0, 1.0);
+	float dist = max(0.0, lightRadius-length(position - light))/lightRadius;
 	
 	if( u_DisplayType == DISPLAY_LIGHTS )
     {
@@ -120,8 +119,8 @@ void main() {
     else
     {
         //Put some code here to actually compute the light from the point light
-		float diffuse = max(0.0, dot(lightDir, normalize(normal)));
-		out_Color.xyz = dist* u_LightIl* diffuse* color + 0.05*dist*vec3(1.0);
+		float diffuse = max(0.0, dot(lightDir, normal));
+		out_Color.xyz = dist* u_LightIl* diffuse* color ;
     }
     return;
 }
