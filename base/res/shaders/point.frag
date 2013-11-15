@@ -117,7 +117,6 @@ void main() {
         float attenuation = max(0.0,1.0 - distRatio);
         float damping_factor = 1.0;
         float diffuse = max(0.0, dot(normalize(lightVec),normal));
-        /*out_Color = vec4(color*diffuse*final_intensity, 1.0f);*/
         float final_intensity = diffuse*attenuation;
 
         vec3 toonColor;

@@ -180,7 +180,7 @@ void main() {
 
         float threshold = 0.1;
 
-        if( G > threshold ){ //we are on an edge
+        if( u_UseToon == 1 && G > threshold ){ //we are on an edge
             out_Color = vec4(1, 1, 1, 1);
         } else { //not an edge
             out_Color = final_color;
