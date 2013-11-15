@@ -161,3 +161,4 @@ $RECYCLE.BIN/
 
 # Vim stuff
 *.swp
+*.dll

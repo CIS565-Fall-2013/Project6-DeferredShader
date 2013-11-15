@@ -24,6 +24,8 @@ using namespace glm;
 const float PI = 3.14159f;
 
 int width, height;
+float inv_width, inv_height;
+bool bloomEnabled = true;
 
 device_mesh_t uploadMesh(const mesh_t & mesh) {
     device_mesh_t out;
@@ -161,7 +163,7 @@ void initMesh() {
             mesh.color = vec3(shape.material.diffuse[0],
                               shape.material.diffuse[1],
                               shape.material.diffuse[2]);
-            mesh.texname = shape.material.diffuse_texname;
+            mesh.texname = shape.material.name;//diffuse_texname;
             draw_meshes.push_back(uploadMesh(mesh));
             f=f+process;
         }
@@ -759,6 +761,10 @@ void updateTitle() {
     //check if a second has passed
     if (currenttime - timebase > 1000) 
     {
+		if (bloomEnabled)
+			strcat (disp, " Bloom ON");
+		else
+			strcat (disp, " Bloom OFF");
         sprintf(title, "CIS565 OpenGL Frame | %s FPS: %4.2f", disp, frame*1000.0/(currenttime-timebase));
         //sprintf(title, "CIS565 OpenGL Frame | %4.2f FPS", frame*1000.0/(currenttime-timebase));
         glutSetWindowTitle(title);
@@ -866,6 +872,9 @@ void display(void)
 
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
+	glUniform1f(glGetUniformLocation(post_prog, "u_InvScrHeight"), inv_height);
+    glUniform1f(glGetUniformLocation(post_prog, "u_InvScrWidth"), inv_width);
+	glUniform1i(glGetUniformLocation(post_prog, "u_BloomOn"), bloomEnabled);
     draw_quad();
 
     glEnable(GL_DEPTH_TEST);
@@ -974,6 +983,10 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case('r'):
             initShader();
+			break;
+		case 'b':
+		case 'B':
+			bloomEnabled = !bloomEnabled;
             break;
     }
 
@@ -1016,8 +1029,8 @@ int main (int argc, char* argv[])
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-    width = 1280;
-    height = 720;
+    width = 1280;	inv_width = 1.0/width;
+    height = 720;	inv_height = 1.0/height;
     glutInitWindowSize(width,height);
     glutCreateWindow("CIS565 OpenGL Frame");
     glewInit();
