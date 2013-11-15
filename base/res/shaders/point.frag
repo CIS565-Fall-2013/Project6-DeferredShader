@@ -37,6 +37,7 @@ uniform float u_LightIl;
 in vec2 fs_Texcoord;
 
 out vec4 out_Color;
+out vec3 light_Color;
 ///////////////////////////////////////
 
 
@@ -103,12 +104,33 @@ void main() {
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
     out_Color = vec4(0,0,0,1.0);
+	float lightnormdot=dot(normal,normalize(light-position));
+	
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
+		float dist=length(position-light)/lightRadius;
+		if(dist<1.0f) out_Color=vec4(1,1,1,1);
+//		else if(dist<2.0f)
+//		{
+//		  float trans=dist-1.0f;
+//		  out_Color=vec4(1,1,1,1)*(1-trans)*(1-trans)*(1-trans);
+//		}
+		//light_Color=out_Color.rgb;
         //Put some code here to visualize the fragment associated with this point light
     }
     else
     {
+
+		float dist=length(position-light)/lightRadius;
+		if(dist<1.0f)  out_Color=vec4(1,1,1,1);
+		else if(dist<2.0f)
+		{
+		  float trans=dist-1.0f;
+		  out_Color=vec4(1,1,1,1)*(1-trans)*(1-trans)*(1-trans);
+		}
+
+		//out_Color+=vec4(color*max(0,lightnormdot)*(3.0f/dist),1.0f);
+		
         //Put some code here to actually compute the light from the point light
     }
     return;

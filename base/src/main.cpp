@@ -312,7 +312,7 @@ void checkFramebufferStatus(GLenum framebufferStatus) {
 GLuint random_normal_tex;
 GLuint random_scalar_tex;
 void initNoise1() {  
-    random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../res/random_normal.png",0,0,0);
+    random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../../../res/random_normal.png",0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -320,7 +320,7 @@ void initNoise1() {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    random_scalar_tex = (unsigned int)SOIL_load_OGL_texture("../res/random.png",0,0,0);
+    random_scalar_tex = (unsigned int)SOIL_load_OGL_texture("../../../res/random.png",0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -540,7 +540,7 @@ mat4x4 get_mesh_world() {
     return tilt_mat * scale_mat; //translate_mat;
 }
 
-
+	
 float FARP;
 float NEARP;
 void draw_mesh() {
@@ -629,10 +629,10 @@ void draw_quad() {
 void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     float radius = strength;
     vec4 light = cam.get_view() * vec4(pos, 1.0); 
-    if( light.z > NEARP)
-    {
-        return;
-    }
+    //if( light.z > NEARP)
+    //{
+    //    return;
+    //}
     light.w = radius;
     glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
     glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
@@ -740,14 +740,28 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+		float downthreshold=-2.5f;
+		float upthreshode=2.5f;
+		float deltad=0.5f;
+		float num1d=(upthreshode-downthreshold)/deltad;
+
+		//for(float dx=-2.5f;dx<=2.5f;dx+=0.5f)draw_light(vec3(2.5+dx, -2.5, 5.0), 1.10/num1d, sc, vp, NEARP);
+		//for(float dy=-2.5f;dy<=2.5f;dy+=0.5f)
+		//	for(float dz=-5.0f;dz<=0.0f;dz+=0.5f)
+		//{
+		//	draw_light(vec3(2.5+downthreshold, -2.5+dy, 5.0+dz), 1.10/num1d, sc, vp, NEARP);
+		//	draw_light(vec3(2.5+upthreshode, -2.5+dy, 5.0+dz), 1.10/num1d, sc, vp, NEARP);
+		//}
+		//draw_light(vec3(2.5, -2.5, 5.0+dz), 1.10/num1d, sc, vp, NEARP);
+
+		draw_light(vec3(2.5f, -2.5f, 5.0f), 0.9f, sc, vp, NEARP);
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 
         dir_light = normalize(dir_light);
-        dir_light.w = 0.3;
-        float strength = 0.09;
+        dir_light.w = 0.9;
+        float strength = 0.39;
         setup_quad(ambient_prog);
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);

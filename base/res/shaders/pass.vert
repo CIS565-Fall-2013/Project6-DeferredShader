@@ -18,4 +18,5 @@ void main(void) {
     vec4 camera = u_View * world;
     fs_Position = camera;
     gl_Position = u_Persp * camera;
+	fs_Position=gl_Position;
 }

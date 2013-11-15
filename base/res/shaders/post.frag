@@ -65,10 +65,20 @@ float getRandomScalar(vec2 texcoords) {
 //////////////////////////////////
 const float occlusion_strength = 1.5f;
 void main() {
-    vec3 color = sampleCol(fs_Texcoord);
+    
+	vec3 color = sampleCol(fs_Texcoord);
+
+	vec2 tempTex;
+	tempTex=fs_Texcoord+vec2(1.0f/float(u_ScreenWidth),0.0f); vec3 color1=sampleCol(tempTex); 
+	tempTex=fs_Texcoord-vec2(1.0f/float(u_ScreenWidth),0.0f); vec3 color2=sampleCol(tempTex); 
+	tempTex=fs_Texcoord+vec2(0.0f,1.0f/float(u_ScreenHeight)); vec3 color3=sampleCol(tempTex);
+	tempTex=fs_Texcoord-vec2(0.0f,1.0f/float(u_ScreenHeight)); vec3 color4=sampleCol(tempTex);
+
     float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
+	gray=1.0f;
     float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
     out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+	out_Color=vec4((color*0.0f+(color1+color2+color3+color4)*0.25f),1.0);
     return;
 }
 

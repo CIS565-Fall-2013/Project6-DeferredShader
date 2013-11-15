@@ -69,8 +69,11 @@ You must implement two of the following extras:
 Setting Up the project
 -------------------------------------------------------------------------------
 It took a while to figure out the problem with the project settings. To make this project work, 
+
 1. Project settings->configuration properties->linker->input->add "..\release\SOIL.lib" in it.
+
 2. Project settings->debugging->add mesh="..\..\..\res\cornell\cube.obj" 
+
 3. In the main.cpp file, for each directory of those shaders file, add ../../   before it so that it can approach the file correctly.
 
 -------------------------------------------------------------------------------
