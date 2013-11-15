@@ -24,23 +24,23 @@ NOTES:
 
 Here are the Keyboard Controls for the program:
 
-*"0": Display Full Lit Diffuse Image  
-*"1": Display Z-Depth Buffer  
-*"2": Display Normals Buffer  
-*"3": Display Color Buffer  
-*"4": Display Camera Space Position Buffer  
-*"5": Display Lights Visualization  
-*"6": Display Ambient Occlusion Buffer  
-*"7": Display Toon Shaded Image  
-*"8": Display Full Lit Diffuse + Luminance-Based Specular Image  
-*"9": Display Image With Bloom/Glow  
-*"Q": Move Camera Up  
-*"Z": Move Camera Down  
-*"W": Move Camera In  
-*"S": Move Camera Out  
-*"A": Move Camera Left  
-*"D": Move Camera Right"  
-*"X": Enable/Disable Scissor Test For Lighting
+"0": Display Full Lit Diffuse Image  
+"1": Display Z-Depth Buffer  
+"2": Display Normals Buffer  
+"3": Display Color Buffer  
+"4": Display Camera Space Position Buffer  
+"5": Display Lights Visualization  
+"6": Display Ambient Occlusion Buffer  
+"7": Display Toon Shaded Image  
+"8": Display Full Lit Diffuse + Luminance-Based Specular Image  
+"9": Display Image With Bloom/Glow  
+"Q": Move Camera Up  
+"Z": Move Camera Down  
+"W": Move Camera In  
+"S": Move Camera Out  
+"A": Move Camera Left  
+"D": Move Camera Right"  
+"X": Enable/Disable Scissor Test For Lighting
  
 ------------------------------------------------------------------------------------
 PART 1: Required Features
