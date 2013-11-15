@@ -60,6 +60,13 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+float convolveWithFilter(mat3 testFilter) {
+    
+    float ss_x = fs_Texcoord.x * u_ScreenWidth;
+    float ss_y = u_ScreenHeight - fs_Texcoord.y * u_ScreenHeight;
+    return -1;
+}
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
@@ -69,16 +76,20 @@ void main() {
     float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
     float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
     /*out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);*/
-    /*out_Color = vec4(color,1);*/
+    out_Color = vec4(color,1);
 
     float ss_x = fs_Texcoord.x * u_ScreenWidth;
     float ss_y = u_ScreenHeight - fs_Texcoord.y * u_ScreenHeight;
 
-    if(ss_x > u_ScreenWidth/2 && ss_y > u_ScreenHeight/2){
-        out_Color = vec4(fs_Texcoord.x, fs_Texcoord.y, 1, 0);
-    } else {
-        out_Color = vec4(1, 0, 0, 0);
-    }
+    //matrices are stored COLUMN MAJOR
+    mat3 basicBlur = mat3(1.0/9.0, 1.0/9.0, 1.0/9.0,
+                          1.0/9.0, 1.0/9.0, 1.0/9.0,
+                          1.0/9.0, 1.0/9.0, 1/0/9.0);
+    /*if(ss_x > u_ScreenWidth/2 && ss_y > u_ScreenHeight/2){*/
+        /*out_Color = vec4(fs_Texcoord.x, fs_Texcoord.y, 1, 0);*/
+    /*} else {*/
+        /*out_Color = vec4(1, 0, 0, 0);*/
+    /*}*/
 
     return;
 }
