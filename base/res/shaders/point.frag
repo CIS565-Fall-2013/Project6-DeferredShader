@@ -31,6 +31,8 @@ uniform int u_DisplayType;
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 
+uniform int u_UseToon;
+
 uniform vec4 u_Light;
 uniform float u_LightIl;
 
@@ -130,7 +132,12 @@ void main() {
         } else {
             toonColor = 0 * color;
         }
-        out_Color = vec4(toonColor,1.0f);
+        
+        if( u_UseToon == 1){
+            out_Color = vec4(toonColor,1.0f);
+        } else { //use phong
+            out_Color = vec4(diffuse*color*final_intensity, 1.0f);
+        }
     }
     return;
 }

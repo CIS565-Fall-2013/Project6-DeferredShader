@@ -664,6 +664,11 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     light.w = radius;
     glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
     glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
+    if( useToon ){
+        glUniform1i(glGetUniformLocation(point_prog, "u_UseToon"), 1);
+    } else {
+        glUniform1i(glGetUniformLocation(point_prog, "u_UseToon"), 0);
+    }
 
     vec4 left = vp * vec4(pos + radius*cam.start_left, 1.0);
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
