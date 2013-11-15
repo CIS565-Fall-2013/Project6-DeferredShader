@@ -12,7 +12,7 @@
 #define	DISPLAY_LIGHTS 5
 #define	DISPLAY_TOON 6
 #define	DISPLAY_BLOOM 7
-#define	DISPLAY_AA 7
+#define	DISPLAY_AA 8
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -114,6 +114,77 @@ float applySobelOperator(vec2 texcoords)
 	return abs(gradient.x) + abs(gradient.y); // approx for greater efficiency
 }
 
+// Used for anti-aliasing: This will compute the blur factor by inspecting the
+// 8 pixels around the current texcoords. The blur factor is given by gradient * gradient
+// where the gradient is the result of the Sobel Operator.
+float computeBlurFactor(vec2 texcoords)
+{
+	float factor = 0.0;
+	
+	ivec2 normTexSize = textureSize(u_Normaltex,0);
+		
+	for (int i = 0 ; i < 3 ; ++i)
+	{
+		for (int j = 0 ; j < 3 ; ++j)
+		{
+			if (i == 1 && j == 1)
+				continue;
+			else
+			{
+				float texOffsetX = float(i - 1.0) / float(normTexSize.x);
+				float texOffsetY = float(j - 1.0 )/ float(normTexSize.y);
+				vec2 coords = texcoords + vec2(texOffsetX, texOffsetY);
+				float gradMag = applySobelOperator(coords);
+				factor += gradMag * gradMag;
+			}
+		}
+	}
+	
+	return factor;
+	
+}
+
+// Apply anti-aliasing blur along the edges using blur factor
+vec3 applyAABlur(vec2 texcoords, float blurFactor)
+{
+	
+	ivec2 postTexSize = textureSize(u_Posttex,0);
+	vec3 finalColor = vec3(0,0,0);
+	
+	blurFactor = min(1.0, blurFactor) ;
+
+	//if (blurFactor > 2)
+		//return vec3(0,1,0);
+	//else if (blurFactor == 1.0)
+		//return vec3(0,0,1);
+	//else if (blurFactor < 2 && blurFactor > 1.0)
+		//return vec3(1,1,0);
+	//else if (blurFactor < 1.0)
+		//return vec3(1,1,1);
+
+	if (blurFactor < 1.0)
+		return texture(u_Posttex, texcoords).rgb;
+	
+	for (int i = 0 ; i < 3 ; ++i)
+	{
+		for (int j = 0 ; j < 3 ; ++j)
+		{
+			if (i == 1 && j == 1)
+				continue;
+			
+			float texOffsetX = float(i - 1.0) / float(postTexSize.x);
+			float texOffsetY = float(j - 1.0)/ float(postTexSize.y);
+			
+			vec3 color = texture(u_Posttex, texcoords + vec2(texOffsetX, texOffsetY)).rgb;
+			finalColor += blurFactor * color;
+		}
+	}
+	
+	finalColor += 2.0 * texture(u_Posttex, texcoords).rgb;
+	finalColor = clamp(finalColor * 0.1, 0 , 1);
+	return finalColor;
+}
+
 vec3 applyGaussianFilter(vec2 texcoords)
 {
 	mat3 gausFilter = mat3 (
@@ -135,9 +206,11 @@ vec3 applyGaussianFilter(vec2 texcoords)
 			result += gausFilter[i][j] * color;
 		}
 	}
-	
+
 	return result;
 }
+
+
 
 ///////////////////////////////////
 // MAIN
@@ -169,7 +242,14 @@ void main() {
 		out_Color = vec4(bloomColor,1.0);
 		//out_Color = vec4(abs(texture(u_Posttex, fs_Texcoord).rgb), 1.0);
 	}
-	else 
+	else if (u_DisplayType == DISPLAY_AA)
+	{
+		float blurFactor = computeBlurFactor(fs_Texcoord);
+		vec3 blurColor = applyAABlur(fs_Texcoord, blurFactor);
+		//out_Color = vec4(blurFactor,blurFactor,blurFactor,1.0);
+		out_Color = vec4(blurColor, 1.0);
+	}
+	else
 	{
 		out_Color = vec4(color, 1.0);
 	}
