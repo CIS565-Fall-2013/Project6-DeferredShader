@@ -10,6 +10,9 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define	DISPLAY_OUTLINE 6
+#define	DISPLAY_TOON 7
+#define	DISPLAY_BLOOM 8
 
 
 /////////////////////////////////////
@@ -23,6 +26,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_SpecularColortex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -58,7 +62,13 @@ float linearizeDepth(float exp_depth, float near, float far) {
 
 //Helper function to automatically sample and unpack normals
 vec3 sampleNrm(vec2 texcoords) {
-    return texture(u_Normaltex,texcoords).xyz;
+    // Original G-buffer.
+	return texture(u_Normaltex,texcoords).xyz;
+
+	// Compact G-buffer.
+	//float Nx = texture(u_Colortex,texcoords).w;
+	//float Ny = texture(u_SpecularColortex,texcoords).w;
+	//return vec3(Nx, Ny, sqrt(1.0 - Nx*Nx - Ny*Ny));
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -66,9 +76,14 @@ vec3 samplePos(vec2 texcoords) {
     return texture(u_Positiontex,texcoords).xyz;
 }
 
-//Helper function to automicatlly sample and unpack positions
+//Helper function to automicatlly sample and unpack colors
 vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
+}
+
+//Helper function to automicatlly sample and unpack specular colors
+vec3 sampleSpecCol(vec2 texcoords) {
+    return texture(u_SpecularColortex,texcoords).xyz;
 }
 
 //Get a random normal vector  given a screen-space texture coordinate
@@ -106,10 +121,35 @@ void main() {
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
+		out_Color = vec4(1.0, 0.0, 0.0, 1.0);
     }
     else
     {
         //Put some code here to actually compute the light from the point light
+		
+		vec3 N_unit = normalize(normal);					// Normal.
+		vec3 L      = light - position;						// Fragment to light.
+		vec3 L_unit = normalize(L);
+		vec3 E_unit = normalize(-position);					// Fragment to eye.
+		vec3 R_unit = normalize(-reflect(L_unit, N_unit));	// Fragment to reflected light direction.
+
+		float lightIntensity = u_LightIl * max(lightRadius-length(L), 0.0) / lightRadius;
+		
+		// Diffuse term
+		vec3 diffuseColor = color * max(dot(N_unit, L_unit), 0.0);
+		diffuseColor = clamp(diffuseColor, 0.0, 1.0);
+
+		// Specular term
+		vec3 specularColor = sampleSpecCol(fs_Texcoord);
+		{
+			float specularExponent = 15.0;
+			float magnitude = max(dot(R_unit, E_unit), 0.0);
+			specularColor *= pow(magnitude, specularExponent);
+		}
+		specularColor = clamp(specularColor, 0.0, 1.0);
+
+		out_Color = vec4(lightIntensity * (diffuseColor + specularColor), 1.0);
+		//out_Color = vec4(clamp(lightIntensity*color*diffuseTerm, 0.0, 1.0), 1.0);
     }
     return;
 }
