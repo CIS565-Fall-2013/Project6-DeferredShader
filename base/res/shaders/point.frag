@@ -11,6 +11,9 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 #define	DISPLAY_TOON 6
+#define	DISPLAY_BLOOM 7
+#define	DISPLAY_AA 8
+#define	DISPLAY_SPECULAR 9
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -26,6 +29,7 @@ uniform sampler2D u_RandomScalartex;
 
 uniform float u_Far;
 uniform float u_Near;
+uniform int u_OcclusionType;
 uniform int u_DisplayType;
 
 uniform int u_ScreenWidth;
@@ -38,6 +42,7 @@ in vec2 fs_Texcoord;
 
 out vec4 out_Color; // diffuse only
 out vec4 out_Spec;
+out vec4 out_BloomMap;
 ///////////////////////////////////////
 
 
@@ -170,10 +175,7 @@ void main() {
 		}
     }
 	
-	// testing custom alpha value of u_Colortex
-	//vec4 test = texture(u_Colortex, fs_Texcoord);
-	//vec3 test2 = vec3(test.a, test.a, test.a);
-	//out_Color = vec4(test2, 1.0);
+	out_BloomMap = vec4(0,0,0,0); // no contribution
 	
     return;
 }

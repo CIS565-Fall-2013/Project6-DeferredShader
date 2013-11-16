@@ -158,9 +158,10 @@ void initMesh() {
                 mesh.indices.push_back(point++);
             }
 
-            mesh.color = vec3(shape.material.diffuse[0],
+            mesh.color = vec4(shape.material.diffuse[0],
                               shape.material.diffuse[1],
-                              shape.material.diffuse[2]);
+                              shape.material.diffuse[2],
+							  shape.material.shininess);
             mesh.texname = shape.material.diffuse_texname;
             draw_meshes.push_back(uploadMesh(mesh));
             f=f+process;
@@ -211,6 +212,7 @@ GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint specTexture = 0;
+GLuint bloomMapTexture = 0;
 GLuint postTexture = 0;
 GLuint FBO[2] = {0, 0};
 
@@ -241,6 +243,10 @@ void initShader() {
 	const char * point_frag = "../res/shaders/point.frag";
 	const char * post_frag = "../res/shaders/post.frag";
 #endif
+
+	/////////////////////////////
+	// pass_prog
+
 	Utility::shaders_t shaders = Utility::loadShaders(pass_vert, pass_frag);
 
     pass_prog = glCreateProgram();
@@ -251,33 +257,49 @@ void initShader() {
 
     Utility::attachAndLinkProgram(pass_prog,shaders);
 
+	/////////////////////////////
+	// diagnostic_prog
 	shaders = Utility::loadShaders(shade_vert, diagnostic_frag);
 
     diagnostic_prog = glCreateProgram();
 
     glBindAttribLocation(diagnostic_prog, quad_attributes::POSITION, "Position");
     glBindAttribLocation(diagnostic_prog, quad_attributes::TEXCOORD, "Texcoord");
-
+	glBindFragDataLocation(diagnostic_prog, 0, "out_Color");		//LOOK: NEED TO DO THIS TO MAKE SURE THAT THE OUTPUTS ARE THE SAME INDEX
+	glBindFragDataLocation(diagnostic_prog, 1, "out_Spec");			//In initFBO, the portion where I am binding the output textures for these
+	glBindFragDataLocation(diagnostic_prog, 2, "out_BloomMap");		//shaders that need to write to the same textures, they need to have the same index
+																	//for the output variable.
     Utility::attachAndLinkProgram(diagnostic_prog, shaders);
 
+	/////////////////////////////
+	// ambient_prog
 	shaders = Utility::loadShaders(shade_vert, ambient_frag);
 
     ambient_prog = glCreateProgram();
 
     glBindAttribLocation(ambient_prog, quad_attributes::POSITION, "Position");
     glBindAttribLocation(ambient_prog, quad_attributes::TEXCOORD, "Texcoord");
+	glBindFragDataLocation(ambient_prog, 0, "out_Color"); //LOOK: NEED TO DO THIS TO MAKE SURE THAT THE OUTPUTS ARE THE SAME INDEX
+	glBindFragDataLocation(ambient_prog, 1, "out_Spec");
+	glBindFragDataLocation(ambient_prog, 2, "out_BloomMap");
 
     Utility::attachAndLinkProgram(ambient_prog, shaders);
 
+	/////////////////////////////
+	// point_prog
 	shaders = Utility::loadShaders(shade_vert, point_frag);
 
     point_prog = glCreateProgram();
 
     glBindAttribLocation(point_prog, quad_attributes::POSITION, "Position");
     glBindAttribLocation(point_prog, quad_attributes::TEXCOORD, "Texcoord");
-
+	glBindFragDataLocation(point_prog, 0, "out_Color"); //LOOK: NEED TO DO THIS TO MAKE SURE THAT THE OUTPUTS ARE THE SAME INDEX
+	glBindFragDataLocation(point_prog, 1, "out_Spec");
+	glBindFragDataLocation(point_prog, 2, "out_BloomMap");
     Utility::attachAndLinkProgram(point_prog, shaders);
 
+	/////////////////////////////
+	// post_prog
 	shaders = Utility::loadShaders(post_vert, post_frag);
 
     post_prog = glCreateProgram();
@@ -294,6 +316,7 @@ void freeFBO() {
     glDeleteTextures(1,&positionTexture);
     glDeleteTextures(1,&colorTexture);
     glDeleteTextures(1,&postTexture);
+	glDeleteTextures(1,&bloomMapTexture);
 	glDeleteTextures(1,&specTexture);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
@@ -453,6 +476,7 @@ void initFBO(int w, int h) {
 
     glGenTextures(1, &postTexture);
 	glGenTextures(1, &specTexture);
+	glGenTextures(1, &bloomMapTexture);
 
     //Set up post FBO
     glBindTexture(GL_TEXTURE_2D, postTexture);
@@ -476,6 +500,17 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
+	//Set up bloomMap FBO
+	glBindTexture(GL_TEXTURE_2D, bloomMapTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
     // create a framebuffer object and bind it to contex
     glGenFramebuffers(1, &FBO[1]); 
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
@@ -483,20 +518,24 @@ void initFBO(int w, int h) {
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
 	// LOOK: For FBO[1], the output texture is being set at ambient_prog's out_Color
     //glReadBuffer(GL_BACK);
-	glReadBuffer(GL_NONE);
-    color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
-	GLint spec_loc = glGetFragDataLocation(ambient_prog, "out_Spec");
-    GLenum draw[2];
+	//glReadBuffer(GL_NONE);
+    color_loc = glGetFragDataLocation(ambient_prog,"out_Color");			// LOOK: This works because in initShaders(), I am explicitly assigning the out_Color,
+	GLint spec_loc = glGetFragDataLocation(ambient_prog, "out_Spec");		// out_Spec, and out_BloomMap to have the same index.
+	GLint bloom_loc = glGetFragDataLocation(ambient_prog, "out_BloomMap");
+    GLenum draw[3];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
 	draw[spec_loc] = GL_COLOR_ATTACHMENT1;
-    glDrawBuffers(2, draw);
-
-    // attach the texture to FBO color attachment point
+	draw[bloom_loc] = GL_COLOR_ATTACHMENT2;
+    glDrawBuffers(3, draw);
+	
+    // attach the texture to FBO colfor attachment point
     test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
 	glBindTexture(GL_TEXTURE_2D, specTexture);
 	glFramebufferTexture(GL_FRAMEBUFFER, draw[spec_loc], specTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, bloomMapTexture);
+	glFramebufferTexture(GL_FRAMEBUFFER, draw[bloom_loc], bloomMapTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -615,7 +654,7 @@ void draw_mesh() {
     glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_InvTrans") ,1,GL_FALSE,&inverse_transposed[0][0]);
 
     for(int i=0; i<draw_meshes.size(); i++){
-        glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
+        glUniform4fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
         glBindVertexArray(draw_meshes[i].vertex_array);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
         glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
@@ -797,6 +836,8 @@ void display(void)
     if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON || display_type == DISPLAY_BLOOM 
 		|| display_type == DISPLAY_AA || display_type == DISPLAY_SPECULAR)
     {
+		//if (display_type != DISPLAY_BLOOM)
+		//{
         setup_quad(point_prog); // used to render the light source and compute light from point light
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
         mat4 vp = perspective(45.0f,(float)width/(float)height,NEARP,FARP) * 
@@ -823,7 +864,7 @@ void display(void)
 #else
 		draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
 #endif
-
+		//}
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 
@@ -843,6 +884,8 @@ void display(void)
     glDisable(GL_BLEND);
 
     //Stage 3 -- RENDER TO SCREEN
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
     setTextures();
     glUseProgram(post_prog);
     
@@ -862,6 +905,10 @@ void display(void)
 	glBindTexture(GL_TEXTURE_2D, specTexture);
 	glUniform1i(glGetUniformLocation(post_prog, "u_SpecTex"),2);
     
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, bloomMapTexture);
+	glUniform1i(glGetUniformLocation(post_prog, "u_BloomMapTex"),3);
+
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glUniform1i(glGetUniformLocation(post_prog, "u_RandomNormaltex"),4);
@@ -875,6 +922,7 @@ void display(void)
 	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
     draw_quad();
 
+	glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     updateTitle();
 

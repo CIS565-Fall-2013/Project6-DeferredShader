@@ -38,7 +38,7 @@ typedef struct {
 	std::vector<glm::vec2> texcoords;
 	std::vector<unsigned short> indices;
     std::string texname;
-    glm::vec3 color;
+    glm::vec4 color; // alpha position will store the shininess of the material (used for bloom)
 } mesh_t;
 
 typedef struct {
@@ -48,7 +48,7 @@ typedef struct {
 	unsigned int vbo_vertices;
 	unsigned int vbo_normals;
 	unsigned int vbo_texcoords;
-    glm::vec3 color;
+    glm::vec4 color;
     std::string texname;
 } device_mesh_t;
 

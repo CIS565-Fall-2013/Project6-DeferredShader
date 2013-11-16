@@ -11,6 +11,9 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 #define	DISPLAY_TOON 6
+#define	DISPLAY_BLOOM 7
+#define	DISPLAY_AA 8
+#define	DISPLAY_SPECULAR 9
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -39,6 +42,7 @@ in vec2 fs_Texcoord;
 
 out vec4 out_Color; // diffuse only
 out vec4 out_Spec;
+out vec4 out_BloomMap;
 ///////////////////////////////////////
 
 
@@ -124,7 +128,7 @@ void main() {
     }	
 	
 	out_Spec = vec4(0,0,0,0.0);
-
+	out_BloomMap = vec4(0,0,0,0);
     return;
 }
 

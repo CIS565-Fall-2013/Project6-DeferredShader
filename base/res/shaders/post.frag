@@ -21,6 +21,7 @@
 uniform sampler2D u_Posttex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_SpecTex;
+uniform sampler2D u_BloomMapTex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -242,9 +243,10 @@ void main() {
 	}
 	else if (u_DisplayType == DISPLAY_BLOOM)
 	{
-		vec3 bloomColor = clamp(applyGaussianFilter(fs_Texcoord), 0, 1);
-		out_Color = vec4(bloomColor,1.0);
-		//out_Color = vec4(abs(texture(u_Posttex, fs_Texcoord).rgb), 1.0);
+		//vec3 bloomColor = clamp(applyGaussianFilter(fs_Texcoord), 0, 1);
+		//out_Color = vec4(bloomColor,1.0);
+		
+		out_Color = texture(u_BloomMapTex, fs_Texcoord);
 	}
 	else if (u_DisplayType == DISPLAY_AA)
 	{

@@ -1,7 +1,7 @@
 #version 330
 
 ////////////////////////////
-//       ENUMERATIONS
+// ENUMERATIONS
 ////////////////////////////
 
 #define	DISPLAY_DEPTH 0
@@ -11,7 +11,9 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 #define	DISPLAY_TOON 6
-
+#define	DISPLAY_BLOOM 7
+#define	DISPLAY_AA 8
+#define	DISPLAY_SPECULAR 9
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -40,6 +42,7 @@ in vec2 fs_Texcoord;
 
 out vec4 out_Color; // diffuse only
 out vec4 out_Spec;
+out vec4 out_BloomMap;
 ///////////////////////////////////////
 
 
@@ -50,7 +53,7 @@ uniform float falloff = 0.1f;
 
 
 /////////////////////////////////////
-//				UTILITY FUNCTIONS
+//	UTILITY FUNCTIONS
 /////////////////////////////////////
 
 //Depth used in the Z buffer is not linearly related to distance from camera
@@ -123,7 +126,11 @@ void main() {
     vec3 light = u_Light.xyz;
     float strength = u_Light.w;
 	
-	if (u_DisplayType != DISPLAY_TOON)
+	if (u_DisplayType == DISPLAY_LIGHTS)
+	{
+		out_Color = vec4(0,0,0,1);
+	}
+	else if (u_DisplayType != DISPLAY_TOON)
 	{
 		if (lin_depth > 0.99f) {
 			out_Color = vec4(vec3(0.0), 1.0);
@@ -141,8 +148,32 @@ void main() {
 		out_Color = vec4(toonColor, 1.0f);
 	}
 	
-	out_Spec = vec4(0,0,0,0); // temp
-
+	if (u_DisplayType == DISPLAY_BLOOM)
+	{
+		float shiny = texture(u_Colortex, fs_Texcoord).a;
+		if (shiny >= 1)
+			out_BloomMap = vec4(0,0,0,0);
+		else
+			out_BloomMap = vec4(shiny, shiny, shiny, 1.0);
+	}
+	else
+	{
+		out_BloomMap = vec4(0,0,0,0);
+	}
+	
+	
+	// No specular contribution for ambient
+	out_Spec = vec4(0,0,0,0); 
+	
+	// testing if I can package shininess in the alpha ch. of u_Colortex
+	//vec4 test = texture(u_Colortex, fs_Texcoord);
+	//vec3 test2 = vec3(test.a, test.a, test.a);
+	//if (test.a >= 1)
+	//	out_Color = vec4(0,0,0,1);
+	//else
+	//	out_Color = vec4(test2, 1.0);
+	
+	
     return;
 }
 
