@@ -191,30 +191,6 @@ vec3 applyAABlur(vec2 texcoords, float blurFactor)
 	return finalColor;
 }
 
-vec3 applyDim3GaussianFilter(vec2 texcoords)
-{
-	mat3 gausFilter = mat3 (
-			0.0668, 0.1248, 0.0668,
-			0.1248, 0.2332, 0.1248,
-			0.0668, 0.1248, 0.0668
-	);
-	
-	vec3 result = vec3(0,0,0);
-	
-	for (int i = 0 ; i < 3 ; ++i)
-	{
-		for (int j = 0 ; j < 3 ; ++j)
-		{
-			ivec2 texSize = textureSize(u_Posttex, 0);
-			float texOffsetS = float(i - 1) / float(texSize.x);
-			float texOffsetT = float(j - 1) / float(texSize.y);
-			vec3 color = texture(u_Posttex, texcoords + vec2(texOffsetS, texOffsetT)).rgb;
-			result += gausFilter[i][j] * color;
-		}
-	}
-
-	return result;
-}
 
 // apply a 5x5 gaussian filter to the incoming texture coordinates
 // return the resulting color
@@ -248,6 +224,34 @@ vec3 applyGaussianFilter(vec2 texcoords)
 	return result * (1 / sum);	
 }
 
+// apply vertical gaussian filter to the result of bloomPass1.frag
+// return the resulting color
+vec3 applyVertGaussianFilter(vec2 texcoords)
+{
+	float pi = 3.141592653589;
+	float sigma = 50.0;
+	
+	float sum = 0;  // for normalization
+	float s = 2.0 * sigma * sigma;
+	vec3 result = vec3(0,0,0);
+	
+	int bound = 18;
+	
+	for (int y = -bound ; y <= bound ; ++y)
+	{
+		float r = y*y;
+		float w = (exp(-r / s)) / (pi * s);
+		sum += w;
+			
+		ivec2 texSize = textureSize(u_BloomMapPass1Tex, 0);
+		float texOffsetS = 0;
+		float texOffsetT = float(y - 1) / float(texSize.y);
+		vec3 color = w * texture(u_BloomMapPass1Tex, texcoords + vec2(texOffsetS, texOffsetT)).rgb;			
+		result += color;
+	}
+	
+	return result * (1 / sum);	
+}
 
 
 ///////////////////////////////////
@@ -278,16 +282,18 @@ void main() {
 	}
 	else if (u_DisplayType == DISPLAY_BLOOM)
 	{
+	
+		vec4 specColor = vec4(abs(texture(u_SpecTex, fs_Texcoord).rgb), 1.0);
+		vec4 baseColor = vec4(color, 1.0);
+		
 		if (!isTwoPassBloom)
 		{
-			vec4 specColor = vec4(abs(texture(u_SpecTex, fs_Texcoord).rgb), 1.0);
-			vec4 baseColor = vec4(color, 1.0);
+
 			out_Color = baseColor + vec4(applyGaussianFilter(fs_Texcoord), 1.0);
 		}
 		else
 		{
-			out_Color = texture(u_BloomMapPass1Tex, fs_Texcoord);
-			//out_Color = vec4(1,1,1,1);
+			out_Color = baseColor + vec4(applyVertGaussianFilter(fs_Texcoord), 1.0);
 		}
 	}
 	else if (u_DisplayType == DISPLAY_AA)

@@ -36,9 +36,9 @@ out vec4 out_Color;
 uniform float zerothresh = 1.0;
 uniform float falloff = 0.1;
 
-// apply a 5x5 gaussian filter to the incoming texture coordinates
+
 // return the resulting color
-vec3 applyGaussianFilter(vec2 texcoords)
+vec3 applyHorzGaussianFilter(vec2 texcoords)
 {
 	float pi = 3.141592653589;
 	float sigma = 50.0;
@@ -51,18 +51,15 @@ vec3 applyGaussianFilter(vec2 texcoords)
 	
 	for (int x = -bound ; x <= bound ; ++x)
 	{
-		for (int y = -bound ; y <= bound ; ++y)
-		{
-			float r = x*x + y*y;
-			float w = (exp(-r / s)) / (pi * s);
-			sum += w;
+		float r = x*x;
+		float w = (exp(-r / s)) / (pi * s);
+		sum += w;
 			
-			ivec2 texSize = textureSize(u_BloomMapTex, 0);
-			float texOffsetS = float(x - 1) / float(texSize.x);
-			float texOffsetT = float(y - 1) / float(texSize.y);
-			vec3 color = w * texture(u_BloomMapTex, texcoords + vec2(texOffsetS, texOffsetT)).rgb;			
-			result += color;
-		}
+		ivec2 texSize = textureSize(u_BloomMapTex, 0);
+		float texOffsetS = float(x - 1) / float(texSize.x);
+		float texOffsetT = 0;
+		vec3 color = w * texture(u_BloomMapTex, texcoords + vec2(texOffsetS, texOffsetT)).rgb;			
+		result += color;
 	}
 	
 	return result * (1 / sum);	
@@ -76,6 +73,6 @@ vec3 applyGaussianFilter(vec2 texcoords)
 
 void main() {
 	
-	out_Color = vec4(1,1,0,1);
+	out_Color = vec4(applyHorzGaussianFilter(fs_Texcoord), 1);
 	return;
 }
