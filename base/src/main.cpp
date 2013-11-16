@@ -605,7 +605,7 @@ mat4x4 get_mesh_world() {
 float FARP;
 float NEARP;
 void draw_mesh() {
-    FARP = 100.0f;
+    FARP = 30.0f;
     NEARP = 0.1f;
 
     glUseProgram(pass_prog);
@@ -841,12 +841,14 @@ void display(void)
     setTextures();
     glUseProgram(post_prog);
     
+    mat4 view = cam.get_view();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_TEXTURE_2D);
 
     glUniform1f(glGetUniformLocation(post_prog, "u_Far"), FARP);
     glUniform1f(glGetUniformLocation(post_prog, "u_Near"), NEARP);
+    glUniformMatrix4fv(glGetUniformLocation(post_prog,"u_View"),1,GL_FALSE,&view[0][0]);
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture);
