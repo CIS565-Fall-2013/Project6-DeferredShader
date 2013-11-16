@@ -6,7 +6,7 @@ Screen space ambient occlusion
 ![Alt text](ToneC.png "Tone Shading")
 Tone Shading
 
-![Alt text](totalC.png "Total")
+![Alt text](totalc.png "Total")
 Total
 
 
