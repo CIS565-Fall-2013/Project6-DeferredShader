@@ -203,7 +203,7 @@ vec3 applyGaussianFilter(vec2 texcoords)
 	float s = 2.0 * sigma * sigma;
 	vec3 result = vec3(0,0,0);
 	
-	int bound = 18;
+	int bound = 2;
 	
 	for (int x = -bound ; x <= bound ; ++x)
 	{
