@@ -3,56 +3,79 @@ Deferred Shader
 -------------------------------------------------------------------------------
 Fall 2013
 -------------------------------------------------------------------------------
+![alt text](renders/title.bmp)
 -------------------------------------------------------------------------------
-REQUIREMENTS:
+FEATURES:
 -------------------------------------------------------------------------------
 
-In this project, you are given code for:
-* Loading .obj files
-* Rendering to a minimal G buffer:
+This project demostrates various effects that can be achieved by deferred shading in OpenGL, including:
+
+###Basic features:
+* Rendering to G buffer:
   * Depth
   * Normal
   * Color
   * Eye space position
 * Rendering simple ambient and directional lighting to texture
-* Example post process shader to add a vignette
+* Post process shader to add a vignette
 
-You are required to implement:
-* Either of the following effects
-  * Bloom (feel free to use [GPU Gems](http://http.developer.nvidia.com/GPUGems/gpugems_ch21.html) as a rough guide)
-  * "Toon" Shading (with basic silhouetting)
+###Advanced features:
+* Bloom with separable filter for Gaussian blur
+* Toon Shading with Canny Edge detection
 * Point light sources
-* An additional G buffer slot and some effect showing it off
+* Glowmap G-buffer slot
+* Screen space ambient occlusion (SSAO)
 
-**NOTE**: Implementing separable convolution will require another link in your pipeline and will count as an extra feature if you do performance analysis with a standard one-pass 2D convolution. The overhead of rendering and reading from a texture _may_ offset the extra computations for smaller 2D kernels.
+###Input:
+* 1: (linear) Depth shading
+* 2: Eye space normal
+* 3: Flat shading
+* 4: Eye space position
+* 5: Diffuse shading with point light and directional light
+* 6: Toon shading
+* Shift+6: Toon shading with silhouette
+* 7: Blooming
+* Shift+7: Glow map used for blooming
+* 8: Screen Space ambient occlusion
+* 0: Directional light only
 
-You must implement two of the following extras:
+-------------------------------------------------------------------------------
+SCREENSHOTS:
+-------------------------------------------------------------------------------
+####Point light source
+![alt text](renders/point_light.bmp)
 
-* The effect you did not choose above
-* Screen space ambient occlusion
-* Compare performance to a normal forward renderer with
-  * No optimizations
-  * Coarse sort geometry front-to-back for early-z
-  * Z-prepass for early-z
-* Optimize g-buffer format, e.g., pack things together, quantize, reconstruct z from normal x and y (because it is normalized), etc.
-  * Must be accompanied with a performance analysis to count
-* Additional lighting and pre/post processing effects! (email first please, if they are good you may add multiple).
+####Toon Shading
+![alt text](renders/Dragon_toon.bmp)
 
+####Toon Shading with Edge
+![alt text](renders/Dragon_edge.bmp)
 
+####Blooming 
+![alt text](renders/Dragon_Bloom.bmp)
+
+####Diffuse lighting without Screen Space Ambient Occlusion
+![alt text](renders/sponza_SSAO_contrast.bmp)
+
+####Diffuse lighting with Screen Space Ambient Occlusion
+![alt text](renders/sponza_SSAO.bmp)
+
+####Sponza blooming
+![alt text](renders/sponza_blooming.bmp)
+
+####Glow map used for Sponza blooming
+![alt text](renders/sponza_glowmap.bmp)
 -------------------------------------------------------------------------------
 PERFORMANCE EVALUATION
 -------------------------------------------------------------------------------
-The performance evaluation is where you will investigate how to make your 
-program more efficient using the skills you've learned in class. You must have
-performed at least one experiment on your code to investigate the positive or
-negative effects on performance. 
+This section will come later.
 
-We encourage you to get creative with your tweaks. Consider places in your code
-that could be considered bottlenecks and try to improve them. 
 
-Each student should provide no more than a one page summary of their
-optimizations along with tables and or graphs to visually explain any
-performance differences.
+---
+HOW TO BUILD
+---
+
+This project make use of OpenGL 4.4 with support of multidimensional arrays, just for performance comparison sake. Make sure you have the latest driver support.
 
 ---
 ACKNOWLEDGEMENTS

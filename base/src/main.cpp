@@ -627,10 +627,10 @@ mat4x4 Camera::get_view() {
 
 mat4x4 get_mesh_world() {
     vec3 tilt(1.0f,0.0f,0.0f);
-    //mat4 translate_mat = glm::translate(glm::vec3(0.0f,.5f,0.0f));
+    mat4 translate_mat = glm::translate(glm::vec3(0.0f,.5f,0.0f));
     mat4 tilt_mat = glm::rotate(mat4(), 90.0f, tilt);
-    //mat4 scale_mat = glm::scale(mat4(), vec3(0.01));
-	mat4 scale_mat = mat4(1.0);
+    mat4 scale_mat = glm::scale(mat4(), vec3(0.01));
+	//mat4 scale_mat = mat4(1.0);
     return tilt_mat * scale_mat; //translate_mat;
 }
 
@@ -855,7 +855,7 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(3.0, -3.0, 5.0), 1.0, sc, vp, NEARP); // -----------> draw_quad
+        draw_light(vec3(2.8, -2.8, 5.0), 1.0, sc, vp, NEARP); // -----------> draw_quad
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 
