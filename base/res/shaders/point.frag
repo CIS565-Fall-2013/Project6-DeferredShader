@@ -11,6 +11,7 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 
+//#define USEPOINTLIGHT
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -105,7 +106,7 @@ void main() {
     float lightRadius = u_Light.w;
     out_Color = vec4(0,0,0,1.0);
 	float lightnormdot=dot(normal,normalize(light-position));
-	
+#ifdef USEPOINTLIGHT	
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
 		float dist=length(position-light)/lightRadius;
@@ -113,9 +114,9 @@ void main() {
 		else if(dist<2.0f)
 		{
 		  float trans=dist-1.0f;
-		//  out_Color=vec4(1,1,1,1)*(1-trans)*(1-trans);
+		  out_Color=vec4(1,1,1,1)*(1-trans)*(1-trans);
 		}
-		//light_Color=out_Color.rgb;
+		light_Color=out_Color.rgb;
         //Put some code here to visualize the fragment associated with this point light
     }
     else
@@ -126,13 +127,14 @@ void main() {
 		else if(dist<2.0f)
 		{
 		  float trans=dist-1.0f;
-		//  out_Color=vec4(1,1,1,1)*(1-trans)*(1-trans)*(1-trans);
+		  out_Color=vec4(1,1,1,1)*(1-trans)*(1-trans)*(1-trans);
 		}
 
-		//out_Color+=vec4(color*max(0,lightnormdot)*(3.0f/dist),1.0f);
+		out_Color+=vec4(color*max(0,lightnormdot),1.0f);
 		
         //Put some code here to actually compute the light from the point light
     }
+	#endif
     return;
 }
 

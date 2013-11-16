@@ -25,9 +25,12 @@ To turn on and off toon shading, uncomment/comment the #define USETOONSHADE in t
 
 To turn on and off SSAO, uncomment/comment the #define USESSAO in the ambient.frag
 
+To turn on and off pointlight, uncomment/comment the #define USEPOINTLIGHT in the point.frag
+
 The bloom shader is default on. I thus fork the cornell_box into 2 versions: cornell_box_notglow.obj and cornell_box_glow.obj. Changing the input argument will work.
 
 By the way, I used "Ka" in the mtl file as the emission of a material. So if you want something shiny, just change it!
+
 
 -------------------------------------------------------------------------------
 TOON SHADING
@@ -116,7 +119,21 @@ Below are 2 comparison of the result of crytek-sponza's scene. The first one wit
 ![SSAO Compare 2](https://github.com/heguanyu/Project6-DeferredShader/blob/master/img/SSAO-compare2.jpg?raw=true)
 
 Below are something interesting: when I increase the scope of the SSAO, it turns out sth like a stone carve effect
+
 ![SSAO overshoot](https://github.com/heguanyu/Project6-DeferredShader/blob/master/img/large-radius-SSAO.jpg?raw=true)
+
+-------------------------------------------------------------------------------
+POINTLIGHT
+-------------------------------------------------------------------------------
+
+The point light is straight forward. It can be better seen in the cornell_box_notglow.obj scene.
+
+You should turn off the scissors test to make sure that the point light is working correctly. 
+
+result is as below
+
+![Pointlight](https://github.com/heguanyu/Project6-DeferredShader/blob/master/img/large-radius-SSAO.jpg?raw=true)
+
 -------------------------------------------------------------------------------
 Setting Up the project
 -------------------------------------------------------------------------------

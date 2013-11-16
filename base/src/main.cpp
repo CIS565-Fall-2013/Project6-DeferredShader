@@ -975,7 +975,7 @@ int main (int argc, char* argv[])
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-    width = 1280;
+    width = 960;
     height = 720;
     glutInitWindowSize(width,height);
     glutCreateWindow("CIS565 OpenGL Frame");

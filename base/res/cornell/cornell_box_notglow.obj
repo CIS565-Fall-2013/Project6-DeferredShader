@@ -29,7 +29,7 @@ f 8 7 6 5
 f 12 11 10 9
 
 o light
-usemtl light
+usemtl white
 v 343.0 548.0 227.0
 v 343.0 548.0 332.0
 v 213.0 548.0 332.0
