@@ -3,7 +3,7 @@
 ![Alt text](SSAOC.png "SSAO")
 Screen space ambient occlusion
 
-![Alt text](ToneC.png "Toon Shading")
+![Alt text](ToonC.png "Toon Shading")
 Toon Shading
 
 ![Alt text](totalc.png "Total")

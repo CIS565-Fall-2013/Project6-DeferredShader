@@ -156,11 +156,11 @@ float gatherOcclusion( vec3 pt_normal,
     if(dis < falloff)
         return 0.0;
 
-    vec3 dir = normalize(occluder_position - pt_position) * 1.0;
-    return max(0.0, dot(pt_normal, dir) * 1.0) * (1.0 / (1.0 + dis)) * 1.6;
+    vec3 dir = normalize(occluder_position - pt_position) * 1.4;
+    return max(0.0, dot(pt_normal, dir) * 1.0) * (1.0 / (1.0 + dis)) * 2.3;   
 }
 
-const float SPHERE_RADIUS = 0.6f;
+const float SPHERE_RADIUS = 0.2f;
 float SSAOWorld(float curr_depth, vec3 position, vec3 normal)
 {
     float occlusion = 0.0f;
@@ -168,11 +168,10 @@ float SSAOWorld(float curr_depth, vec3 position, vec3 normal)
     vec3 random = (getRandomNormal(fs_Texcoord));    
     for(int i = 0; i < NUM_WS_SAMPLES; i++)
     {      
-        float r = length(poissonSphere[i]);
-        vec3 dir = normalize(reflect(poissonSphere[i], random));
+       vec3 dir = (reflect((poissonSphere[i]), random));
         //vec3 dir = normalize(poissonSphere[i]);
 
-        vec3 ranPos = position + sign(dot(normal, dir)) * dir * r * SPHERE_RADIUS;
+        vec3 ranPos = position + sign(dot(dir, normal)) * dir * SPHERE_RADIUS;
 
         vec4 screenPos = u_Persp * vec4(ranPos, 1.0);
         screenPos = screenPos / screenPos.w;
@@ -273,7 +272,7 @@ void main() {
             break;
         case(DISPLAY_OCCLUSION):
             //occlusion = SSAOScreen(lin_depth, position, normal);
-            occlusion = SSAOWorld(lin_depth, position, normal);
+            occlusion = SSAOWorld(lin_depth, position, normalize(normal));
             //occlusion = SSAOGird(lin_depth, position, normal);
             occlusion = clamp(occlusion * occlusion_strength, 0.0, 1.0);
             out_Color = vec4(vec3(1.0 - occlusion), 1.0);
