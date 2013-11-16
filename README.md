@@ -27,6 +27,19 @@ Mutiple post-processing passes are performed:
 * Motion blurring
 * Toon shading silhouette (using Sobel filter on both depth and normal)
 
+Keyboard usage
+--------------------------------------------------------------------------------
+* 1: show depth
+* 2: show screen space normal
+* 3: show albedo
+* 4: show screen space position
+* 5: show light influence (press 'x' to toggle scissor)
+* 6: show Toon shading
+* 0: show diffuse shading (plus SSAO)
+* mouse to look around
+* W,S,A,D to move
+
+
 Rendering result
 ---------------------------------------------------------------------------------
 Diffuse shading+SSAO:
