@@ -941,7 +941,7 @@ void display(void)
 		dir_light = cam.get_view() * dir_light; 
 		dir_light = normalize(dir_light);
 		dir_light.w = 0.3;
-		float strength = 0.25;
+		float strength = 0.09;
 		setup_quad(ambient_prog);
 		glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
 		glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);

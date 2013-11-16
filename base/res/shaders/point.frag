@@ -127,11 +127,19 @@ void main() {
 		{
 			float att = clamp((lightRadius-dist)/lightRadius, 0.0,1.0);
 			att *= att;
+			
+			float kd = 0.60;
 			//diffuse
 			out_Color += att*vec4(color,1.0)*NdotL*u_LightIl;
 			
 			//Specular
-			//out_Color += att*vec4(color,1.0)*u_LightIl;
+			vec4 specColor = texture(u_SpecColortex,fs_Texcoord);
+			vec3 toReflectedLight = normalize(reflect((position-light), normal));
+			float specular = max(dot(toReflectedLight, normalize(-position)), 0.0);
+			specular = pow(specular, 50.0);
+
+			float ks = 1.0-kd;
+			out_Color += ks*specColor*specular;
 		}
     }
     return;

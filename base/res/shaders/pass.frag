@@ -102,7 +102,7 @@ void main(void)
 	
 	
 	//Pass through specular color
-	out_Spec_Color = vec4(u_Ks, 1.0);
+	out_Spec_Color = vec4(u_Ks, u_specExp);
 	if(u_hasSpecTex > 0)
 	{
 		out_Spec_Color *= vec4(texture(u_SpecTex,fs_Texcoord).rgb,1.0);
