@@ -138,16 +138,25 @@ void main() {
                 for(int j = 0; j < 3; j++){
                     float mx = (j-1.0) / u_ScreenWidth;
                     float my = (i-1.0) / u_ScreenHeight;
-                          
+                    
+                     vec3 nearNrm = sampleNrm(vec2(fs_Texcoord.s + mx, fs_Texcoord.t + my));
+ 
+                     float cosValue = dot(normal, nearNrm);
+     
+                     if(cosValue < 0.97){
+                         out_Color = vec4(vec3(0.0), 1.0);
+                         return;
+                     }
+
                     float c = length(sampleCol(vec2(fs_Texcoord.s + mx, fs_Texcoord.t + my)));     
 
                     magX += GX[j][i] * c;
                     magY += GY[j][i] * c;
                 }
             }
-            float mag = sqrt((magX)*(magX) + (magY)*(magY));
-            mag = clamp(mag, 0.0, 1.0);
-            out_Color = vec4(vec3(out_Color * (mag) * 5.0 + out_Color), 1.0);
+            //float mag = sqrt((magX)*(magX) + (magY)*(magY));
+           // mag = clamp(mag, 0.0, 1.0);
+            //out_Color = vec4(vec3(out_Color * (mag) * 5.0 + out_Color), 1.0);
             //out_Color = vec4(color, 1.0);
         }
 

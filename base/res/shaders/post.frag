@@ -102,7 +102,7 @@ void main() {
                 float mx = float(i) / u_ScreenWidth;
                 vec4 nearspe = sampleSpec(vec2(fs_Texcoord.s + mx, fs_Texcoord.t)); 
                 //if(nearspe.w == 101){
-                    c += sampleCol(vec2(fs_Texcoord.s + mx, fs_Texcoord.t)) * ((1.0 / (2.0 * 3.141516 * sd * sd) * exp(-(i*i)/(2.0*sd*sd)))) * 1000.0;
+                c += sampleCol(vec2(fs_Texcoord.s + mx, fs_Texcoord.t)) * ((1.0 / (2.0 * 3.141516 * sd * sd) * exp(-(i*i)/(2.0*sd*sd)))) * 1000.0;
                     
                // }
                // else
