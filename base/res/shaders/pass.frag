@@ -43,7 +43,7 @@ out vec4 out_Normal;
 out vec4 out_Position;
 out vec4 out_Diff_Color;
 out vec4 out_Spec_Color;
-out float out_Bloom;
+out vec3 out_Bloom;
 
 void main(void)
 {
@@ -52,12 +52,12 @@ void main(void)
 	
 	vec4 diffuseColor = vec4(u_Kd,1.0);
 	
-	out_Bloom = 0.0;
+	out_Bloom = vec3(0.0);
 	if(u_hasDiffTex > 0)
 	{
 		vec4 texel  = texture(u_DiffTex,fs_Texcoord);
 		diffuseColor *= vec4(texel.rgb, 1.0);
-		out_Bloom = 1.0-texel.a;
+		out_Bloom = (1.0-texel.a)*texel.rgb;
 	}
 	
 	//Pass through diffuse color

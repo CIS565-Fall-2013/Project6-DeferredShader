@@ -571,7 +571,7 @@ void initFBO(int w, int h) {
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_R32F , w, h, 0, GL_RED, GL_FLOAT,0);
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGB, GL_FLOAT,0);
 
 
 	// create a framebuffer object

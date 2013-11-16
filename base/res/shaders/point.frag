@@ -103,7 +103,6 @@ void main() {
     vec3 position = samplePos(fs_Texcoord);
     vec4 diffTexel = texture(u_DiffColortex,fs_Texcoord);
     vec3 color = diffTexel.rgb;
-    float bloom = getRandomScalar(fs_Texcoord);
 	
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
@@ -140,7 +139,6 @@ void main() {
 			out_Color += ks*specColor*specular;
 		}
     }
-	out_Color.a = bloom;
     return;
 }
 
