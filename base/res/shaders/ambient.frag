@@ -146,6 +146,16 @@ void main() {
     vec3 light = u_Light.xyz;
     float strength = u_Light.w;
     vec3 lightVec = light - position;
+
+    vec3 cam_view_dir = vec3(0, 0, -1);
+
+    float specular = sampleSpecular(fs_Texcoord);
+    vec3 incident = -normalize(lightVec);
+    vec3 reflectDir = calcReflectionDirection(normal, incident);
+    float specular_dot = min(max(0.0, dot(reflectDir, cam_view_dir)),1.0);
+    float specular_term = pow(specular_dot, specular);
+    float norm_dot_dir = max(0.0, dot(normalize(cam_view_dir), -normalize(normal)));
+
     if (lin_depth > 0.99f) {
         out_Color = vec4(vec3(0.0), 1.0);
     } else {
@@ -166,17 +176,9 @@ void main() {
         if(u_UseToon == 1){
             final_color = vec4(toonColor*(strength + ambient),1.0f);
         } else { //use phong
-            final_color = vec4(diffuse*color*(strength + ambient),1.0f);
+            final_color = vec4((0.7*diffuse*color + 0.3*specular_term*vec3(1,1,1))*(strength + ambient),1.0f);
         }
         /*vec4 cs_normal = u_View * u_Model * vec4(normal,1);//normal in camera space*/
-        vec3 cam_view_dir = vec3(0, 0, -1);
-
-        float specular = sampleSpecular(fs_Texcoord);
-        vec3 incident = -normalize(lightVec);
-        vec3 reflectDir = calcReflectionDirection(normal, incident);
-        float specular_dot = max(0.0, dot(reflectDir, cam_view_dir));
-        float specular_term = pow(specular_dot, specular);
-        float norm_dot_dir = max(0.0, dot(normalize(cam_view_dir), -normalize(normal)));
 
         float ss_x = fs_Texcoord.x * u_ScreenWidth;
         float ss_y = fs_Texcoord.y * u_ScreenHeight;
