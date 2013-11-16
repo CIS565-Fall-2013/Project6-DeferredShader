@@ -691,6 +691,10 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     light.w = radius;
     glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
     glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
+    vec3 inclin = glm::gtx::rotate_vector::rotate(cam.start_dir,cam.ry,cam.start_left);
+    vec3 spun = glm::gtx::rotate_vector::rotate(inclin,cam.rx,cam.up);
+    vec3 viewDir = spun;
+    glUniform3fv(glGetUniformLocation(ambient_prog, "u_viewDir"), 1, &(viewDir[0]));
     if( useToon ){
         glUniform1i(glGetUniformLocation(point_prog, "u_UseToon"), 1);
     } else {

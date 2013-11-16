@@ -36,6 +36,7 @@ uniform int u_UseToon;
 
 uniform vec4 u_Light;
 uniform float u_LightIl;
+uniform vec3 u_viewDir; //view direction for contours
 
 in vec2 fs_Texcoord;
 
