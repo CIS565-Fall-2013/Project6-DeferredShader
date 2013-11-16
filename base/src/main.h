@@ -12,6 +12,10 @@
 #define MULTI_LIGHTS 0
 #define IS_TWO_PASS_BLOOM 1
 
+// obj paths
+// mesh=../../../res/crytek-sponza/sponza.obj
+// mesh=../../../res/cornell/cornell_box.obj
+
 class Camera {
 public:
     Camera(glm::vec3 start_pos, glm::vec3 start_dir, glm::vec3 up) : 
