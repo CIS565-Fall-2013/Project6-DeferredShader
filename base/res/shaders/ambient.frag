@@ -97,8 +97,8 @@ float getRandomScalar(vec2 texcoords) {
 // from fall 2012 base code
 const float SS_RADIUS = 0.01f;
 const float constAttenuation  = 1.0;
-const float linearAttenuation = 20.0;
-const float quadAttenuation = 50.0;
+const float linearAttenuation = 1.0;
+const float quadAttenuation = 10.0;
 const float bias = 0.05;
 const float AOIntensity = 2.0;
 float gatherOcclusion( vec3 pt_normal, vec3 pt_position, vec3 occluder_normal, vec3 occluder_position) {

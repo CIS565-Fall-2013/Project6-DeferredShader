@@ -1,6 +1,8 @@
 # This file uses centimeters as units for non-parametric coordinates.
 
 mtllib teapot.mtl
+
+usemtl color
 v 0.773403 0.538020 0.000000
 v 0.760666 0.586166 0.000000
 v 0.775441 0.602215 0.000000
