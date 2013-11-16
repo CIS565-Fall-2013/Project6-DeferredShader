@@ -776,10 +776,11 @@ void updateTitle() {
 
 
 void draw_light_loop(mat4 sc, mat4 vp, float NEARP){
-        for(int x = 0; x < 4; x++){
-            for(int y = 0; y < 4; y++){
-                for(int z = 0; z < 4; z++){
-                    draw_light(vec3(x*(1.2) + 0.5, -y*1.2 - 1.5, z*1.2 + 0.5), 1.0, sc, vp, NEARP);
+        int limit = 7;
+        for(int x = 0; x < limit; x++){
+            for(int y = 0; y < limit; y++){
+                for(int z = 0; z < limit; z++){
+                    draw_light(vec3(x*(5.0/limit) + 0.5, -y*(5.0/limit) - 1.5, z*(5.0/limit) + 0.5), 1.0, sc, vp, NEARP);
                 }
             }
         }
