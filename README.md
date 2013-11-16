@@ -48,18 +48,22 @@ running.
 PERFORMANCE EVALUATION
 -------------------------------------------------------------------------------
 
+Number of Lights
 
-The performance evaluation is where you will investigate how to make your 
-program more efficient using the skills you've learned in class. You must have
-performed at least one experiment on your code to investigate the positive or
-negative effects on performance. 
+With scissor test, nearly 3000 lights can be rendered without a major performance
+hit. After 3000 lights, however, the number of texture reads becomes very high and
+there is a sharp drop in performance. Without the scissor test, the scene can barely
+handle 700 lights. 
 
-We encourage you to get creative with your tweaks. Consider places in your code
-that could be considered bottlenecks and try to improve them. 
+![alt text](./renders/chart_2.png "number of lights")
 
-Each student should provide no more than a one page summary of their
-optimizations along with tables and or graphs to visually explain any
-performance differences.
+Number of neighbors sampled for bloom effect
+
+When blurring the glow texture, FPS stays at 60 when the number of samples taken is 
+under 64. When the number of samples go above 64, performance decreases to about 30 
+FPS since the number of texture reads become very high.  
+
+![alt text](./renders/chart_3.png "number of lights")
 
 -------------------------------------------------------------------------------
 THIRD PARTY CODE POLICY
