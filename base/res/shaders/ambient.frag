@@ -149,7 +149,7 @@ void main() {
 
     vec3 cam_view_dir = vec3(0, 0, -1);
 
-    float specular = sampleSpecular(fs_Texcoord);
+    float specular = sampleSpecular(fs_Texcoord) + 2;
     vec3 incident = -normalize(lightVec);
     vec3 reflectDir = calcReflectionDirection(normal, incident);
     float specular_dot = min(max(0.0, dot(reflectDir, cam_view_dir)),1.0);

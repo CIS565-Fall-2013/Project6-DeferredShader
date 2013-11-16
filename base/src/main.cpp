@@ -810,7 +810,7 @@ void display(void)
         }
 
         glDisable(GL_SCISSOR_TEST);
-        vec4 dir_light(0.1, 1.0, 1.0, 0.0);
+        vec4 dir_light(0.1, 0.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 
         dir_light = normalize(dir_light);
         dir_light.w = 0.3;
