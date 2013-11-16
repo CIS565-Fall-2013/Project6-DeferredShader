@@ -70,5 +70,8 @@
     <None Include="..\..\..\res\shaders\toon.frag">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\..\..\res\shaders\bloom.frag">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

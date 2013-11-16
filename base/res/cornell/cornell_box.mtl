@@ -27,3 +27,17 @@ Ka 20 20 20
 Kd 1 1 1
 Ks 0 0 0
 Ns 0.0
+
+newmtl yellow
+Ka 0 0 0
+Kd 1 1 0
+Ks 0 0 0
+Ns 0.0
+
+newmtl purple
+Ka 0 0 0
+Kd 0.33 0.1 0.55
+Ks 0 0 0
+Ns 0.0
+
+

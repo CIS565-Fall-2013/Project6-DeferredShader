@@ -215,7 +215,8 @@ GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint shininessTexture = 0;
 GLuint postTexture = 0;
-GLuint FBO[2] = {0, 0};
+GLuint bloomPass1Texture= 0;
+GLuint FBO[3] = {0, 0, 0};
 
 
 GLuint pass_prog;
@@ -225,6 +226,7 @@ GLuint diagnostic_prog;
 GLuint post_prog;
 
 GLuint toon_prog;
+GLuint bloom_prog;
 
 void initShader() {
 #ifdef WIN32
@@ -239,6 +241,7 @@ void initShader() {
 	const char * post_frag = "../../../res/shaders/post.frag";
 
 	const char * toon_frag = "../../../res/shaders/toon.frag";
+	const char * bloom_frag = "../../../res/shaders/bloom.frag";
 #else
 	const char * pass_vert = "../res/shaders/pass.vert";
 	const char * shade_vert = "../res/shaders/shade.vert";
@@ -250,6 +253,7 @@ void initShader() {
 	const char * point_frag = "../res/shaders/point.frag";
 	const char * post_frag = "../res/shaders/post.frag";
 	const char * toon_frag = "../res/shaders/toon.frag";
+	const char * bloom_frag = "../res/shaders/bloom.frag";
 #endif
 	Utility::shaders_t shaders = Utility::loadShaders(pass_vert, pass_frag);
 
@@ -306,6 +310,16 @@ void initShader() {
     glBindAttribLocation(toon_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(toon_prog, shaders);
+
+	//Bloom shader
+	shaders = Utility::loadShaders(shade_vert, bloom_frag);
+
+    bloom_prog = glCreateProgram();
+
+    glBindAttribLocation(bloom_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(bloom_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(bloom_prog, shaders);
 }
 
 void freeFBO() {
@@ -315,8 +329,11 @@ void freeFBO() {
     glDeleteTextures(1,&colorTexture);
     glDeleteTextures(1,&postTexture);
 	glDeleteTextures(1,&shininessTexture);
+	glDeleteTextures(1,&bloomPass1Texture);
+	glDeleteTextures(1,&shininessTexture);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
+	glDeleteFramebuffers(1,&FBO[2]);
 }
 
 void checkFramebufferStatus(GLenum framebufferStatus) {
@@ -443,6 +460,7 @@ void initFBO(int w, int h) {
 
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_FLOAT,0);
 
+
     // creatwwe a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
@@ -480,6 +498,38 @@ void initFBO(int w, int h) {
         checkFramebufferStatus(FBOstatus);
     }
 
+	glGenTextures(1, &bloomPass1Texture);
+    //Set up bloom step1
+	glBindTexture(GL_TEXTURE_2D, bloomPass1Texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+    
+	// creatwwe a framebuffer object
+    glGenFramebuffers(1, &FBO[2]);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO[2]);
+
+	// Instruct openGL that we won't bind a color texture with the currently bound FBO
+    glReadBuffer(GL_BACK);
+    color_loc = glGetFragDataLocation(bloom_prog,"out_Color");
+    GLenum drawBloom[1];
+    drawBloom[color_loc] = GL_COLOR_ATTACHMENT0;
+    glDrawBuffers(1, drawBloom);
+
+    // attach the texture to FBO depth attachment point
+    test = GL_COLOR_ATTACHMENT0;
+    glBindTexture(GL_TEXTURE_2D, bloomPass1Texture);
+    glFramebufferTexture(GL_FRAMEBUFFER, drawBloom[color_loc], bloomPass1Texture, 0);
+
+    // check FBO status
+    FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[2]\n");
+        checkFramebufferStatus(FBOstatus);
+    }
+
     //Post Processing buffer!
     glActiveTexture(GL_TEXTURE9);
 
@@ -499,7 +549,7 @@ void initFBO(int w, int h) {
     glGenFramebuffers(1, &FBO[1]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
 
-    // Instruct openGL that we won't bind a color texture with the currently bound FBO
+	// Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_BACK);
     color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
     GLenum draw[1];
@@ -681,6 +731,7 @@ void setup_quad(GLuint prog)
     glActiveTexture(GL_TEXTURE6);
     glBindTexture(GL_TEXTURE_2D, shininessTexture);
     glUniform1i(glGetUniformLocation(prog, "u_Shininesstex"),6);
+
 }
 
 void draw_quad() {
@@ -794,7 +845,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_BLOOM)
     {
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -843,6 +894,28 @@ void display(void)
     }
     glDisable(GL_BLEND);
 
+
+	//Bloom Pass 1
+    setTextures();
+	bindFBO(2);
+    glUseProgram(bloom_prog);
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  
+    glActiveTexture(GL_TEXTURE0);
+    
+	glBindTexture(GL_TEXTURE_2D, postTexture);
+    glUniform1i(glGetUniformLocation(bloom_prog, "u_Posttex"),0);
+    
+	glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, shininessTexture);
+    glUniform1i(glGetUniformLocation(bloom_prog, "u_Shininesstex"),6); 
+    
+	glUniform1i(glGetUniformLocation(bloom_prog, "u_ScreenHeight"), height);
+    glUniform1i(glGetUniformLocation(bloom_prog, "u_ScreenWidth"), width);
+	glUniform1i(glGetUniformLocation(bloom_prog, "u_DisplayType"), display_type);
+    draw_quad();
+
+
     //Stage 3 -- RENDER TO SCREEN
     setTextures();
     glUseProgram(post_prog);
@@ -863,8 +936,13 @@ void display(void)
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glUniform1i(glGetUniformLocation(post_prog, "u_RandomScalartex"),5);
 
+    glActiveTexture(GL_TEXTURE7);
+	glBindTexture(GL_TEXTURE_2D, bloomPass1Texture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_BloomPass1tex"),7);
+
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
+    glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
     draw_quad();
 
     glEnable(GL_DEPTH_TEST);
@@ -967,6 +1045,9 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case('7'):
             display_type = DISPLAY_TOON;
+			break;
+		case('8'):
+            display_type = DISPLAY_BLOOM;
 			break;
         case('0'):
             display_type = DISPLAY_TOTAL;

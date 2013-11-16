@@ -10,28 +10,32 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-#define	DISPLAY_BLOOM 8
+
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
 uniform sampler2D u_Posttex;
+uniform sampler2D u_Shininess;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
-uniform sampler2D u_BloomPass1tex;
+
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
-uniform int u_DisplayType;
 
 in vec2 fs_Texcoord;
 
 out vec4 out_Color;
 ///////////////////////////////////////
 
+
+
+
 uniform float zerothresh = 1.0f;
 uniform float falloff = 0.1f;
-uniform int kernelY = 100;
+
+uniform int kernelX = 100;
 
 /////////////////////////////////////
 //				UTILITY FUNCTIONS
@@ -42,8 +46,8 @@ vec3 sampleCol(vec2 texcoords) {
     return texture(u_Posttex,texcoords).xyz;
 }
 
-vec3 sampleBloomPass1(vec2 texcoords) {
-    return texture(u_BloomPass1tex,texcoords).xyz;
+float sampleBloomAlpha(vec2 texcoords) {
+    return texture(u_Shininess,texcoords).r;
 }
 
 //Get a random normal vector  given a screen-space texture coordinate
@@ -66,34 +70,31 @@ float getRandomScalar(vec2 texcoords) {
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
-const float occlusion_strength = 1.5f;
 void main() {
+    vec3 color = sampleCol(fs_Texcoord);
 
-
-	vec3 bloomColor = vec3(0.0);
-
-	if (u_DisplayType == DISPLAY_BLOOM)
-	{
-	int kyHalf = kernelY/2;
+	int kxHalf = kernelX/2;
 	int count = 0;
-	float delY = 1.0/u_ScreenHeight;
-	for(int i=-kyHalf; i<=kyHalf; ++i)
+	float delX = 1.0/u_ScreenWidth;
+
+	vec3 sumColor = vec3(0.0);
+
+	for(int i=-kxHalf; i<=kxHalf; ++i)
 	{
-		vec2 texCoord = vec2(fs_Texcoord.s, fs_Texcoord.t+i*delY);
-		vec3 color = sampleBloomPass1(texCoord);
-		bloomColor += color;
+		vec2 texCoord = vec2(fs_Texcoord.s+i*delX, fs_Texcoord.t);
+
+		float alpha = sampleBloomAlpha(texCoord);
+		vec3 color = sampleCol(texCoord);
+		
+		sumColor += alpha*color;
 		count++;
 	}
-	
-		bloomColor = 1.0/count * bloomColor;
-	}
-    vec3 color = sampleCol(fs_Texcoord)+5*bloomColor;
-    float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
-    float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
-    out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
 
-	//out_Color =  vec4(sampleBloomPass1(fs_Texcoord),1.0);
-	//out_Color = vec4(bloomColor,1.0);
+	sumColor = 1.0/count * sumColor;
+
+	out_Color = vec4(sumColor,1.0);
+
+	//out_Color = vec4(sampleCol(fs_Texcoord),1.0);
     return;
 }
 
