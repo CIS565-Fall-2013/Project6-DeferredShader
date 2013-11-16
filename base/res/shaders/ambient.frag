@@ -102,6 +102,35 @@ vec3 colorProduct(vec3 c1, vec3 c2)
 }
 
 
+vec3 getSSAO(sampler2D zTex, vec2 v_texCoord, int u_ScreenWidth, int u_ScreenHeight)
+{
+
+	float dx=1.0f/float(u_ScreenWidth);
+	float dy=1.0f/float(u_ScreenHeight);
+	vec2 tmpTexcord=v_texCoord;
+	vec3 totalcolor=vec3(0,0,0);
+
+
+	float sampleradius=3.0f;
+	float sampledelta=1.0f;
+	
+	float myDepth=texture(zTex,v_texCoord);
+
+	for(float i=-sampleradius;i<=sampleradius+0.1f;i+=sampledelta) for(float j=-sampleradius;j<=sampleradius+0.1f;j+=sampledelta)
+	{
+		if(i*i+j*j>sampleradius*sampleradius)continue;
+		tmpTexcord=v_texCoord+vec2(i*dx,j*dy);
+
+		float tmpDepth=texture(zTex,tmpTexcord);
+		float thedist=tmpDepth-myDepth;
+		
+		if(thedist>0) continue;
+		float weight=0.000001/(thedist*thedist+0.0001);
+		
+		totalcolor+=vec3(1.0f)*weight;
+	}
+	return totalcolor;
+}
 
 void main() {
 
@@ -110,6 +139,8 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+
+	//color-=getSSAO(u_Depthtex,fs_Texcoord,u_ScreenWidth, u_ScreenHeight);
 	vec3 lightcolor=texture(u_Lightmaptex,fs_Texcoord).xyz;
 
 	vec2 tempTex;
@@ -124,38 +155,27 @@ void main() {
 	depth4=linearizeDepth(depth4,u_Near,u_Far);
 
 	
-	//color+=lightmap;
-	//color=colorProduct(color,vec3(196.0f/255.0f,165.0f/255.0f,21.0f/255.0f));
     vec3 light = u_Light.xyz;
     float strength = u_Light.w;
     if (lin_depth > 0.99f) {
         out_Color = vec4(vec3(0.0), 1.0);
-		//out_Color = vec4(vec3(1.0), 1.0);
     } else {
         float ambient = u_LightIl;
-		//strength=1.0f;
-		//ambient=0.3f;
         float diffuse = max(0.0, dot(normalize(light),normal));
-		//float diffuse2 = max(0.0, dot(normalize(-light),normal));
-		//float diffuse=(diffuse1*0.9f+diffuse2*0.1f);
-	
+
+	/*
 		if(diffuse<0.05f) diffuse=0.0f;
 		else if(diffuse<0.25f) diffuse=0.25f;
 		else if(diffuse<0.5f) diffuse=0.5f;
 		else if(diffuse<0.75f) diffuse=0.75f;
-		else if(diffuse<1.0f) diffuse=1.0f;
+		else if(diffuse<1.0f) diffuse=1.0f;*/
 
 
 
 
         out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
+		return;
 		if(length(lightcolor)>0.01f || length(lightcolor1)>0.01f || length(lightcolor2)>0.01f || length(lightcolor3)>0.01f || length(lightcolor4)>0.01f ) return;
-
-
-		float checkedge=-dot(normalize(position),normal);
-		//if(checkedge<0.1f) out_Color=vec4(0,0,0,1);
-
-		
 
 
 		if(depth1>1.05f*lin_depth || depth1<0.95f*lin_depth || angle1<0.7f||

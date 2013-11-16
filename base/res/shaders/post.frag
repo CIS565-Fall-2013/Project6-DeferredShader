@@ -81,7 +81,7 @@ vec3 getBlurredLightMap(sampler2D lightTex, vec2 v_texCoord, int u_ScreenWidth, 
 	float blurradius=10.0f;
 	float blurdelta=1.0f;
 	float sigma=blurradius*1.24089642;
-	for(float i=-blurradius;i<=blurradius+0.1f;i+=blurdelta) for(float j=-blurradius;j<=blurradius+0.1f;j+=1.0f)
+	for(float i=-blurradius;i<=blurradius+0.1f;i+=blurdelta) for(float j=-blurradius;j<=blurradius+0.1f;j+=blurdelta)
 	{
 		if(i*i+j*j>blurradius*blurradius)continue;
 		tmpTexcord=v_texCoord+vec2(i*dx,j*dy);
