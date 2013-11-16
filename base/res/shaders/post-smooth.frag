@@ -28,5 +28,6 @@ void main()
 	blendResult /= float( SMOOTH_KERNEL_SIZE*SMOOTH_KERNEL_SIZE );
     out_Color = vec4( blendResult );
 	out_Color *= texture( u_Posttex, fs_Texcoord );
+	
 }
 

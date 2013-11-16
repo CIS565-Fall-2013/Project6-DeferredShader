@@ -15,7 +15,8 @@
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
 uniform sampler2D u_aoResulttex;
-uniform sampler2D u_mv; 
+uniform sampler2D u_normaltex;
+uniform sampler2D u_colortex; 
 
 in vec2 fs_Texcoord;
 out vec4 out_Color;
@@ -23,7 +24,7 @@ out vec4 out_Color;
 
 vec4 motionBlur( vec2 texcoord, int nSamples )
 {
-    vec2 velocity = texture( u_mv, texcoord ).xy;
+    vec2 velocity = vec2( texture( u_normaltex, texcoord ).w, texture( u_colortex, texcoord ).w) ;
 	vec4 blurredColor = vec4(0,0,0,0);
     for( int i = 1; i < nSamples; ++i )
     {

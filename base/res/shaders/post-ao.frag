@@ -29,7 +29,7 @@ uniform float u_zNear;
 uniform float u_zFar;
 //uniform vec3 u_kernels[SSAO_SAMPLE_SIZE];
 uniform mat4 u_proj;
-
+uniform mat4 u_invProj;
 
 in vec2 fs_Texcoord;
 out vec4 out_Color;
@@ -37,6 +37,24 @@ out vec4 out_Color;
 float linearizeDepth(float exp_depth, float near, float far)
 {
     return	(2 * near) / (far + near -  exp_depth * (far - near)); 
+}
+
+//Helper function to automatically sample and unpack normals
+vec3 sampleNrm(vec2 texcoords) {
+
+	vec3 N = texture( u_normaltex, texcoords ).xyz;
+	return N;
+}
+
+//Helper function to automicatlly sample and unpack positions
+vec3 samplePos(vec2 texcoords) {
+    float depth = texture( u_depthtex, texcoords).r * 2.0 - 1.0f;
+	//depth = u_Persp[3][2] / ( depth -u_Persp[2][2] );
+
+	vec2 vxy = texcoords * 2.0 - 1;
+    vec4 P = vec4(vxy.x,vxy.y,depth,1);
+	P = u_invProj * P;
+    return vec3(P.xyz/P.w );
 }
 
 
@@ -59,22 +77,16 @@ float ambientOcclusion( vec2 texcoord )
     for( int i = 0; i < SSAO_SAMPLE_SIZE; ++i )
 	{
 	    vec3 s_pos = TBN * texture( u_kerneltex, i / float(SSAO_SAMPLE_SIZE) ).xyz;
-		s_pos = s_pos +  pos;
+		s_pos = s_pos*0.9 +  pos;
 	
 		//project sample pos to 2D screen space
 		vec4 offset = u_proj * vec4( s_pos, 1.0 );
 		offset.xyz /= offset.w;
 		offset.xyz = offset.xyz * 0.5 + 0.5;
 	    
-		//float s_depth = texture( u_depthtex, offset.xy ).r;
-  //      s_depth = linearizeDepth( s_depth , u_zNear, u_zFar );
-		//offset.z =  linearizeDepth( offset.z, u_zNear, u_zFar );
-
-		//float cutoff = abs( depth - s_depth ) < 0.03 ? 1.0 : 0.0;
-		//occlusion += ( s_depth <= offset.z? 1.0 : 0.0 ) * cutoff ;
 		
 		vec3 sampleP = texture( u_postex, offset.xy ).xyz;
-		float cutoff = abs( pos.z - sampleP.z ) <1.4 ? 1.0 : 0.0;
+		float cutoff = abs( pos.z - sampleP.z ) <0.9 ? 1.0 : 0.0;
 		occlusion += ( s_pos.z <= sampleP.z ? 1.0 : 0.0 ) * cutoff ;
 	}
 	occlusion /= float(SSAO_SAMPLE_SIZE);

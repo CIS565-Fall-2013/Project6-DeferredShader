@@ -11,21 +11,28 @@ in vec4 PrevNDCPos;
 in vec4 NDCPos;
 
 out vec4 out_Normal;
-out vec4 out_Position;
+//out vec4 out_Position;
 out vec4 out_Color;
-out vec4 out_MV;
+//out vec4 out_MV;
 
 void main(void)
 {
-    out_Normal = vec4(normalize(fs_Normal),0.0f);
-    out_Position = vec4(fs_Position.xyz,1.0f); //Tuck position into 0 1 range
-    out_Color = vec4(u_Color, u_shininess );
-
+    //out_Position = vec4(fs_Position.xyz,1.0f); //Tuck position into 0 1 range
 	//get velocity
-	vec4 pos = NDCPos/ NDCPos.w;
-	pos = pos * 0.5 + 0.5; //position of this frame at screen space
+	vec4 pos;
+	vec4 prevPos;
+    vec3 N = normalize(fs_Normal.xyz);
+	vec4 mv;
+    pos= NDCPos/ NDCPos.w;
+	pos= pos * 0.5 + 0.5; //position of this frame at screen space
 	
-	vec4 prevPos = PrevNDCPos / PrevNDCPos.w;
+	prevPos = PrevNDCPos / PrevNDCPos.w;
 	prevPos = prevPos * 0.5 + 0.5;  //position of last frame at screen space
-	out_MV = ( pos - prevPos)/2.0; //velocity
+	mv = ( pos - prevPos)/2.0; //velocity
+
+	//out_Normal.zw = ( pos - prevPos ).xy / 2.0;
+	//out_Normal.xy = normalize(N.xy)*sqrt(N.z*0.5+0.5);
+	out_Normal = vec4( N, mv.x );
+	//out_Position = fs_Position;
+	out_Color = vec4(u_Color, mv.y );
 }

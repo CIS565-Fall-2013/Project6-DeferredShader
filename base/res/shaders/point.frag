@@ -16,10 +16,11 @@
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
 uniform mat4 u_Persp;
+uniform mat4 u_invPersp;
 
 uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
-uniform sampler2D u_Positiontex;
+//uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
@@ -58,12 +59,23 @@ float linearizeDepth(float exp_depth, float near, float far) {
 
 //Helper function to automatically sample and unpack normals
 vec3 sampleNrm(vec2 texcoords) {
-    return texture(u_Normaltex,texcoords).xyz;
+ //   vec3 G = texture(u_Normaltex,texcoords).xyz;
+	//vec3 N;
+	//N.z = dot(G.xy,G.xy)*2-1;
+	//N.xy = normalize( G.xy ) * sqrt( 1-N.z*N.z );
+	vec3 N = texture( u_Normaltex, texcoords ).xyz;
+	return N;
 }
 
 //Helper function to automicatlly sample and unpack positions
 vec3 samplePos(vec2 texcoords) {
-    return texture(u_Positiontex,texcoords).xyz;
+    float depth = texture( u_Depthtex, texcoords).r * 2.0 - 1.0f;
+	//depth = u_Persp[3][2] / ( depth -u_Persp[2][2] );
+
+	vec2 vxy = texcoords * 2.0 - 1;
+    vec4 P = vec4(vxy.x,vxy.y,depth,1);
+	P = u_invPersp * P;
+    return vec3(P.xyz/P.w );
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -104,7 +116,7 @@ void main() {
     float lightRadius = u_Light.w;
     out_Color = vec4(0,0,0,1.0);
 
-	float dst_factor = 1.0/distance( light, position );
+	float dst_factor = 5/distance( light, position );
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light

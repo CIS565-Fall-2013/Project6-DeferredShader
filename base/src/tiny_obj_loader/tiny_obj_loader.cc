@@ -463,7 +463,7 @@ LoadObj(
   const char* mtl_basepath)
 {
 
-  shapes.clear();
+  //shapes.clear();
 
   std::stringstream err;
 

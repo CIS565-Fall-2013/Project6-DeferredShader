@@ -27,6 +27,7 @@ uniform float u_Far;
 uniform float u_Near;
 uniform int u_OcclusionType;
 uniform int u_DisplayType;
+uniform mat4 u_invPersp;
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
@@ -58,12 +59,18 @@ float linearizeDepth(float exp_depth, float near, float far) {
 
 //Helper function to automatically sample and unpack normals
 vec3 sampleNrm(vec2 texcoords) {
-    return texture(u_Normaltex,texcoords).xyz;
+    return texture( u_Normaltex, texcoords ).xyz;
 }
 
 //Helper function to automicatlly sample and unpack positions
 vec3 samplePos(vec2 texcoords) {
-    return texture(u_Positiontex,texcoords).xyz;
+    float depth = texture( u_Depthtex, texcoords).r * 2.0 - 1.0f;
+	//depth = u_Persp[3][2] / ( depth -u_Persp[2][2] );
+
+	vec2 vxy = texcoords * 2.0 - 1;
+    vec4 P = vec4(vxy.x,vxy.y,depth,1);
+	P = u_invPersp * P;
+    return vec3(P.xyz/P.w );
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -108,6 +115,7 @@ void main() {
             out_Color = vec4(vec3(lin_depth),1.0);
             break;
         case(DISPLAY_NORMAL):
+		    
             out_Color = vec4((normal),1.0);
             break;
         case(DISPLAY_POSITION):

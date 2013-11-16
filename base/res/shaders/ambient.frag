@@ -16,6 +16,7 @@
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
 uniform mat4 u_Persp;
+uniform mat4 u_invPersp;
 
 uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
@@ -59,12 +60,20 @@ float linearizeDepth(float exp_depth, float near, float far) {
 
 //Helper function to automatically sample and unpack normals
 vec3 sampleNrm(vec2 texcoords) {
-    return texture(u_Normaltex,texcoords).xyz;
+
+	vec3 N = texture( u_Normaltex, texcoords ).xyz;
+	return N;
 }
 
 //Helper function to automicatlly sample and unpack positions
 vec3 samplePos(vec2 texcoords) {
-    return texture(u_Positiontex,texcoords).xyz;
+    float depth = texture( u_Depthtex, texcoords).r * 2.0 - 1.0f;
+	//depth = u_Persp[3][2] / ( depth -u_Persp[2][2] );
+
+	vec2 vxy = texcoords * 2.0 - 1;
+    vec4 P = vec4(vxy.x,vxy.y,depth,1);
+	P = u_invPersp * P;
+    return vec3(P.xyz/P.w );
 }
 
 //Helper function to automicatlly sample and unpack positions
