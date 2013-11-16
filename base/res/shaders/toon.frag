@@ -129,11 +129,19 @@ void main() {
 	//calculate magnitude of gradient, if s is high, there is an edge, else, no edge
 	float s = sqrt(dot(Dx, Dx) + dot(Dy, Dy));
 
-	//vec3 eyeDir = normalize(u_CamPosition - position);
-	
-	//if (dot(eyeDir, normal) < 0.0)
-	//	s += 0.0;
+	//test edges with normals
 
+	for (int i = -1; i < 2; ++i) {
+		for (int j = -1; j < 2; ++j) {
+			vec2 offset = fs_Texcoord + vec2(i*stepX, j*stepY);
+			vec3 offsetNormal = sampleNrm(offset);
+
+			//test if normals are really different, if so, there is an edge
+			if (dot(normal, offsetNormal) < 0.85)
+				s += 1.0;
+		}
+	}
+	
 	//toon shading based on normals
 	vec3 lightDir = normalize(u_Light.xyz - position);
 	float shade = max(dot(lightDir, normal), 0.0);
@@ -151,7 +159,7 @@ void main() {
 		out_Color.rgb = 0.2 * color;
 	}
 	
-	out_Color.rgb *= (1.0 - s);
+	out_Color.rgb *= max(0.0, (1.0 - s));
     return;
 }
 
