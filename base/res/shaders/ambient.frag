@@ -150,11 +150,12 @@ void main() {
 	
 	if (u_DisplayType == DISPLAY_BLOOM)
 	{
-		float shiny = texture(u_Colortex, fs_Texcoord).a;
-		if (shiny >= 1)
+		vec4 origColor = texture(u_Colortex, fs_Texcoord);
+		float shiny = origColor.a;
+		if (shiny >= 1 || shiny == 0)
 			out_BloomMap = vec4(0,0,0,0);
 		else
-			out_BloomMap = vec4(shiny, shiny, shiny, 1.0);
+			out_BloomMap = origColor;
 	}
 	else
 	{

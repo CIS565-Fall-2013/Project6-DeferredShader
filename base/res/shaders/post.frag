@@ -188,7 +188,7 @@ vec3 applyAABlur(vec2 texcoords, float blurFactor)
 	return finalColor;
 }
 
-vec3 applyGaussianFilter(vec2 texcoords)
+vec3 applyDim3GaussianFilter(vec2 texcoords)
 {
 	mat3 gausFilter = mat3 (
 			0.0668, 0.1248, 0.0668,
@@ -213,12 +213,45 @@ vec3 applyGaussianFilter(vec2 texcoords)
 	return result;
 }
 
+// apply a 5x5 gaussian filter to the incoming texture coordinates
+// return the resulting color
+vec3 applyGaussianFilter(vec2 texcoords)
+{
+	float pi = 3.141592653589;
+	float sigma = 50.0;
+	
+	float sum = 0;  // for normalization
+	float s = 2.0 * sigma * sigma;
+	vec3 result = vec3(0,0,0);
+	
+	int bound = 18;
+	
+	for (int x = -bound ; x <= bound ; ++x)
+	{
+		for (int y = -bound ; y <= bound ; ++y)
+		{
+			float r = x*x + y*y;
+			float w = (exp(-r / s)) / (pi * s);
+			sum += w;
+			
+			ivec2 texSize = textureSize(u_BloomMapTex, 0);
+			float texOffsetS = float(x - 1) / float(texSize.x);
+			float texOffsetT = float(y - 1) / float(texSize.y);
+			vec3 color = w * texture(u_BloomMapTex, texcoords + vec2(texOffsetS, texOffsetT)).rgb;			
+			result += color;
+		}
+	}
+	
+	return result * (1 / sum);	
+	//return result;
+}
+
 
 
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
-const float occlusion_strength = 1.5f;
+const float occlusion_strength = 1.5;
 void main() {
 
 	vec3 color = sampleCol(fs_Texcoord);
@@ -243,10 +276,10 @@ void main() {
 	}
 	else if (u_DisplayType == DISPLAY_BLOOM)
 	{
-		//vec3 bloomColor = clamp(applyGaussianFilter(fs_Texcoord), 0, 1);
-		//out_Color = vec4(bloomColor,1.0);
-		
-		out_Color = texture(u_BloomMapTex, fs_Texcoord);
+		vec4 specColor = vec4(abs(texture(u_SpecTex, fs_Texcoord).rgb), 1.0);
+		vec4 baseColor = vec4(color, 1.0);
+		out_Color = baseColor + vec4(applyGaussianFilter(fs_Texcoord), 1.0);
+		//out_Color =vec4(applyGaussianFilter(fs_Texcoord), 1.0);
 	}
 	else if (u_DisplayType == DISPLAY_AA)
 	{
