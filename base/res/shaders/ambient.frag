@@ -4,12 +4,15 @@
 //       ENUMERATIONS
 ////////////////////////////
 
-#define	DISPLAY_DEPTH 0
-#define	DISPLAY_NORMAL 1
-#define	DISPLAY_POSITION 2
-#define	DISPLAY_COLOR 3
-#define	DISPLAY_TOTAL 4
-#define	DISPLAY_LIGHTS 5
+#define DISPLAY_DEPTH 0
+#define DISPLAY_NORMAL 1
+#define DISPLAY_POSITION 2
+#define DISPLAY_COLOR 3
+#define DISPLAY_TOTAL 4
+#define DISPLAY_LIGHTS 5
+#define DISPLAY_TONE 6
+#define DISPLAY_BLOOM 7
+#define DISPLAY_OCCLUSION 8
 
 
 /////////////////////////////////////
@@ -115,6 +118,41 @@ void main() {
         float ambient = u_LightIl;
         float diffuse = max(0.0, dot(normalize(light),normal));
         out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
+
+
+        if(u_DisplayType == DISPLAY_TONE){
+            //Sober filter
+            mat3 GX, GY;
+            GX[0] = vec3(1.0,2.0,1.0);
+            GX[1] = vec3(0.0,0.0,0.0);
+            GX[2] = vec3(-1.0,-2.0,-1.0);
+
+            GY[0] = vec3(1.0,0.0,-1.0);
+            GY[1] = vec3(2.0,0.0,-2.0);
+            GY[2] = vec3(1.0,0.0,-1.0);
+
+            float magX = 0.0;
+            float magY = 0.0;
+
+            for(int i = 0;i < 3; i++){
+                for(int j = 0; j < 3; j++){
+                    float mx = (j-1.0) / u_ScreenWidth;
+                    float my = (i-1.0) / u_ScreenHeight;
+                          
+                    float c = length(sampleCol(vec2(fs_Texcoord.s + mx, fs_Texcoord.t + my)));     
+
+                    magX += GX[j][i] * c;
+                    magY += GY[j][i] * c;
+                }
+            }
+            float mag = sqrt((magX)*(magX) + (magY)*(magY));
+            mag = clamp(mag, 0.0, 1.0);
+            out_Color = vec4(vec3(out_Color * (mag) * 5.0 + out_Color), 1.0);
+            //out_Color = vec4(color, 1.0);
+        }
+
+
+
     }	
     return;
 }

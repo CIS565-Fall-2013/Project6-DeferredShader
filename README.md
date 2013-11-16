@@ -15,7 +15,7 @@ In this project, I implemented separable convolution bloom effect, Toon shading,
 
 For the bloom effect, instead of doing one pass convolution, I did the two pass separable convolution which has a great speed up. For two pass, I added one more post fragment shader. I also make use of additional specular G buffer to determine which area to bloom. To define which material is effected by bloom effect, user just need to set Ns value to 101 in the .mtl file. I also using Gaussian blur effect for blurring the object.
 
-For Toon shading, I am using sober matrix to multiply by the 9 different pixel color around current point. Then get the magnitude this pixel, using this magnitude to determine the color of current point. Also done in post fragment shader. 
+For Toon shading, I am using sober matrix to multiply by the 9 different pixel color around current point. Then get the magnitude this pixel, using this magnitude to determine the color of current point. I done this in ambient fragment shader.
 
 For specular G buffer, I pass a vec4 value to fragment shader. This vec4 includes specular color and specular intensity. User can specify these values in .mtl file using Ks for specular color and Ns for specular intensity.
 
@@ -58,7 +58,7 @@ I also did a evaluation on the number of lights and frame rates. Obviously, the 
 ![Alt text](after.png "after")
 **After Bloom Effect**
 
-![Alt text](ToneB.png "Toon Shading")
+![Alt text](ToonB.png "Toon Shading")
 **Toon Shading**
 
 ![Alt text](SSAOB.png "SSAO")

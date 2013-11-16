@@ -95,11 +95,18 @@ void main() {
         if(specular.w == 101){
             vec3 c = vec3(0.0);
             int range = 20;
+            int count = 0;
             for(int i = -range; i < range; i++)
             {
                 float sd = 6.0;
                 float mx = float(i) / u_ScreenWidth;
-                c += sampleCol(vec2(fs_Texcoord.s + mx, fs_Texcoord.t)) * ((1.0 / (2.0 * 3.141516 * sd * sd) * exp(-(i*i)/(2.0*sd*sd)))) * 1000.0;
+                vec4 nearspe = sampleSpec(vec2(fs_Texcoord.s + mx, fs_Texcoord.t)); 
+                //if(nearspe.w == 101){
+                    c += sampleCol(vec2(fs_Texcoord.s + mx, fs_Texcoord.t)) * ((1.0 / (2.0 * 3.141516 * sd * sd) * exp(-(i*i)/(2.0*sd*sd)))) * 1000.0;
+                    
+               // }
+               // else
+                ///    c += color * ((1.0 / (2.0 * 3.141516 * sd * sd) * exp(-(i*i)/(2.0*sd*sd)))) * 1000.0;
             }
             c /= 2.0 * range;
             out_Color = vec4(c , 1.0);

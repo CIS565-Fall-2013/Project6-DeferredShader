@@ -555,7 +555,7 @@ void initFBO(int w, int h) {
 	color_loc = glGetFragDataLocation(post_prog,"out_Color");
 	//position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLenum draw2[1];
-    draw2[color_loc] = GL_COLOR_ATTACHMENT0;
+    draw2[color_loc] = GL_COLOR_ATTACHMENT4;
 	//draw2[position_loc] = GL_COLOR_ATTACHMENT1;
     glDrawBuffers(1, draw2);
 
@@ -567,6 +567,8 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[specular_loc], specularTexture, 0);
 	glBindTexture(GL_TEXTURE_2D, positionTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[normal_loc], normalTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -991,6 +993,10 @@ void display(void)
 	glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, positionTexture);
     glUniform1i(glGetUniformLocation(post_prog2, "u_Positiontex"),2);
+
+	glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glUniform1i(glGetUniformLocation(post_prog2, "u_Normaltex"),3);
     
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
