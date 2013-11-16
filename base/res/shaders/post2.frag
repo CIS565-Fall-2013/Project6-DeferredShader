@@ -21,6 +21,7 @@
 uniform sampler2D u_Posttex;
 uniform sampler2D u_Speculartex;
 uniform sampler2D u_Positiontex;
+uniform sampler2D u_Normaltex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -47,6 +48,11 @@ uniform float falloff = 0.1f;
 //Helper function to automicatlly sample and unpack positions
 vec3 sampleCol(vec2 texcoords) {
     return texture(u_Posttex,texcoords).xyz;
+}
+
+//Helper function to automatically sample and unpack normals
+vec3 sampleNrm(vec2 texcoords) {
+    return texture(u_Normaltex,texcoords).xyz;
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -88,6 +94,8 @@ void main() {
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;  
 
+    vec3 normal = sampleNrm(fs_Texcoord);
+
     if(u_DisplayType == DISPLAY_TONE){
         //Sober filter
         mat3 GX, GY;
@@ -107,6 +115,14 @@ void main() {
                 float mx = (j-1.0) / u_ScreenWidth;
                 float my = (i-1.0) / u_ScreenHeight;
 
+                //vec3 nearNrm = sampleNrm(vec2(fs_Texcoord.s + mx, fs_Texcoord.t + my));
+
+                //float cosValue = dot(normal, nearNrm);
+
+                // if(cosValue < 0.5){
+                //     out_Color = vec4(vec3(0.0), 1.0);
+                //     return;
+                // }
                 //vec3 c = (sampleCol(vec2(fs_Texcoord.s + mx, fs_Texcoord.t + my)));     
                 float c = length(sampleCol(vec2(fs_Texcoord.s + mx, fs_Texcoord.t + my)));     
 
@@ -117,6 +133,7 @@ void main() {
         float mag = sqrt((magX)*(magX) + (magY)*(magY));
         mag = clamp(mag, 0.0, 1.0);
         out_Color = vec4(color * (1.0 - mag) * 5.0 + color, 1.0);
+        //out_Color = vec4(color, 1.0);
     }
     else
     {
