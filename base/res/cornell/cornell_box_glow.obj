@@ -8,7 +8,7 @@
 mtllib cornell_box.mtl
 
 o floor
-usemtl lightpurple
+usemtl purple
 v 552.8 0.0   0.0
 v 0.0   0.0   0.0
 v 0.0   0.0 559.2

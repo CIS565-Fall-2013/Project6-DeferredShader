@@ -18,6 +18,18 @@ replace the ray intersection with the scene.
 In the project, as required, I implemented both Toon shading and Blooming effect(actually more likely to be a glowing effect). 
 
 -------------------------------------------------------------------------------
+HOW TO USE
+-------------------------------------------------------------------------------
+
+To turn on and off toon shading, uncomment/comment the #define USETOONSHADE in the ambient.frag
+
+To turn on and off SSAO, uncomment/comment the #define USESSAO in the ambient.frag
+
+The bloom shader is default on. I thus fork the cornell_box into 2 versions: cornell_box_notglow.obj and cornell_box_glow.obj. Changing the input argument will work.
+
+By the way, I used "Ka" in the mtl file as the emission of a material. So if you want something shiny, just change it!
+
+-------------------------------------------------------------------------------
 TOON SHADING
 -------------------------------------------------------------------------------
 The toon shading happen in the shader, instead of post-shading processing. The toon shading is simple: So for each dot(light,normal), I do not use it directly. Instead, it will be clamped to the threshold above it.

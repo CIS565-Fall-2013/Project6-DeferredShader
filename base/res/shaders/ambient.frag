@@ -11,6 +11,8 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 
+//#define USETOONSHADE
+#define USESSAO
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -146,7 +148,10 @@ void main() {
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
 
+	#ifdef USESSAO
 	color=colorProduct(color,getSSAO(u_Depthtex,u_Positiontex,fs_Texcoord,u_ScreenWidth, u_ScreenHeight));
+	#endif
+
 	vec3 lightcolor=texture(u_Lightmaptex,fs_Texcoord).xyz;
 
 	vec2 tempTex;
@@ -169,18 +174,18 @@ void main() {
         float ambient = u_LightIl;
         float diffuse = max(0.0, dot(normalize(light),normal));
 
-	/*
+	#ifdef USETOONSHADE
 		if(diffuse<0.05f) diffuse=0.0f;
 		else if(diffuse<0.25f) diffuse=0.25f;
 		else if(diffuse<0.5f) diffuse=0.5f;
 		else if(diffuse<0.75f) diffuse=0.75f;
-		else if(diffuse<1.0f) diffuse=1.0f;*/
+		else if(diffuse<1.0f) diffuse=1.0f;
 
-
+	#endif
 
 
         out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
-		return;
+	#ifdef USETOONSHADE
 		if(length(lightcolor)>0.01f || length(lightcolor1)>0.01f || length(lightcolor2)>0.01f || length(lightcolor3)>0.01f || length(lightcolor4)>0.01f ) return;
 
 
@@ -190,6 +195,7 @@ void main() {
 		depth4>1.05f*lin_depth || depth4<0.95f*lin_depth ||angle4<0.7f)
 			out_Color=vec4(0,0,0,1)
 		;
+		#endif
     }	
     return;
 }
