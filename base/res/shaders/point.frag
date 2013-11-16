@@ -62,8 +62,8 @@ vec3 sampleNrm(vec2 texcoords) {
 }
 
 //Helper function to automicatlly sample and unpack positions
-vec3 samplePos(vec2 texcoords) {
-    return texture(u_Positiontex,texcoords).xyz;
+vec4 samplePos(vec2 texcoords) {
+    return texture(u_Positiontex,texcoords);
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -98,18 +98,38 @@ void main() {
     float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
 
     vec3 normal = sampleNrm(fs_Texcoord);
-    vec3 position = samplePos(fs_Texcoord);
+    vec4 pos = samplePos(fs_Texcoord);
+	
+	vec3 position = pos.xyz;
+	// Shininess and glow was packed
+	float shininess = 2.0*floor(pos.w/2.0);
+
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
     out_Color = vec4(0,0,0,1.0);
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
-        //Put some code here to visualize the fragment associated with this point light
+        out_Color = vec4(0.0125,0.0325,0.0425,1.0);
+		//Put some code here to visualize the fragment associated with this point light
     }
     else
     {
-        //Put some code here to actually compute the light from the point light
+		vec3 posToLight = light-position;
+		float diffuse = max(0.0, dot(normalize(posToLight),normal));
+		
+		// position is in eye space, so view vector should be negative position?
+		vec3 halfVec = normalize(normalize(vec3(0.0,0.0,-0.0)-position) + normalize(posToLight));
+		float spec = dot(halfVec, normal);
+		if(shininess < 0.0001)
+			spec = 0.0;
+		else
+			spec = pow(spec,shininess);
+
+		float luminance = u_LightIl * max(0.0,(1.0 - length(posToLight)/lightRadius));
+		out_Color = vec4(1.0* luminance*color*(lightRadius*(diffuse)) + vec3(1.0,1.0,1.0) *(luminance * lightRadius * spec),1.0f);
+        //out_Color = vec4(1.0,0.0,0.0,1.0);
+		//Put some code here to actually compute the light from the point light
     }
     return;
 }

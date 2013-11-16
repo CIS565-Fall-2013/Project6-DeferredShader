@@ -25,6 +25,13 @@ const float PI = 3.14159f;
 
 int width, height;
 
+/***** Uniform variables that are interaction controllable *****/
+int bloomWidth2D = 3;
+int kernelWidthX = 3;
+int kernelWidthY = 3;
+int postProcessMode = 0;
+/***************************************************************/
+
 device_mesh_t uploadMesh(const mesh_t & mesh) {
     device_mesh_t out;
     //Allocate vertex array
@@ -78,7 +85,9 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
     //Unplug Vertex Array
     glBindVertexArray(0);
 
+	out.shininess = mesh.shininess;
     out.texname = mesh.texname;
+	out.meshName = mesh.meshName;
     out.color = mesh.color;
     return out;
 }
@@ -161,7 +170,10 @@ void initMesh() {
             mesh.color = vec3(shape.material.diffuse[0],
                               shape.material.diffuse[1],
                               shape.material.diffuse[2]);
+			
+			mesh.shininess = shape.material.shininess;
             mesh.texname = shape.material.diffuse_texname;
+			mesh.meshName = shape.name;
             draw_meshes.push_back(uploadMesh(mesh));
             f=f+process;
         }
@@ -212,7 +224,9 @@ GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint postTexture = 0;
-GLuint FBO[2] = {0, 0};
+GLuint postTexture2 = 0;
+GLuint postTexture3 = 0;
+GLuint FBO[4] = {0, 0, 0, 0};
 
 
 GLuint pass_prog;
@@ -220,8 +234,9 @@ GLuint point_prog;
 GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
+GLuint post_prog2;
 void initShader() {
-    Utility::shaders_t shaders = Utility::loadShaders("../res/shaders/pass.vert", "../res/shaders/pass.frag");
+    Utility::shaders_t shaders = Utility::loadShaders("../../../res/shaders/pass.vert", "../../../res/shaders/pass.frag");
 
     pass_prog = glCreateProgram();
 
@@ -231,7 +246,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(pass_prog,shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/diagnostic.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/diagnostic.frag");
 
     diagnostic_prog = glCreateProgram();
 
@@ -240,7 +255,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(diagnostic_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/ambient.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/ambient.frag");
 
     ambient_prog = glCreateProgram();
 
@@ -249,7 +264,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(ambient_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/point.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/point.frag");
 
     point_prog = glCreateProgram();
 
@@ -258,7 +273,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(point_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/post.vert", "../res/shaders/post.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/post.vert", "../../../res/shaders/post.frag");
 
     post_prog = glCreateProgram();
 
@@ -274,8 +289,11 @@ void freeFBO() {
     glDeleteTextures(1,&positionTexture);
     glDeleteTextures(1,&colorTexture);
     glDeleteTextures(1,&postTexture);
+	glDeleteTextures(1,&postTexture2);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
+	glDeleteFramebuffers(1,&FBO[2]);
+	glDeleteFramebuffers(1,&FBO[3]);
 }
 
 void checkFramebufferStatus(GLenum framebufferStatus) {
@@ -312,7 +330,7 @@ void checkFramebufferStatus(GLenum framebufferStatus) {
 GLuint random_normal_tex;
 GLuint random_scalar_tex;
 void initNoise() {  
-    random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../res/random_normal.png",0,0,0);
+    random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../../../res/random_normal.png",0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -320,7 +338,7 @@ void initNoise() {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    random_scalar_tex = (unsigned int)SOIL_load_OGL_texture("../res/random.png",0,0,0);
+    random_scalar_tex = (unsigned int)SOIL_load_OGL_texture("../../../res/random.png",0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -371,7 +389,7 @@ void initFBO(int w, int h) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
     //Set up color FBO
     glBindTexture(GL_TEXTURE_2D, colorTexture);
@@ -455,6 +473,79 @@ void initFBO(int w, int h) {
         printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[1]\n");
         checkFramebufferStatus(FBOstatus);
     }
+
+    glGenTextures(1, &postTexture2);
+
+    //Set up post FBO
+    glBindTexture(GL_TEXTURE_2D, postTexture2);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+	// creatwwe a framebuffer object
+    glGenFramebuffers(1, &FBO[2]);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO[2]);
+
+    // Instruct openGL that we won't bind a color texture with the currently bound FBO
+    glReadBuffer(GL_BACK);
+    color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
+    GLenum drawMore[1];
+    drawMore[color_loc] = GL_COLOR_ATTACHMENT0;
+    glDrawBuffers(1, drawMore);
+
+    // attach the texture to FBO depth attachment point
+    test = GL_COLOR_ATTACHMENT0;
+    glBindTexture(GL_TEXTURE_2D, postTexture2);
+    glFramebufferTexture(GL_FRAMEBUFFER, drawMore[color_loc], postTexture2, 0);
+
+    // check FBO status
+    FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[2]\n");
+        checkFramebufferStatus(FBOstatus);
+    }
+
+	glGenTextures(1, &postTexture3);
+
+    //Set up post FBO
+    glBindTexture(GL_TEXTURE_2D, postTexture3);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+	// creatwwe a framebuffer object
+    glGenFramebuffers(1, &FBO[3]);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO[3]);
+
+    // Instruct openGL that we won't bind a color texture with the currently bound FBO
+    glReadBuffer(GL_BACK);
+    color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
+    GLenum drawMoreMore[1];
+    drawMoreMore[color_loc] = GL_COLOR_ATTACHMENT0;
+    glDrawBuffers(1, drawMoreMore);
+
+    // attach the texture to FBO depth attachment point
+    test = GL_COLOR_ATTACHMENT0;
+    glBindTexture(GL_TEXTURE_2D, postTexture3);
+    glFramebufferTexture(GL_FRAMEBUFFER, drawMoreMore[color_loc], postTexture3, 0);
+
+    // check FBO status
+    FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[3]\n");
+        checkFramebufferStatus(FBOstatus);
+    }
+
 
     // switch back to window-system-provided framebuffer
     glClear(GL_DEPTH_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -562,6 +653,9 @@ void draw_mesh() {
     glUniformMatrix4fv(glGetUniformLocation(pass_prog,"u_InvTrans") ,1,GL_FALSE,&inverse_transposed[0][0]);
 
     for(int i=0; i<draw_meshes.size(); i++){
+		float glow = (draw_meshes[i].meshName.compare("short_block")==0) ? 1.0 : 0.0;
+		glUniform1f(glGetUniformLocation(pass_prog, "u_Glow"), glow);
+		glUniform1f(glGetUniformLocation(pass_prog, "u_Shininess"), draw_meshes[i].shininess);
         glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
         glBindVertexArray(draw_meshes[i].vertex_array);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
@@ -684,15 +778,44 @@ void updateDisplayText(char * disp) {
     }
 }
 
+void updateModeText(char * mode) {
+	switch(postProcessMode){
+		case(POST_PASS):
+			sprintf(mode, "Pass Through");
+			break;
+		case(POST_BLOOM_2D):
+			sprintf(mode, "Bloom 2D Kernel");
+			break;
+		case(POST_BLOOM_SEPARATED):
+			sprintf(mode, "Bloom Separated Kernel");
+			break;
+		case(POST_GLOW_2D):
+			sprintf(mode, "Glow 2D Kernel");
+			break;
+		case(POST_GLOW_SEPARATED):
+			sprintf(mode, "Glow Separated Kernel");
+			break;
+		case(POST_VIGNETTE):
+			sprintf(mode, "Vignette Kernel");
+			break;
+		case(POST_SSAO):
+			sprintf(mode, "SSAO: Scalable");
+			break;
+	}
+}
+
 int frame = 0;
 int currenttime = 0;
 int timebase = 0;
 char title[1024];
 char disp[1024];
+char mode[1024];
 char occl[1024];
 
 void updateTitle() {
     updateDisplayText(disp);
+
+	updateModeText(mode);
     //calculate the frames per second
     frame++;
 
@@ -702,12 +825,67 @@ void updateTitle() {
     //check if a second has passed
     if (currenttime - timebase > 1000) 
     {
-        sprintf(title, "CIS565 OpenGL Frame | %s FPS: %4.2f", disp, frame*1000.0/(currenttime-timebase));
+        sprintf(title, "CIS565 OpenGL Frame | %s FPS: %4.2f |%d %s | Blur:%dx%d", disp, frame*1000.0/(currenttime-timebase),postProcessMode, mode, 2*kernelWidthX+1, 2*kernelWidthY+1);
         //sprintf(title, "CIS565 OpenGL Frame | %4.2f FPS", frame*1000.0/(currenttime-timebase));
         glutSetWindowTitle(title);
         timebase = currenttime;		
         frame = 0;
     }
+}
+
+void setupPostFrameBuffer(int fboID, GLuint inputTexture, int postProcessEffect)
+{
+    bindFBO(fboID);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_TEXTURE_2D);
+    glUseProgram(post_prog);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, inputTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Normaltex"),2);
+
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D,positionTexture);
+	glUniform1i(glGetUniformLocation(post_prog, "u_Positiontex"),3);
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, random_normal_tex);
+    glUniform1i(glGetUniformLocation(post_prog, "u_RandomNormaltex"),4);
+    
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
+    glUniform1i(glGetUniformLocation(post_prog, "u_RandomScalartex"),5);
+
+    glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
+    glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
+
+	glUniform1i(glGetUniformLocation(post_prog, "u_kernelWidthX"),kernelWidthX);
+	glUniform1i(glGetUniformLocation(post_prog, "u_kernelWidthY"),kernelWidthY);
+	glUniform1i(glGetUniformLocation(post_prog, "u_Mode"),postProcessEffect);
+
+}
+
+void setupBlendFrameBuffer(int outputFBO, GLuint inputTex1, GLuint inputTex2)
+{
+    bindFBO(outputFBO);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_TEXTURE_2D);
+    glUseProgram(post_prog);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, inputTex1);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, inputTex2);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Posttex2"),1);
+
+	glUniform1i(glGetUniformLocation(post_prog, "u_Mode"),ARG_BLEND);
+
 }
 
 bool doIScissor = true;
@@ -739,8 +917,13 @@ void display(void)
                        0.0, 0.5, 0.0, 0.0,
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
-
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+		
+		for( float i = 0.1 ; i <= 6.0 ; i+=0.85)
+			for(float j = 0.1 ; j <= 6.0 ; j+=0.85)
+				for(float k = 0.1 ; k <= 6.0 ; k+=0.85)
+					draw_light(vec3(i, -j, k), 0.75, sc, vp, NEARP);
+		
+        //draw_light(vec3(2.5, -2.5, 4.0), 3.00, sc, vp, NEARP);
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
@@ -761,15 +944,73 @@ void display(void)
     glDisable(GL_BLEND);
 
     setTextures();
+
+	GLuint finalTexture = postTexture;
+	GLuint finalBlendTexture = postTexture3;
+	int finalPostProcess = ARG_VIGNETTE;
+
+	switch(postProcessMode)
+	{
+		case POST_PASS:
+			finalPostProcess = ARG_PASS;
+			break;
+		case POST_BLOOM_2D:
+			finalPostProcess = ARG_BLOOM_2D;
+			break;
+		case POST_GLOW_2D:
+			finalPostProcess = ARG_GLOW_2D;
+			break;
+		case POST_VIGNETTE:
+			finalPostProcess = ARG_VIGNETTE;
+			break;
+		case POST_BLOOM_SEPARATED:
+			setupPostFrameBuffer(2,postTexture,ARG_BLOOM_SELECT);
+			draw_quad();
+			setupPostFrameBuffer(3,postTexture2,ARG_BLUR_X);
+			draw_quad();
+			setupPostFrameBuffer(2,postTexture3,ARG_BLUR_Y);
+			draw_quad();
+			finalPostProcess = ARG_BLEND;
+			finalTexture = postTexture;
+			finalBlendTexture = postTexture2;
+			break;
+		case POST_GLOW_SEPARATED:
+			setupPostFrameBuffer(2,postTexture,ARG_GLOW_SELECT);
+			draw_quad();
+			setupPostFrameBuffer(3,postTexture2,ARG_BLUR_X);
+			draw_quad();
+			setupPostFrameBuffer(2,postTexture3,ARG_BLUR_Y);
+			draw_quad();
+			finalPostProcess = ARG_BLEND;
+			finalTexture = postTexture;
+			finalBlendTexture = postTexture2;
+			break;
+		case POST_SSAO:
+			finalPostProcess = ARG_SSAO_SCALE;
+			break;
+	}	
+	
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_TEXTURE_2D);
     glUseProgram(post_prog);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, postTexture);
+    glBindTexture(GL_TEXTURE_2D, finalTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
     
+	glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, finalBlendTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Posttex2"),1);
+
+	glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Normaltex"),2);
+
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D,positionTexture);
+	glUniform1i(glGetUniformLocation(post_prog, "u_Positiontex"),3);
+
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glUniform1i(glGetUniformLocation(post_prog, "u_RandomNormaltex"),4);
@@ -780,7 +1021,13 @@ void display(void)
 
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
+
+	glUniform1i(glGetUniformLocation(post_prog, "u_kernelWidthX"),kernelWidthX);
+	glUniform1i(glGetUniformLocation(post_prog, "u_kernelWidthY"),kernelWidthY);
+	glUniform1i(glGetUniformLocation(post_prog, "u_Mode"),finalPostProcess);
+
     draw_quad();
+	
 
     glEnable(GL_DEPTH_TEST);
     updateTitle();
@@ -836,6 +1083,22 @@ void motion(int x, int y)
     mouse_old_y = y;
 }
 
+void specialKeyboard(int key, int x, int y){
+	
+	switch(key)
+	{
+		case GLUT_KEY_UP:	kernelWidthY++;
+							break;
+		case GLUT_KEY_DOWN:	kernelWidthY += kernelWidthY > 0? -1 : 0;
+							break;
+		case GLUT_KEY_RIGHT:kernelWidthX++;
+							break;
+		case GLUT_KEY_LEFT:	kernelWidthX += kernelWidthX > 0? -1 : 0;
+							break;
+	}
+
+}
+
 void keyboard(unsigned char key, int x, int y) {
     float tx = 0;
     float ty = 0;
@@ -880,6 +1143,12 @@ void keyboard(unsigned char key, int x, int y) {
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;
+		case(']'):
+			postProcessMode = (postProcessMode + 1) % POST_COUNT;
+			break;
+		case('['):
+			postProcessMode = postProcessMode > 1 ? (postProcessMode - 1) : 0;
+			break;
         case('x'):
             doIScissor ^= true;
             break;
@@ -953,6 +1222,7 @@ int main (int argc, char* argv[])
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);	
     glutKeyboardFunc(keyboard);
+	glutSpecialFunc(specialKeyboard);
     glutMouseFunc(mouse);
     glutMotionFunc(motion);
 

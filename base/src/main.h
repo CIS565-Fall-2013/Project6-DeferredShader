@@ -36,7 +36,9 @@ typedef struct {
 	std::vector<glm::vec2> texcoords;
 	std::vector<unsigned short> indices;
     std::string texname;
+	std::string meshName;
     glm::vec3 color;
+	float shininess;
 } mesh_t;
 
 typedef struct {
@@ -48,6 +50,8 @@ typedef struct {
 	unsigned int vbo_texcoords;
     glm::vec3 color;
     std::string texname;
+	std::string meshName;
+	float shininess;
 } device_mesh_t;
 
 typedef struct {
@@ -84,6 +88,30 @@ enum Display {
     DISPLAY_COLOR = 3,
     DISPLAY_TOTAL = 4,
     DISPLAY_LIGHTS = 5
+};
+
+enum PostProcess {
+	POST_PASS = 0,
+	POST_BLOOM_2D,
+	POST_BLOOM_SEPARATED,
+	POST_GLOW_2D,
+	POST_GLOW_SEPARATED,
+	POST_VIGNETTE,
+	POST_SSAO,
+	POST_COUNT
+};
+
+enum PostProcessArg {
+	ARG_PASS = 0,
+	ARG_BLOOM_SELECT,
+	ARG_BLOOM_2D,
+	ARG_GLOW_SELECT,
+	ARG_GLOW_2D,
+	ARG_BLUR_X,
+	ARG_BLUR_Y,
+	ARG_VIGNETTE,
+	ARG_SSAO_SCALE,
+	ARG_BLEND,
 };
 
 char* loadFile(char *fname, GLint &fSize);

@@ -63,8 +63,8 @@ vec3 sampleNrm(vec2 texcoords) {
 }
 
 //Helper function to automicatlly sample and unpack positions
-vec3 samplePos(vec2 texcoords) {
-    return texture(u_Positiontex,texcoords).xyz;
+vec4 samplePos(vec2 texcoords) {
+    return texture(u_Positiontex,texcoords);
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -99,12 +99,24 @@ void main() {
     float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
 
     vec3 normal = sampleNrm(fs_Texcoord);
-    vec3 position = samplePos(fs_Texcoord);
+    vec4 pos = samplePos(fs_Texcoord);
+		
+	vec3 position = pos.xyz;
+	// Shininess and glow was packed
+	float shininess = 2.0*floor(pos.w/2.0);
+
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
 
     float diffuse = max(0.0, dot(normalize(light),normal));
+
+			
+	// position is in eye space, so view vector should be negative position?
+	vec3 halfVec = normalize(normalize(-position) + normalize(light));
+	float spec = dot(halfVec, normal);
+	spec = pow(spec,shininess);
+
     out_Color = vec4(color*u_LightIl*diffuse,1.0f);
 }	
 
