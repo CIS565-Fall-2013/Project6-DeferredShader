@@ -34,6 +34,8 @@ uniform sampler2D u_MaskTex;
 ///========================
 
 in vec3 fs_Normal;
+in vec3 fs_Tangent;
+in vec3 fs_Binormal;
 in vec4 fs_Position;
 in vec2 fs_Texcoord;
 
@@ -80,7 +82,7 @@ void main(void)
 	{
 		//TODO: Do Bump Mapping Here
 		ivec2 size = textureSize2D(u_BumpTex,0);
-		float scaling = 0.1;//Strength factor
+		float scaling = 0.2;//Strength factor
 		const vec3 offsetDir = vec3(-1,0,1);
 		vec2 offset = 1.0/size;
 		
@@ -97,7 +99,8 @@ void main(void)
 		}
 		
 		//Modify using 
-		out_Normal = vec4(vec3(bump),0.0);
+		mat3 rotMat = mat3(fs_Tangent, fs_Binormal, fs_Normal);
+		out_Normal = vec4(rotMat*vec3(bump),0.0);
 	}	
 	
 	
