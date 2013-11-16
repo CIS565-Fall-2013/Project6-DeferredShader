@@ -10,7 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-
+#define DISPLAY_TOON 6
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -107,16 +107,34 @@ void main() {
 	float dst_factor = 1.0/distance( light, position );
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
-	    float dst_factor = 1.0/distance( light, position );
         //Put some code here to visualize the fragment associated with this point light
 		out_Color = ( dst_factor*dst_factor ) * vec4( 1.0, 1.0, 1.0, 1 ); 
 		
     }
-    else
+    else if( u_DisplayType == DISPLAY_TOON )
     {
         //Put some code here to actually compute the light from the point light
-		out_Color = dst_factor*dst_factor*vec4( color * max( 0, dot( normal, light - position )), 1 );
+		vec3 lightDir = normalize( light - position );
+		
+		float NdotL = max( 0, dot( normal, lightDir ));
+		if( NdotL > 0.95 )
+		    NdotL = 1;
+		else if( NdotL > 0.7 )
+		    NdotL = 0.7;
+		else if( NdotL > 0.5 )
+		    NdotL = 0.5;
+		else if( NdotL > 0.25 )
+		    NdotL = 0.25;
+	    else
+		    NdotL = 0.1;
+
+        out_Color = vec4( color * NdotL, 1 );
     }
+	else
+	{
+	    vec3 lightDir = normalize( light - position );
+		out_Color = dst_factor*dst_factor*vec4( color * max( 0, dot( normal, lightDir )), 1 );
+	}
     
 }
 

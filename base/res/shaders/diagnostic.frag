@@ -11,7 +11,6 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 
-
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////

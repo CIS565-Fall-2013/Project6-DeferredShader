@@ -30,6 +30,9 @@ int width, height;
 const int SSAO_SAMPLE_SIZE = 128;
 float kernels[ SSAO_SAMPLE_SIZE*4 ];
 GLuint kernelTexture = 0;
+
+vec3 lightPos;
+
 void initSSAOSampleVectors( )
 {
     srand(time(NULL));
@@ -294,6 +297,7 @@ GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint postTexture = 0;
 GLuint mvTexture = 0;
+GLuint aoResultTexture=0;
 
 GLuint FBO[2] = {0, 0};
 
@@ -302,10 +306,15 @@ GLuint pass_prog;
 GLuint point_prog;
 GLuint ambient_prog;
 GLuint diagnostic_prog;
+GLuint toonshade_prog;
 GLuint post_prog;
+GLuint post_cel_prog;
+GLuint post_ao_prog;
 GLuint post_smooth_prog;
 GLuint post_blur_prog;
 void initShader() {
+
+    /////MRT shaders outputting Normal, Depth, Position, Velocity field
     Utility::shaders_t shaders = Utility::loadShaders("../../../res/shaders/pass.vert", "../../../res/shaders/pass.frag");
 
     pass_prog = glCreateProgram();
@@ -322,6 +331,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(pass_prog,shaders);
 
+    /////Diagnostic shader for displaying different buffers
     shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/diagnostic.frag");
 
     diagnostic_prog = glCreateProgram();
@@ -331,6 +341,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(diagnostic_prog, shaders);
 
+    /////Ambient lighting shaders
     shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/ambient.frag");
 
     ambient_prog = glCreateProgram();
@@ -340,6 +351,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(ambient_prog, shaders);
 
+    /////Point lighting shaders
     shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/point.frag");
 
     point_prog = glCreateProgram();
@@ -349,6 +361,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(point_prog, shaders);
 
+    /////Post-processing shaders
     shaders = Utility::loadShaders("../../../res/shaders/post.vert", "../../../res/shaders/post.frag");
 
     post_prog = glCreateProgram();
@@ -358,6 +371,17 @@ void initShader() {
 
     Utility::attachAndLinkProgram(post_prog, shaders);
 
+    /////Post-processing shaders (SSAO)
+    shaders = Utility::loadShaders("../../../res/shaders/post.vert", "../../../res/shaders/post-ao.frag");
+
+    post_ao_prog = glCreateProgram();
+
+    glBindAttribLocation(post_ao_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(post_ao_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(post_ao_prog, shaders);
+
+    /////AO smooth shader
     shaders = Utility::loadShaders("../../../res/shaders/post.vert", "../../../res/shaders/post-smooth.frag");
     post_smooth_prog = glCreateProgram();
 
@@ -365,6 +389,24 @@ void initShader() {
     glBindAttribLocation(post_smooth_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(post_smooth_prog, shaders);
+
+    /////Motion blur shader
+    shaders = Utility::loadShaders("../../../res/shaders/post.vert", "../../../res/shaders/post-blur.frag");
+    post_blur_prog = glCreateProgram();
+
+    glBindAttribLocation(post_blur_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(post_blur_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(post_blur_prog, shaders);
+
+    /////Toon shading outline postprocessing
+    shaders = Utility::loadShaders("../../../res/shaders/post.vert", "../../../res/shaders/post-toon.frag");
+    post_cel_prog = glCreateProgram();
+
+    glBindAttribLocation(post_cel_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(post_cel_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(post_cel_prog, shaders);
 }
 
 void freeFBO() {
@@ -374,8 +416,6 @@ void freeFBO() {
     glDeleteTextures(1,&colorTexture);
     glDeleteTextures(1,&postTexture);
     glDeleteTextures(1,&mvTexture );
-    //glDeleteTextures(1,&noiseTexture );
-    //glDeleteTextures(1,&kernelTexture );
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
 }
@@ -540,17 +580,23 @@ void initFBO(int w, int h) {
     //Post Processing buffer!
     glActiveTexture(GL_TEXTURE9);
 
+    glGenTextures(1, &aoResultTexture );
     glGenTextures(1, &postTexture);
+
+    //Set up AO output texture
+    glBindTexture(GL_TEXTURE_2D, aoResultTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8 , w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE,0);
 
     //Set up post FBO
     glBindTexture(GL_TEXTURE_2D, postTexture);
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
     // create a framebuffer object
@@ -564,7 +610,7 @@ void initFBO(int w, int h) {
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
     glDrawBuffers(1, draw);
 
-    // attach the texture to FBO depth attachment point
+    // attach the texture to FBO 1st color attachment point
     test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
@@ -757,10 +803,10 @@ void draw_quad() {
     glBindVertexArray(0);
 }
 
-void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
+void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP, bool isScissor ) {
     float radius = strength;
     vec4 light = cam.get_view() * vec4(pos, 1.0); 
-    if( light.z > NEARP)
+    if( light.z > NEARP && isScissor )
     {
         return;
     }
@@ -771,14 +817,15 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     vec4 left = vp * vec4(pos + radius*cam.start_left, 1.0);
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
     vec4 center = vp * vec4(pos, 1.0);
+    left /= left.w;
+    up /= up.w;
+    center /= center.w;
 
     left = sc * left;
     up = sc * up;
     center = sc * center;
 
-    left /= left.w;
-    up /= up.w;
-    center /= center.w;
+
 
     float hw = glm::distance(left, center);
     float hh = glm::distance(up, center);
@@ -811,6 +858,9 @@ void updateDisplayText(char * disp) {
             break;
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
+            break;
+        case(DISPLAY_TOON):
+            sprintf( disp, "Displaying Toon shading" );
             break;
     }
 }
@@ -860,7 +910,8 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
+
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL ||display_type==DISPLAY_TOON)
     {
         setup_quad(point_prog);
         if(doIScissor) 
@@ -877,7 +928,7 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP,  doIScissor );
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
@@ -899,50 +950,118 @@ void display(void)
     }
     glDisable(GL_BLEND);
 
+
     setTextures();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_TEXTURE_2D);
-    glUseProgram(post_prog);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, postTexture);
-    glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
+    if( display_type <DISPLAY_TOTAL )
+    {
+        glUseProgram(post_prog);  //passthrough
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, postTexture);
+        glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
+        draw_quad();
+    }
+    else if( display_type == DISPLAY_TOON ) //create silhouette
+    {
+        glUseProgram(post_cel_prog);
+        
+        glActiveTexture( GL_TEXTURE0 );
+        glBindTexture( GL_TEXTURE_2D, postTexture );
+        glUniform1i( glGetUniformLocation(post_cel_prog, "u_Posttex" ), 0 );
+
+        glActiveTexture( GL_TEXTURE1 );
+        glBindTexture( GL_TEXTURE_2D, depthTexture );
+        glUniform1i( glGetUniformLocation(post_cel_prog, "u_depthtex" ), 1 );
+
+        glActiveTexture( GL_TEXTURE2 );
+        glBindTexture( GL_TEXTURE_2D, normalTexture );
+        glUniform1i( glGetUniformLocation(post_cel_prog, "u_normaltex" ), 2 );
+
+        glUniform1i(glGetUniformLocation(post_cel_prog, "u_ScreenHeight"), height );
+        glUniform1i(glGetUniformLocation(post_cel_prog, "u_ScreenWidth"), width );
+        glUniform1f(glGetUniformLocation(post_cel_prog, "u_zNear"), NEARP );
+        glUniform1f(glGetUniformLocation(post_cel_prog, "u_zFar"),  FARP );
+
+        draw_quad();
+    }
+    else
+    {
+        glUseProgram(post_ao_prog);  //Ambient Occlusion
+
     
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, mvTexture);
-    glUniform1i(glGetUniformLocation(post_prog, "u_mv"), 1 );
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, mvTexture);
+        glUniform1i(glGetUniformLocation(post_ao_prog, "u_mv"), 0 );
 
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, normalTexture);
-    glUniform1i(glGetUniformLocation(post_prog, "u_normaltex"), 2 );
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, normalTexture);
+        glUniform1i(glGetUniformLocation(post_ao_prog, "u_normaltex"),1 );
 
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
-    glUniform1i(glGetUniformLocation(post_prog, "u_depthtex"), 3 );
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, depthTexture);
+        glUniform1i(glGetUniformLocation(post_ao_prog, "u_depthtex"), 2 );
 
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, positionTexture );
-    glUniform1i(glGetUniformLocation(post_prog, "u_postex"), 4 );
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, positionTexture );
+        glUniform1i(glGetUniformLocation(post_ao_prog, "u_postex"), 3 );
 
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, noiseTexture );
-    glUniform1i(glGetUniformLocation(post_prog, "u_noisetex"), 5 );
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, noiseTexture );
+        glUniform1i(glGetUniformLocation(post_ao_prog, "u_noisetex"), 4 );
 
-    glActiveTexture(GL_TEXTURE6);
-    glBindTexture(GL_TEXTURE_1D, kernelTexture );
-    glUniform1i(glGetUniformLocation(post_prog, "u_kerneltex"), 6 );
+        glActiveTexture(GL_TEXTURE5);
+        glBindTexture(GL_TEXTURE_1D, kernelTexture );
+        glUniform1i(glGetUniformLocation(post_ao_prog, "u_kerneltex"),5 );
     
-    glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height );
-    glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width );
-    glUniform2fv( glGetUniformLocation( post_prog, "u_noiseSampleFactor" ), 1, &noiseSampleFactor[0] );
-    glUniform1f(glGetUniformLocation(post_prog, "u_zNear"), NEARP );
-    glUniform1f(glGetUniformLocation(post_prog, "u_zFar"),  FARP );
-    glUniformMatrix4fv(glGetUniformLocation(post_prog, "u_proj"), 1, GL_FALSE, &persp[0][0] ); 
-    //glUniform3fv( glGetUniformLocation(post_prog, "u_kernels"), SSAO_SAMPLE_SIZE, &kernels[0] );
+        glUniform1i(glGetUniformLocation(post_ao_prog, "u_ScreenHeight"), height );
+        glUniform1i(glGetUniformLocation(post_ao_prog, "u_ScreenWidth"), width );
+        glUniform2fv( glGetUniformLocation( post_ao_prog, "u_noiseSampleFactor" ), 1, &noiseSampleFactor[0] );
+        glUniform1f(glGetUniformLocation(post_ao_prog, "u_zNear"), NEARP );
+        glUniform1f(glGetUniformLocation(post_ao_prog, "u_zFar"),  FARP );
+        glUniformMatrix4fv(glGetUniformLocation(post_ao_prog, "u_proj"), 1, GL_FALSE, &persp[0][0] ); 
+        //glUniform3fv( glGetUniformLocation(post_prog, "u_kernels"), SSAO_SAMPLE_SIZE, &kernels[0] );
     
+        draw_quad();
+        
+        //Smooth the result image of SSAO
+        glBindTexture( GL_TEXTURE_2D, aoResultTexture );
+        glCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, width, height, 0 );
 
-    draw_quad();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_TEXTURE_2D);
+        glUseProgram(post_smooth_prog);
+
+        glActiveTexture( GL_TEXTURE0 );
+        glBindTexture(GL_TEXTURE_2D, aoResultTexture );
+        glUniform1i(glGetUniformLocation(post_smooth_prog, "u_aoResulttex"),0);
+        glActiveTexture( GL_TEXTURE1 );
+        glBindTexture(GL_TEXTURE_2D, postTexture );
+        glUniform1i(glGetUniformLocation(post_smooth_prog, "u_Posttex"),1);
+
+        glUniform1i(glGetUniformLocation(post_smooth_prog, "u_ScreenHeight"), height );
+        glUniform1i(glGetUniformLocation(post_smooth_prog, "u_ScreenWidth"), width );
+        draw_quad();
+
+        //Add motion blur
+        glBindTexture( GL_TEXTURE_2D, aoResultTexture );
+        glCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, width, height, 0 );
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_TEXTURE_2D);
+        glUseProgram(post_blur_prog);
+
+        glActiveTexture( GL_TEXTURE0 );
+        glBindTexture(GL_TEXTURE_2D, aoResultTexture );
+        glUniform1i(glGetUniformLocation(post_blur_prog, "u_aoResulttex"),0);
+        glActiveTexture( GL_TEXTURE1 );
+        glBindTexture( GL_TEXTURE_2D, mvTexture );
+        glUniform1i( glGetUniformLocation(post_blur_prog, "u_mv"),1 );
+
+        draw_quad();
+    }
 
     glEnable(GL_DEPTH_TEST);
     updateTitle();
@@ -1047,6 +1166,9 @@ void keyboard(unsigned char key, int x, int y) {
         case('5'):
             display_type = DISPLAY_LIGHTS;
             break;
+        case('6'):
+            display_type = DISPLAY_TOON;
+            break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;
@@ -1099,11 +1221,12 @@ int main (int argc, char* argv[])
     glewExperimental = 1;
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA |GLUT_DEPTH );
-    glutInitContextVersion( 4,0);
+    glutInitContextVersion( 4,3);
     glutInitContextFlags( GLUT_FORWARD_COMPATIBLE );
     glutInitContextProfile( GLUT_COMPATIBILITY_PROFILE );
     width = 1280;
     height = 720;
+    lightPos = vec3( 0.0, 0.0, 10.0 );
     glutInitWindowSize(width,height);
     glutCreateWindow("CIS565 OpenGL Frame");
     //glewExperimental=TRUE;

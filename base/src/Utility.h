@@ -9,11 +9,12 @@ namespace Utility {
 	typedef struct {
 		GLuint vertex;
 		GLuint fragment;
+        GLuint geometry;
 	} shaders_t;
 
 
 
-shaders_t loadShaders(const char * vert_path, const char * frag_path);
+shaders_t loadShaders(const char * vert_path, const char * frag_path, const char * geom_path = NULL);
 
 void attachAndLinkProgram( GLuint program, shaders_t shaders);
 

@@ -73,5 +73,14 @@
     <None Include="..\..\..\res\shaders\post-smooth.frag">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\..\..\res\shaders\post-ao.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\res\shaders\outline.geom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\res\shaders\post-toon.frag">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

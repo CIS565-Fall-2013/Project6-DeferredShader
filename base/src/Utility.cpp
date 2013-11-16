@@ -81,47 +81,38 @@ namespace Utility {
 		}
 	}
 
-	shaders_t loadShaders(const char * vert_path, const char * frag_path) {
-		GLuint f, v;
+    GLuint initshaders (GLenum type, const char *filename) 
+    {
+        GLuint shader = glCreateShader(type) ; 
+        GLint compiled ; 
+        char *ss;
+        GLint slen;
 
-		char *vs,*fs;
+        ss = loadFile(filename,slen);
+        const char * cs = ss;
 
-		v = glCreateShader(GL_VERTEX_SHADER);
-		f = glCreateShader(GL_FRAGMENT_SHADER);	
-
-		// load shaders & get length of each
-		GLint vlen;
-		GLint flen;
-		vs = loadFile(vert_path,vlen);
-		fs = loadFile(frag_path,flen);
-
-		const char * vv = vs;
-		const char * ff = fs;
-
-		glShaderSource(v, 1, &vv,&vlen);
-		glShaderSource(f, 1, &ff,&flen);
-
-		GLint compiled;
-
-		glCompileShader(v);
-		glGetShaderiv(v, GL_COMPILE_STATUS, &compiled);
+        glShaderSource (shader, 1, &cs, &slen) ; 
+        glCompileShader (shader) ; 
+        glGetShaderiv (shader, GL_COMPILE_STATUS, &compiled) ; 
 		if (!compiled)
 		{
 			cout << "Vertex shader not compiled." << endl;
-			printShaderInfoLog(v);
+			printShaderInfoLog(shader);
 		} 
+        delete [] ss;
 
-		glCompileShader(f);
-		glGetShaderiv(f, GL_COMPILE_STATUS, &compiled);
-		if (!compiled)
-		{
-			cout << "Fragment shader not compiled." << endl;
-			printShaderInfoLog(f);
-		} 
-		shaders_t out; out.vertex = v; out.fragment = f;
+        return shader ; 
+    }
 
-		delete [] vs; // dont forget to free allocated memory
-		delete [] fs; // we allocated this in the loadFile function...
+	shaders_t loadShaders(const char * vert_path, const char * frag_path, const char * geom_path) {
+		GLuint f, v, g = 0;
+
+		v = initshaders( GL_VERTEX_SHADER, vert_path );
+        f = initshaders( GL_FRAGMENT_SHADER, frag_path );
+        if( geom_path )
+            g = initshaders( GL_GEOMETRY_SHADER, geom_path );
+
+        shaders_t out; out.vertex = v; out.fragment = f; out.geometry = g;
 
 		return out;
 	}
@@ -129,6 +120,8 @@ namespace Utility {
 	void attachAndLinkProgram( GLuint program, shaders_t shaders) {
 		glAttachShader(program, shaders.vertex);
 		glAttachShader(program, shaders.fragment);
+        if( shaders.geometry )
+            glAttachShader(program, shaders.geometry  );
 
 		glLinkProgram(program);
 		GLint linked;
