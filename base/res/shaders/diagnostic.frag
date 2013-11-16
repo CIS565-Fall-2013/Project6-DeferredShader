@@ -10,6 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_BLOOM 6
+#define DISPLAY_TOON 7
 
 
 /////////////////////////////////////
@@ -20,6 +22,7 @@ uniform mat4 u_Persp;
 uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
+uniform sampler2D u_Bloomtex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
@@ -72,6 +75,11 @@ vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
 }
 
+//Helper function to automicatlly sample and unpack bloom
+vec3 sampleBloom(vec2 texcoords) {
+    return texture(u_Bloomtex,texcoords).xyz;
+}
+
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
 vec3 getRandomNormal(vec2 texcoords) {
@@ -101,6 +109,7 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+	vec3 bloom = sampleBloom(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
 
@@ -117,7 +126,11 @@ void main() {
         case(DISPLAY_COLOR):
             out_Color = vec4(color, 1.0);
             break;
+		case(DISPLAY_BLOOM):
+           // out_Color = vec4(bloom, 1.0);
+            break;
         case(DISPLAY_LIGHTS):
+		case(DISPLAY_TOON):
         case(DISPLAY_TOTAL):
             break;
     }	
