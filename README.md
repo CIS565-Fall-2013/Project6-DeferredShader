@@ -82,10 +82,10 @@ With mozaic shading applied
 ![alt tag](https://raw.github.com/vivreddy/Project6-DeferredShader/master/base/Renders/mosaic.png)
 
 With fish eye effect applied
-![alt tag](https://raw.github.com/vivreddy/Project6-DeferredShader/master/base/Renders/fisheye.png)
+![alt tag](https://raw.github.com/vivreddy/Project6-DeferredShader/master/base/Renders/fisheye2.png)
 
 With fish eye effect applied on Sponza scene
-![alt tag](https://raw.github.com/vivreddy/Project6-DeferredShader/master/base/Renders/fisheye2.png)
+![alt tag](https://raw.github.com/vivreddy/Project6-DeferredShader/master/base/Renders/fisheye.png)
 
 -------------------------------------------------------------------------------
 PERFORMANCE EVALUATION
@@ -95,8 +95,8 @@ compared. As the computations in the shaders for the effects became complex, the
 
 Here are the frame rate comparisons for different effects:
 
-		Effect		   Frame rate
-	    Basic Diffuse 	     37.22
+		Effect		       Frame rate
+	    Basic Diffuse 	         37.22
 	     With Bloom               2.69     
 	    Toon Shading             36.45
 	   Mosaic Shading            37.11
