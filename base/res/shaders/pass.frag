@@ -14,8 +14,9 @@ out vec4 out_SpecularColor;
 
 void main(void)
 {
-    out_Normal = vec4(normalize(fs_Normal),0.0f);
+	vec3 N_unit = normalize(fs_Normal);
+    out_Normal = vec4(N_unit,0.0f);
     out_Position = vec4(fs_Position.xyz,1.0f); //Tuck position into 0 1 range
-    out_Color = vec4(u_Color,1.0);
-	out_SpecularColor = vec4(u_SpecularColor, 1.0);
+    out_Color = vec4(u_Color, N_unit.x);
+	out_SpecularColor = vec4(u_SpecularColor, N_unit.y);
 }

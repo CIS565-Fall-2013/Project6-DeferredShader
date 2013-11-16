@@ -62,7 +62,13 @@ float linearizeDepth(float exp_depth, float near, float far) {
 
 //Helper function to automatically sample and unpack normals
 vec3 sampleNrm(vec2 texcoords) {
-    return texture(u_Normaltex,texcoords).xyz;
+    // Original G-buffer.
+	return texture(u_Normaltex,texcoords).xyz;
+
+	// Compact G-buffer.
+	//float Nx = texture(u_Colortex,texcoords).w;
+	//float Ny = texture(u_SpecularColortex,texcoords).w;
+	//return vec3(Nx, Ny, sqrt(1.0 - Nx*Nx - Ny*Ny));
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -120,7 +126,6 @@ void main() {
     else
     {
         //Put some code here to actually compute the light from the point light
-		
 		
 		vec3 N_unit = normalize(normal);					// Normal.
 		vec3 L      = light - position;						// Fragment to light.

@@ -69,8 +69,8 @@ float getRandomScalar(vec2 texcoords) {
 
 vec3 multiplyNormal(int x, int y, float n)
 {
-	vec2 offset = vec2(float(x)/u_ScreenWidth, float(y)/u_ScreenHeight);
-	return texture(u_Normaltex, fs_Texcoord + offset).xyz * n;
+	vec2 xy = fs_Texcoord + vec2(float(x)/u_ScreenWidth, float(y)/u_ScreenHeight);
+	return texture(u_Normaltex, xy).xyz * n;
 }
 
 vec3 convolve3x3(float i11, float i12, float i13, float i21, float i22, float i23,
