@@ -12,6 +12,7 @@
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_BLOOM 6
 #define DISPLAY_TOON 7
+#define DISPLAY_SSAO 8
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -52,8 +53,7 @@ uniform float falloff = 0.1f;
 /////////////////////////////////////
 //				UTILITY FUNCTIONS
 /////////////////////////////////////
-
-//Depth used in the Z buffer is not linearly related to distance from camera
+//Depth used in the Z buffe r isnot linearly related to distance from camera
 //This restores linear depth
 float linearizeDepth(float exp_depth, float near, float far) {
     return	(2 * near) / (far + near -  exp_depth * (far - near)); 
@@ -103,6 +103,22 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+
+    if(u_DisplayType == DISPLAY_SSAO) {
+        float kernel_width = 5.0;
+        vec3 SSAO_color = vec3(0.0);
+        // Check the depth in neighbor patch whether there is an occlusion happens
+        for (float x = - kernel_width / 2.0; x <= kernel_width / 2.0; x += 2.0) {
+            for (float y = - kernel_width / 2.0; y <= kernel_width / 2.0; y += 2.0) {
+                vec2 incremental = vec2(x /float(u_ScreenWidth), y / float(u_ScreenHeight));
+                    float neighbour_depth = texture(u_Depthtex, fs_Texcoord + incremental).r;
+                    if (neighbour_depth >= exp_depth)
+                        continue;
+                    SSAO_color += vec3(0.025);                
+            }
+        }
+        color *= (1.0 - SSAO_color); 
+    }
     vec3 light = u_Light.xyz;
     float strength = u_Light.w;
     if (lin_depth > 0.99f) {

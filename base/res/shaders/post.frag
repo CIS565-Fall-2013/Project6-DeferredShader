@@ -67,7 +67,7 @@ float getRandomScalar(vec2 texcoords) {
 
 // Gaussian Convolution
 float conv(float x, float sigma) {
-    float gaussian = 1.0 / sqrt(2.0 * PI) / sigma * exp(-x * x / 2.0 / sigma / sigma);
+    float gaussian = 1.0 / sqrt(2.0 * PI) / sigma * exp(- x * x / 2.0 / sigma / sigma);
     return gaussian;
 }
 
@@ -81,20 +81,20 @@ void main() {
     float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
     if (u_DisplayType == DISPLAY_BLOOM) {
         // Initialize
-        float kernel_width = 8.0;
+        float kernel_width = 20.0;
         float sigma = sqrt(kernel_width/2/3);
         vec3 bloom_color = vec3(0.0);
-
-        for (float x = - kernel_width / 2.0; x < kernel_width / 2.0; x += 1.0) {
-            for (float y = - kernel_width / 2.0; y < kernel_width / 2.0; y += 1.0) {
-                vec2 incremental = vec2(x / u_ScreenWidth, y / u_ScreenHeight); 
-                bloom_color += texture(u_Bloomtex, fs_Texcoord + incremental).rgb * conv(x, sigma) * conv(y, sigma);
+        
+        // Add the Gaussian Kernel
+        for (float x = - kernel_width / 2.0; x < kernel_width / 2.0; x += 2.0) {
+            for (float y = - kernel_width / 2.0; y < kernel_width / 2.0; y += 2.0) {
+                vec2 incremental = vec2(x /float(u_ScreenWidth), y / float(u_ScreenHeight));
+                bloom_color += texture(u_Bloomtex, fs_Texcoord + incremental).xyz * conv(incremental.x, sigma) * conv(incremental.y, sigma);                
             }
         }
-        color *= bloom_color;
+        color = 0.75 * color +  bloom_color;
     }
-    out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+    out_Color = vec4(color, 1.0);
+    //out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
     return;
 }
-
-

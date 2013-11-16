@@ -139,9 +139,19 @@ void main() {
                     diffuse = 0.5;
                 else
                     diffuse = 0.3;
-            out_Color = vec4(color * diffuse, 1.0);
+                out_Color = vec4(color * diffuse, 1.0);
+            
             } else
-            out_Color = vec4(0.0, 0.0, 0.0, 1.0);
+                out_Color = vec4(0.0, 0.0, 0.0, 1.0);
+            
+            // Draw the edges by finding normals of neighbours
+            vec3 normal_up    = sampleNrm(fs_Texcoord + vec2(0.0, - 3.0 / float(u_ScreenHeight)));
+            vec3 normal_right = sampleNrm(fs_Texcoord + vec2(3.0 / float(u_ScreenWidth),0.0)); 
+            vec3 normal_down  = sampleNrm(fs_Texcoord + vec2(0.0, 3.0 / float(u_ScreenHeight))); 
+            vec3 normal_left  = sampleNrm(fs_Texcoord + vec2(- 3.0 / float(u_ScreenWidth), 0.0));   
+
+            if (dot(normal_up, normal) < 0.8 || dot(normal_up, normal) < 0.8 || dot(normal_up, normal) < 0.8 || dot(normal_up, normal) < 0.8)
+                out_Color = vec4(0.0, 0.0, 0.0, 1.0);
         }
     }
     return;
