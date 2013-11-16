@@ -57,7 +57,7 @@ void main(void)
 	out_Diff_Color = diffuseColor*vec4(u_Kd,1.0);
 	 
 	if(u_PassthroughMode == HASTEX_OVERLAY){
-		out_Diff_Color += 0.9*vec4(u_hasMaskTex,u_hasDiffTex,u_hasBumpTex,0.0);
+		out_Diff_Color += 0.9*vec4(u_hasMaskTex,u_hasSpecTex,u_hasBumpTex,0.0);
 	}else if(u_PassthroughMode == TEXCOORDS_AS_DIFFUSE){
 		out_Diff_Color = vec4(fs_Texcoord.x, fs_Texcoord.y, 0.0, 1.0);
 	}
@@ -105,6 +105,6 @@ void main(void)
 	out_Spec_Color = vec4(u_Ks, 1.0);
 	if(u_hasSpecTex > 0)
 	{
-		out_Spec_Color *=vec4(texture(u_SpecTex,fs_Texcoord).rgb,1.0);
+		out_Spec_Color *= vec4(texture(u_SpecTex,fs_Texcoord).rgb,1.0);
 	}
 }
