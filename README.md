@@ -22,33 +22,29 @@ FEATURES:
 -------------------------------------------------------------------------------
 
 - Use of G Buffers - Depth, Normal, Color, Eye space position, Shininess
+- Blinn Phong lighting model
 - Post process effects like bloom and toon shading
 - Support for efficient rendering of multiple point lights using scissor testing in OpenGL
 
 -------------------------------------------------------------------------------
 RESULTS:
 -------------------------------------------------------------------------------
-*COLOR INTERPOLATION* : Smooth linear interpolation of colors for each triangle based on barycentric co-ordinates
-![alt tag](https://raw.github.com/vimanyu/Project4-Rasterizer/master/renders/cow_color_interp.png)
+*BLINN PHONG* :
+![alt tag](https://raw.github.com/vimanyu/Project6-DeferredShader/master/renders/blinnPhong.png)
 
-*NORMALS*: World space normals
-![alt tag](https://raw.github.com/vimanyu/Project4-Rasterizer/master/renders/cow_normals.png)
+*TOON SHADING*:
+![alt tag](https://raw.github.com/vimanyu/Project6-DeferredShader/master/renders/toonShading.png)
 
-*Z-DEPTH*: Z-depth in camera space
-![alt tag](https://raw.github.com/vimanyu/Project4-Rasterizer/master/renders/dragon_depth.png)
+*BLOOM*:
+![alt tag](https://raw.github.com/vimanyu/Project6-DeferredShader/master/renders/bloom.png)
 
-*LAMBERT DIFFUSE LIGHING*: Simple lambertian shading
-![alt tag](https://raw.github.com/vimanyu/Project4-Rasterizer/master/renders/dragon.png)
-
-*BLINN PHONG LIGHTING*: Diffuse lighting with specular highlights
-![alt tag](https://raw.github.com/vimanyu/Project4-Rasterizer/master/renders/buddha_spec.png)
 
 -------------------------------------------------------------------------------
 VIDEO
 -------------------------------------------------------------------------------
-The following is a video of the rasterizer tool in action
+The following is a video of the deferred shading in action
 
-[![ScreenShot](https://raw.github.com/vimanyu/Project4-Rasterizer/master/doc_images/rasterizer_video_screenshot.png)](http://www.youtube.com/watch?v=s8ehsuIoL_U)
+[![ScreenShot](https://raw.github.com/vimanyu/Project6-DeferredShader/master/renders/deferredShader_video_screenshot.png)](http://www.youtube.com/watch?v=s8ehsuIoL_U)
 
 -------------------------------------------------------------------------------
 BUILDING AND RUNNING CODE
@@ -85,9 +81,9 @@ Normals buffer:
 
 Component|Data
 ---|---
-Component 1| nomral.x
+Component 1| normal.x
 Component 2| normal.y
-Componetn 3| normal.z
+Component 3| normal.z
 
 Shininess buffer:
 
@@ -99,9 +95,9 @@ In the **packed G-Buffer**, the normals G-Buffer has
 
 Component|Data
 ---|---
-Component 1| nomral.x
+Component 1| normal.x
 Component 2| normal.y
-Componetn 3| shininess
+Component 3| shininess
 
 For this, the third component of the normal was made on the fly using thie formula,
 
@@ -109,8 +105,8 @@ For this, the third component of the normal was made on the fly using thie formu
 normal.z = sqrt(1- normal.x*normal.x - normal.y*normal.y);
 ```
 
-
 ---
 ACKNOWLEDGEMENTS
 ---
-The objs for this project were downloaded from various websites online.
+Referred this paper for toon shading,
+http://www.cs.rutgers.edu/~decarlo/671/readings/decaudin_1996.pdf
