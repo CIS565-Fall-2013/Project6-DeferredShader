@@ -80,6 +80,7 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
 
     out.texname = mesh.texname;
     out.color = mesh.color;
+    out.shininess = mesh.specPower;
     return out;
 }
 
@@ -162,6 +163,7 @@ void initMesh() {
                               shape.material.diffuse[1],
                               shape.material.diffuse[2]);
             mesh.texname = shape.material.diffuse_texname;
+            mesh.specPower = shape.material.shininess;
             draw_meshes.push_back(uploadMesh(mesh));
             f=f+process;
         }
@@ -211,6 +213,7 @@ GLuint depthTexture = 0;
 GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
+GLuint specularTexture = 0;
 GLuint postTexture = 0;
 GLuint FBO[2] = {0, 0};
 
@@ -294,6 +297,7 @@ void freeFBO() {
     glDeleteTextures(1,&normalTexture);
     glDeleteTextures(1,&positionTexture);
     glDeleteTextures(1,&colorTexture);
+    glDeleteTextures(1,&specularTexture);
     glDeleteTextures(1,&postTexture);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
@@ -366,6 +370,7 @@ void initFBO(int w, int h) {
     glGenTextures(1, &normalTexture);
     glGenTextures(1, &positionTexture);
     glGenTextures(1, &colorTexture);
+    glGenTextures(1, &specularTexture);
 
     //Set up depth FBO
     glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -412,6 +417,17 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
+    //Set up specular FBO
+    glBindTexture(GL_TEXTURE_2D, specularTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
     // creatwwe a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
@@ -421,11 +437,13 @@ void initFBO(int w, int h) {
     GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-    GLenum draws [3];
+    GLint specular_loc = glGetFragDataLocation(pass_prog,"out_Specular"); //specular map
+    GLenum draws [4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+    draws[specular_loc] = GL_COLOR_ATTACHMENT3;
+    glDrawBuffers(4, draws);
 
     // attach the texture to FBO depth attachment point
     int test = GL_COLOR_ATTACHMENT0;
@@ -437,6 +455,8 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
     glBindTexture(GL_TEXTURE_2D, colorTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
+    glBindTexture(GL_TEXTURE_2D, specularTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[specular_loc], specularTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -591,6 +611,7 @@ void draw_mesh() {
 
     for(int i=0; i<draw_meshes.size(); i++){
         glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
+        glUniform3fv(glGetUniformLocation(pass_prog, "u_Shininess"), 1, &(draw_meshes[i].shininess));
         glBindVertexArray(draw_meshes[i].vertex_array);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
         glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
@@ -642,6 +663,10 @@ void setup_quad(GLuint prog)
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
+
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, specularTexture);
+    glUniform1i(glGetUniformLocation(prog, "u_Speculartex"),6);
 }
 
 void draw_quad() {
@@ -781,8 +806,6 @@ void display(void)
                 }
             }
         }
-        //draw_light(vec3(2.5, -5, 2.5), 1.0, sc, vp, NEARP);
-        //draw_light(vec3(2.5, -5, 3.0), 1.0, sc, vp, NEARP);
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);

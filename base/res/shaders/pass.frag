@@ -2,6 +2,7 @@
 
 uniform float u_Far;
 uniform vec3 u_Color;
+uniform vec3 u_Shininess;
 
 in vec3 fs_Normal;
 in vec4 fs_Position;
@@ -9,6 +10,7 @@ in vec4 fs_Position;
 out vec4 out_Normal;
 out vec4 out_Position;
 out vec4 out_Color;
+out vec4 out_Specular; //specular map
 
 void main(void)
 {
