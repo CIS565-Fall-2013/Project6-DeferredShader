@@ -71,6 +71,12 @@ I also did a evaluation on the number of lights and frame rates. Obviously, the 
 **With Specular**
 
 
+## To Do ##
+
+
+- To reduce the artifacts in SSAO
+- To specify more general way for bloom effect
+ 
 
 
 ---
