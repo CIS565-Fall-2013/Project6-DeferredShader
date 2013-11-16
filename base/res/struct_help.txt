@@ -1,0 +1,11 @@
+pass_prog			pass_vert, 	pass_frag
+diagnostic_prog		shade_vert, diagnostic_frag
+ambient_prog		shade_vert, ambient_frag
+point_prog			shade_vert, point_frag
+post_prog			post_vert,	post_frag
+
+GLuint depthTexture = 0;
+GLuint normalTexture = 0;
+GLuint positionTexture = 0;
+GLuint colorTexture = 0;
+GLuint postTexture = 0;

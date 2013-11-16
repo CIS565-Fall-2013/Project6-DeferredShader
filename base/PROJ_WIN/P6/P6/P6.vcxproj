@@ -67,7 +67,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration);..\..\..\..\shared32\glew\lib;..\..\..\..\shared32\freeglut\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>freeglut.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freeglut.lib;glew32.lib;SOIL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -83,14 +83,18 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\res\shaders\ambient.frag" />
+    <None Include="..\..\..\res\shaders\bloom.frag" />
+    <None Include="..\..\..\res\shaders\bloom.vert" />
     <None Include="..\..\..\res\shaders\diagnostic.frag" />
     <None Include="..\..\..\res\shaders\directional.frag" />
+    <None Include="..\..\..\res\shaders\horblur.frag" />
     <None Include="..\..\..\res\shaders\pass.frag" />
     <None Include="..\..\..\res\shaders\pass.vert" />
     <None Include="..\..\..\res\shaders\point.frag" />
     <None Include="..\..\..\res\shaders\post.frag" />
     <None Include="..\..\..\res\shaders\post.vert" />
     <None Include="..\..\..\res\shaders\shade.vert" />
+    <None Include="..\..\..\res\shaders\verblur.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

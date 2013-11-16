@@ -10,7 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-
+#define DISPLAY_BLOOM 6
+#define DISPLAY_SIL 7
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -23,16 +24,19 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
-
+uniform sampler2D u_Bloomtex;
+uniform sampler2D u_Speculartex;
 uniform float u_Far;
 uniform float u_Near;
 uniform int u_DisplayType;
+uniform vec3 u_lightColor;
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 
 uniform vec4 u_Light;
 uniform float u_LightIl;
+uniform vec3 u_camPos;
 
 in vec2 fs_Texcoord;
 
@@ -102,15 +106,44 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
-    out_Color = vec4(0,0,0,1.0);
+	vec3 lightVector = light - position;
+	float dist = length(lightVector);
+	//vec3 lightColor = vec3(1.0,0.0,1.0);
+	float Intensity = 2.0;
     if( u_DisplayType == DISPLAY_LIGHTS )
-    {
-        //Put some code here to visualize the fragment associated with this point light
-    }
-    else
-    {
-        //Put some code here to actually compute the light from the point light
+    {		
+		//Put some code here to visualize the fragment associated with this point light
+		if(dist <= lightRadius)
+		{
+			vec3 markColor = vec3(1.0,1.0,1.0)*0.4 + color * 0.6;
+			out_Color = vec4(markColor,1.0);
+		}	
+		
+    } 
+	else
+    {	
+		float diffuse = max(0.0,dot(normalize(lightVector),normal));
+		float isInradius = step(0.0,lightRadius - length(lightVector));
+		float attenuation = dist/(1-(dist/lightRadius)*(dist/lightRadius));
+		attenuation = attenuation / lightRadius + 1;
+		attenuation = 1.0/(attenuation * attenuation);
+		vec3 diffuseColor = Intensity * color * diffuse * u_lightColor * attenuation * isInradius;
+		//specular color
+		vec3 reflect = reflect(normalize(-lightVector),normal);
+		vec3 eyevector =normalize(u_camPos - position);
+		float specular = pow(dot(reflect,eyevector),3.0);
+		vec3 specularColor = vec3(0.0);
+		specularColor = specular * texture(u_Speculartex,fs_Texcoord).rgb;
+		
+		out_Color = vec4(diffuseColor + specularColor, 1.0);
+				
     }
     return;
 }
+
+//light attenuation equation got from here
+//http://imdoingitwrong.wordpress.com/2011/02/10/improved-light-attenuation/
+// 1/(d/r + 1)^2
+// d is the position distance from light
+// r = 1 - (d/lightRadius);
 

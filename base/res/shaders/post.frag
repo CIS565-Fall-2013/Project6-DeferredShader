@@ -10,7 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-
+#define DISPLAY_BLOOM 6
+#define DISPLAY_SIL 7
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -18,9 +19,25 @@
 uniform sampler2D u_Posttex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Colortex;
+uniform sampler2D u_Bloomtex;
+uniform sampler2D u_Positiontex;
+uniform sampler2D u_Normaltex;
+uniform sampler2D u_Speculartex;
+uniform vec3 u_cameraPos; // eyePos
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
+uniform int u_DisplayType;
+
+uniform float u_texelSizeX;
+uniform float u_texelSizeY;
+uniform int u_blurAmount;
+uniform float u_blurScale;
+uniform float u_blurStrength;
+
+uniform	mat3 u_GX = mat3( -1.0, 0.0, 1.0,-2.0, 0.0, 2.0,-1.0, 0.0, 1.0 );
+uniform	mat3 u_GY = mat3(  1.0,  2.0,  1.0,0.0,  0.0,  0.0,-1.0, -2.0,	-1.0);
 
 in vec2 fs_Texcoord;
 
@@ -60,15 +77,67 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+float Gaussian1D(float x, float y, float dev)
+{
+	return (1.0/sqrt(2.0*3.14159 * dev)) * exp(-(x*x)/(2.0*dev));			
+}
+float Gaussian2D(float x, float y, float dev)
+{
+	return ( 1.0 / (2.0*3.14159 * dev * dev)) * exp(-((x*x+y*y)/(2.0*dev*dev)));
+}
+
+//Helper function to automicatlly sample and unpack positions
+vec3 samplePos(vec2 texcoords) {
+    return texture(u_Positiontex,texcoords).xyz;
+}
+//Helper function to automatically sample and unpack normals
+vec3 sampleNrm(vec2 texcoords) {
+    return texture(u_Normaltex,texcoords).xyz;
+}
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
 const float occlusion_strength = 1.5f;
 void main() {
-    vec3 color = sampleCol(fs_Texcoord);
-    float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
-    float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
-    out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+
+	vec4 otherColor = texture(u_Posttex,fs_Texcoord);
+
+	if(u_DisplayType == DISPLAY_SIL)
+	{
+		// I'm impelmenteng a sebel edge detection method
+		//reference http://rastergrid.com/blog/2011/01/frei-chen-edge-detector/#more-532	
+		float sumX = 0.0; float sumY = 0.0;
+		for(int i = -1; i<= 1; ++i)
+		{
+			for(int j = -1; j<=1; ++j)
+			{
+				vec3 tmpColor = texture(u_Colortex,fs_Texcoord + vec2(i*u_texelSizeX, j*u_texelSizeY)).rgb;
+				sumX += length(tmpColor) * u_GX[i+1][j+1];
+				sumY += length(tmpColor) * u_GY[i+1][j+1];
+			}
+		}
+		out_Color = clamp(0.5*sqrt(sumX*sumX + sumY*sumY) + otherColor,0.0,1.0);
+		return;
+	}
+	/*else if(u_DisplayType == DISPLAY_BLOOM)
+	{
+		vec4 glowColor = vec4(0.0);
+		float dev = float(u_blurAmount) * 0.3;
+		for(int i = -u_blurAmount/2; i<=u_blurAmount/2; ++i)
+		{
+			for(int j = -u_blurAmount/2; j<=u_blurAmount/2; ++j)
+			{
+				glowColor += texture(u_Bloomtex,fs_Texcoord + vec2(u_texelSizeX * i * u_blurScale , u_texelSizeY * j* u_blurScale))
+					* Gaussian2D(float(i)*u_blurStrength,float(j)*u_blurStrength,dev);
+			
+			}
+		}
+		out_Color = clamp((glowColor + otherColor)-(glowColor * otherColor),0.0,1.0);
+		
+		return;		
+	}*/
+	out_Color = otherColor;
     return;
 }
 

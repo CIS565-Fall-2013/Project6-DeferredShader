@@ -8,6 +8,7 @@ uniform mat4x4 u_InvTrans;
 
 in  vec3 Position;
 in  vec3 Normal;
+in  vec2 Texcoord;
 
 out vec3 fs_Normal;
 out vec4 fs_Position;
