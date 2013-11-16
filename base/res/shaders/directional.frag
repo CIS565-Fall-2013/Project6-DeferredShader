@@ -21,6 +21,7 @@ uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
+uniform sampler2D u_Speculartex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 

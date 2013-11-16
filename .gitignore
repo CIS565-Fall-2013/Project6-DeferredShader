@@ -161,3 +161,13 @@ $RECYCLE.BIN/
 
 # Vim stuff
 *.swp
+
+#Don't include the binary
+565DefferedShader
+
+#Ctags output
+tags
+
+#profiler stuff
+*/gmon.out
+*/profile_out*

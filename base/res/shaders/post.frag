@@ -60,15 +60,73 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+/*//convert from pixel coordinates to NDC (between 0 and 1) */
+/*vec2 pixToNDC(float pix_x, float pix_y){ */
+    /*return vec2( pix_x / u_ScreenWidth, pix_y / u_ScreenHeight);    */
+/*}*/
+
+/*//assume the kernel is already FLIPPED*/
+/*vec3 convolveFlipped(mat3 kernel, float pix_x, float pix_y) {*/
+    /*//color 00 is the color at (0,0) of the kernel centered at (pix_x, pix_y)*/
+    /*//color xy is the color at (x, y) of the kernel centered at (pix_x, pix_y)*/
+    /*vec3 color_00 =  sampleCol(pixToNDC(pix_x-1,pix_y-1));*/
+    /*vec3 color_10 =  sampleCol(pixToNDC(pix_x,pix_y-1));*/
+    /*vec3 color_20 =  sampleCol(pixToNDC(pix_x+1,pix_y-1));*/
+
+    /*vec3 color_01 =  sampleCol(pixToNDC(pix_x-1,pix_y));*/
+    /*vec3 color_11 =  sampleCol(pixToNDC(pix_x,pix_y));*/
+    /*vec3 color_21 =  sampleCol(pixToNDC(pix_x+1,pix_y));*/
+
+    /*vec3 color_02 =  sampleCol(pixToNDC(pix_x-1,pix_y+1));*/
+    /*vec3 color_12 =  sampleCol(pixToNDC(pix_x,pix_y+1));*/
+    /*vec3 color_22 =  sampleCol(pixToNDC(pix_x+1,pix_y+1));*/
+
+    /*//ASSUMING THE KERNEL IS ALREAYD FLIPPED! */
+    /*vec3 finalColor = kernel[0][0]*color_00 + kernel[1][0]*color_10 + kernel[2][0]*color_20 + kernel[0][1]*color_01 + kernel[1][1]*color_11 + kernel[2][1]*color_21 + kernel[0][2]*color_02 + kernel[1][2]*color_12 + kernel[2][2]*color_22; */
+
+    /*return finalColor;*/
+/*}*/
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
 const float occlusion_strength = 1.5f;
 void main() {
     vec3 color = sampleCol(fs_Texcoord);
-    float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
-    float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
-    out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+    /*float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));*/
+    /*float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);*/
+    out_Color = vec4(color, 1);
+
+    /*float ss_x = fs_Texcoord.x * u_ScreenWidth;*/
+    /*float ss_y = fs_Texcoord.y * u_ScreenHeight;*/
+
+    /*//matrices are stored COLUMN MAJOR*/
+    /*[>mat3 basicBlur = mat3(1.0/9.0, 1.0/9.0, 1.0/9.0,<]*/
+                          /*[>1.0/9.0, 1.0/9.0, 1.0/9.0,<]*/
+                          /*[>1.0/9.0, 1.0/9.0, 1.0/9.0);<]*/
+    
+    /*//apply Sobel filter to find edges*/
+    /*mat3 xFilt = transpose(mat3(-1, 0, 1, */
+                                /*-2, 0, 2,*/
+                                /*-1, 0, 1));*/
+    /*mat3 yFilt = transpose(mat3(-1,-2,-1, */
+                                /*0, 0, 0,*/
+                                /*1, 2, 1));*/
+
+    /*vec3 GxRGB = convolveFlipped(xFilt, ss_x, ss_y);*/
+    /*vec3 GyRGB = convolveFlipped(yFilt, ss_x, ss_y);*/
+    /*//find average gradient in X and Y as a scalar, based on average of gradient in red, green, blue channels*/
+    /*float GxAvg = (1.0/3.0) * (GxRGB.r + GxRGB.g + GxRGB.b);*/
+    /*float GyAvg = (1.0/3.0) * (GyRGB.r + GyRGB.g + GyRGB.b);*/
+    /*float G = sqrt( GxAvg*GxAvg + GyAvg*GyAvg ); //magnitude of gradient*/
+
+    /*float threshold = 0.1;*/
+
+    /*if( G > threshold ){ //we are on an edge*/
+        /*out_Color = vec4(1, 1, 1, 1);*/
+    /*} else { //not an edge*/
+        /*out_Color = vec4(color, 1);*/
+    /*}*/
     return;
 }
 

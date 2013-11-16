@@ -80,6 +80,7 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
 
     out.texname = mesh.texname;
     out.color = mesh.color;
+    out.shininess = mesh.specPower;
     return out;
 }
 
@@ -162,6 +163,7 @@ void initMesh() {
                               shape.material.diffuse[1],
                               shape.material.diffuse[2]);
             mesh.texname = shape.material.diffuse_texname;
+            mesh.specPower = shape.material.shininess;
             draw_meshes.push_back(uploadMesh(mesh));
             f=f+process;
         }
@@ -211,6 +213,7 @@ GLuint depthTexture = 0;
 GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
+GLuint specularTexture = 0;
 GLuint postTexture = 0;
 GLuint FBO[2] = {0, 0};
 
@@ -294,6 +297,7 @@ void freeFBO() {
     glDeleteTextures(1,&normalTexture);
     glDeleteTextures(1,&positionTexture);
     glDeleteTextures(1,&colorTexture);
+    glDeleteTextures(1,&specularTexture);
     glDeleteTextures(1,&postTexture);
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
@@ -366,6 +370,7 @@ void initFBO(int w, int h) {
     glGenTextures(1, &normalTexture);
     glGenTextures(1, &positionTexture);
     glGenTextures(1, &colorTexture);
+    glGenTextures(1, &specularTexture);
 
     //Set up depth FBO
     glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -412,6 +417,17 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
+    //Set up specular FBO
+    glBindTexture(GL_TEXTURE_2D, specularTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
     // creatwwe a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
@@ -421,11 +437,13 @@ void initFBO(int w, int h) {
     GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-    GLenum draws [3];
+    GLint specular_loc = glGetFragDataLocation(pass_prog,"out_Specular"); //specular map
+    GLenum draws [4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+    draws[specular_loc] = GL_COLOR_ATTACHMENT3;
+    glDrawBuffers(4, draws);
 
     // attach the texture to FBO depth attachment point
     int test = GL_COLOR_ATTACHMENT0;
@@ -437,6 +455,8 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
     glBindTexture(GL_TEXTURE_2D, colorTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
+    glBindTexture(GL_TEXTURE_2D, specularTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[specular_loc], specularTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -476,6 +496,8 @@ void initFBO(int w, int h) {
     test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
+    //glBindTexture(GL_TEXTURE_2D, specularTexture);
+    //glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], specularTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -591,6 +613,7 @@ void draw_mesh() {
 
     for(int i=0; i<draw_meshes.size(); i++){
         glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
+        glUniform1f(glGetUniformLocation(pass_prog, "u_Shininess"), draw_meshes[i].shininess);
         glBindVertexArray(draw_meshes[i].vertex_array);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
         glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
@@ -642,6 +665,10 @@ void setup_quad(GLuint prog)
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
+
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, specularTexture);
+    glUniform1i(glGetUniformLocation(prog, "u_Speculartex"),6);
 }
 
 void draw_quad() {
@@ -664,6 +691,15 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     light.w = radius;
     glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
     glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
+    vec3 inclin = glm::gtx::rotate_vector::rotate(cam.start_dir,cam.ry,cam.start_left);
+    vec3 spun = glm::gtx::rotate_vector::rotate(inclin,cam.rx,cam.up);
+    vec3 viewDir = spun;
+    glUniform3fv(glGetUniformLocation(ambient_prog, "u_viewDir"), 1, &(viewDir[0]));
+    if( useToon ){
+        glUniform1i(glGetUniformLocation(point_prog, "u_UseToon"), 1);
+    } else {
+        glUniform1i(glGetUniformLocation(point_prog, "u_UseToon"), 0);
+    }
 
     vec4 left = vp * vec4(pos + radius*cam.start_left, 1.0);
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
@@ -738,6 +774,18 @@ void updateTitle() {
     }
 }
 
+
+void draw_light_loop(mat4 sc, mat4 vp, float NEARP){
+        int limit = 7;
+        for(int x = 0; x < limit; x++){
+            for(int y = 0; y < limit; y++){
+                for(int z = 0; z < limit; z++){
+                    draw_light(vec3(x*(5.0/limit) + 0.5, -y*(5.0/limit) - 1.5, z*(5.0/limit) + 0.5), 1.0, sc, vp, NEARP);
+                }
+            }
+        }
+}
+
 bool doIScissor = true;
 void display(void)
 {
@@ -756,7 +804,6 @@ void display(void)
     glClear(GL_COLOR_BUFFER_BIT);
     if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
     {
-        setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
         mat4 vp = perspective(45.0f,(float)width/(float)height,NEARP,FARP) * 
                   cam.get_view();
@@ -769,10 +816,18 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+        setup_quad(point_prog);
+        draw_light_loop(sc, vp, NEARP);
+        //for(int x = 0; x < 4; x++){
+            //for(int y = 0; y < 4; y++){
+                //for(int z = 0; z < 4; z++){
+                    //draw_light(vec3(x*(1.2) + 0.5, -y*1.2 - 1.5, z*1.2 + 0.5), 1.0, sc, vp, NEARP);
+                //}
+            //}
+        //}
 
         glDisable(GL_SCISSOR_TEST);
-        vec4 dir_light(0.1, 1.0, 1.0, 0.0);
+        vec4 dir_light(0.1, 0.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 
         dir_light = normalize(dir_light);
         dir_light.w = 0.3;
@@ -780,6 +835,23 @@ void display(void)
         setup_quad(ambient_prog);
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
+        if(useToon){
+            glUniform1i(glGetUniformLocation(ambient_prog, "u_UseToon"), 1);
+        } else {
+            glUniform1i(glGetUniformLocation(ambient_prog, "u_UseToon"), 0);
+        } 
+
+        //calculate the view direction of the camera so we can give it to our shader.
+        vec3 inclin = glm::gtx::rotate_vector::rotate(cam.start_dir,cam.ry,cam.start_left);
+        vec3 spun = glm::gtx::rotate_vector::rotate(inclin,cam.rx,cam.up);
+        vec3 viewDir = spun;
+        glUniform3fv(glGetUniformLocation(ambient_prog, "u_viewDir"), 1, &(viewDir[0]));
+
+        mat4 model = get_mesh_world();
+        mat4 view = cam.get_view();
+        glUniformMatrix4fv(glGetUniformLocation(ambient_prog,"u_Model"),1,GL_FALSE,&model[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(ambient_prog,"u_View"),1,GL_FALSE,&view[0][0]);
+
         draw_quad();
     }
     else
@@ -908,6 +980,9 @@ void keyboard(unsigned char key, int x, int y) {
         case('5'):
             display_type = DISPLAY_LIGHTS;
             break;
+        case('6'):
+            display_type = DISPLAY_SPECULAR;
+            break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;
@@ -916,6 +991,9 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case('r'):
             initShader();
+            break;
+        case('t'):
+            useToon = !useToon;
             break;
     }
 

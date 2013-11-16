@@ -21,6 +21,7 @@ uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
+uniform sampler2D u_Speculartex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -31,8 +32,11 @@ uniform int u_DisplayType;
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 
+uniform int u_UseToon;
+
 uniform vec4 u_Light;
 uniform float u_LightIl;
+uniform vec3 u_viewDir; //view direction for contours
 
 in vec2 fs_Texcoord;
 
@@ -79,6 +83,14 @@ vec3 getRandomNormal(vec2 texcoords) {
                 (texcoords.t)*(u_ScreenHeight)/sz.y)).rgb;
 }
 
+vec3 calcReflectionDirection(vec3 normal, vec3 incident) {
+  float cosI = dot( normalize(normal), normalize(incident) );
+  return normalize(incident + 2 * cosI * normal);
+}
+
+float sampleSpecular(vec2 texcoords) {
+    return texture(u_Speculartex,texcoords).x;
+}
 
 //Get a random scalar given a screen-space texture coordinate
 //Fetches from a random texture
@@ -102,14 +114,47 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
-    out_Color = vec4(0,0,0,1.0);
+    /*out_Color = vec4(0,0,0,1.0);*/
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
-        //Put some code here to visualize the fragment associated with this point light
+        out_Color = vec4(1.0,1.0,0.0,1.0);
     }
     else
     {
-        //Put some code here to actually compute the light from the point light
+        vec3 lightVec = light - position;
+        vec3 cam_view_dir = vec3(0, 0, -1);
+        float specular = sampleSpecular(fs_Texcoord) + 2;
+        vec3 incident = -normalize(lightVec);
+        vec3 reflectDir = calcReflectionDirection(normal, incident);
+        float specular_dot = min(max(0.0, dot(reflectDir, cam_view_dir)),1.0);
+        float specular_term = pow(specular_dot, specular);
+
+        //got the following attenuation equation from http://www.gamedev.net/topic/595672-light-attenuation-model-for-deferred-shading/
+        float distRatio = length( lightVec ) / lightRadius;
+        float attenuation = max(0.0,1.0 - distRatio);
+        float damping_factor = 1.0;
+        float diffuse = max(0.0, dot(normalize(lightVec),normal));
+        float final_intensity = diffuse*attenuation;
+
+        vec3 toonColor;
+        if( final_intensity > 0.95 ){
+            toonColor = color;
+        } else if( final_intensity > 0.5){
+            toonColor = 0.6 * color;
+        } else if(final_intensity > 0.25){
+            toonColor = 0.4 * color;
+        } else if (final_intensity > 0.1){
+            toonColor = 0.2 * color;
+        } else {
+            toonColor = 0 * color;
+        }
+        
+        if( u_UseToon == 1){
+            out_Color = vec4(toonColor,1.0f);
+        } else { //use phong
+            /*out_Color = vec4(diffuse*color*final_intensity, 1.0f);*/
+            out_Color = vec4((0.7*diffuse*color + 0.3*specular_term*vec3(1,1,1))*final_intensity, 1.0f);
+        }
     }
     return;
 }

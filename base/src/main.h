@@ -9,6 +9,8 @@
 
 #include "tiny_obj_loader.h"
 
+bool useToon = false;
+
 class Camera {
 public:
     Camera(glm::vec3 start_pos, glm::vec3 start_dir, glm::vec3 up) : 
@@ -37,6 +39,7 @@ typedef struct {
 	std::vector<unsigned short> indices;
     std::string texname;
     glm::vec3 color;
+    float specPower;
 } mesh_t;
 
 typedef struct {
@@ -48,6 +51,7 @@ typedef struct {
 	unsigned int vbo_texcoords;
     glm::vec3 color;
     std::string texname;
+    float shininess;
 } device_mesh_t;
 
 typedef struct {
@@ -83,7 +87,8 @@ enum Display {
     DISPLAY_POSITION = 2,
     DISPLAY_COLOR = 3,
     DISPLAY_TOTAL = 4,
-    DISPLAY_LIGHTS = 5
+    DISPLAY_LIGHTS = 5,
+    DISPLAY_SPECULAR = 6
 };
 
 char* loadFile(char *fname, GLint &fSize);

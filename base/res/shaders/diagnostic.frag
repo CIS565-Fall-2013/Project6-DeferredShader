@@ -10,6 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define	DISPLAY_SPECULAR 6
 
 
 /////////////////////////////////////
@@ -21,6 +22,7 @@ uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
+uniform sampler2D u_Speculartex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -67,6 +69,10 @@ vec3 samplePos(vec2 texcoords) {
     return texture(u_Positiontex,texcoords).xyz;
 }
 
+float sampleSpecular(vec2 texcoords) {
+    return texture(u_Speculartex,texcoords).x;
+}
+
 //Helper function to automicatlly sample and unpack positions
 vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
@@ -101,8 +107,12 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+    float specular = sampleSpecular(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
+
+    float maxSpecular = 98.0;
+    float specFraction = specular / maxSpecular;
 
     switch (u_DisplayType) {
         case(DISPLAY_DEPTH):
@@ -117,7 +127,11 @@ void main() {
         case(DISPLAY_COLOR):
             out_Color = vec4(color, 1.0);
             break;
+        case(DISPLAY_SPECULAR):
+            out_Color = vec4(specFraction, specFraction, specFraction, 1.0);
+            break;
         case(DISPLAY_LIGHTS):
+            break;
         case(DISPLAY_TOTAL):
             break;
     }	
