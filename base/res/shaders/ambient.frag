@@ -102,32 +102,38 @@ vec3 colorProduct(vec3 c1, vec3 c2)
 }
 
 
-vec3 getSSAO(sampler2D zTex, vec2 v_texCoord, int u_ScreenWidth, int u_ScreenHeight)
+vec3 getSSAO(sampler2D zTex, sampler2D positionTex, vec2 v_texCoord, int u_ScreenWidth, int u_ScreenHeight)
 {
 
 	float dx=1.0f/float(u_ScreenWidth);
 	float dy=1.0f/float(u_ScreenHeight);
 	vec2 tmpTexcord=v_texCoord;
-	vec3 totalcolor=vec3(0,0,0);
+	vec3 totalcolor=vec3(1,1,1);
 
 
 	float sampleradius=3.0f;
 	float sampledelta=1.0f;
 	
 	float myDepth=texture(zTex,v_texCoord);
+	vec3 myPosition=texture(positionTex,v_texCoord).xyz;
+	vec3 tmpPosition;
 
 	for(float i=-sampleradius;i<=sampleradius+0.1f;i+=sampledelta) for(float j=-sampleradius;j<=sampleradius+0.1f;j+=sampledelta)
 	{
 		if(i*i+j*j>sampleradius*sampleradius)continue;
 		tmpTexcord=v_texCoord+vec2(i*dx,j*dy);
+		
 
 		float tmpDepth=texture(zTex,tmpTexcord);
+		tmpPosition=texture(positionTex,tmpTexcord).xyz;
+
 		float thedist=tmpDepth-myDepth;
 		
 		if(thedist>0) continue;
-		float weight=0.000001/(thedist*thedist+0.0001);
+		//if(length(tmpPosition-myPosition)>0.01f) continue;
+		float weight=0.020;
 		
-		totalcolor+=vec3(1.0f)*weight;
+		totalcolor-=vec3(1.0f)*weight;
 	}
 	return totalcolor;
 }
@@ -140,7 +146,7 @@ void main() {
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
 
-	//color-=getSSAO(u_Depthtex,fs_Texcoord,u_ScreenWidth, u_ScreenHeight);
+	color=colorProduct(color,getSSAO(u_Depthtex,u_Positiontex,fs_Texcoord,u_ScreenWidth, u_ScreenHeight));
 	vec3 lightcolor=texture(u_Lightmaptex,fs_Texcoord).xyz;
 
 	vec2 tempTex;
