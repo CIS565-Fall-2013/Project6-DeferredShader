@@ -12,13 +12,15 @@
 #define DISPLAY_LIGHTS 5
 #define DISPLAY_TONE 6
 #define DISPLAY_BLOOM 7
+#define DISPLAY_OCCLUSION 8
 
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
 uniform sampler2D u_Posttex;
-//uniform sampler2D u_Normaltex;
+uniform sampler2D u_Speculartex;
+uniform sampler2D u_Positiontex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -30,9 +32,8 @@ uniform int u_DisplayType;
 in vec2 fs_Texcoord;
 
 out vec4 out_Color;
+uniform vec4 u_Light;
 ///////////////////////////////////////
-
-
 
 
 uniform float zerothresh = 1.0f;
@@ -48,10 +49,16 @@ vec3 sampleCol(vec2 texcoords) {
     return texture(u_Posttex,texcoords).xyz;
 }
 
-// //Helper function to automatically sample and unpack normals
-// vec3 sampleNrm(vec2 texcoords) {
-//     return texture(u_Normaltex,texcoords).xyz;
-// }
+//Helper function to automicatlly sample and unpack positions
+vec3 samplePos(vec2 texcoords) {
+    return texture(u_Positiontex,texcoords).xyz;
+}
+
+//Helper function to automicatlly sample and unpack specular
+vec4 sampleSpec(vec2 texcoords) {
+    return texture(u_Speculartex,texcoords).xyzw;
+}
+
 
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
@@ -76,6 +83,10 @@ float getRandomScalar(vec2 texcoords) {
 const float occlusion_strength = 1.5f;
 void main() {
     vec3 color = sampleCol(fs_Texcoord);    
+    vec4 specular = sampleSpec(fs_Texcoord); 
+    vec3 position = samplePos(fs_Texcoord);
+    vec3 light = u_Light.xyz;
+    float lightRadius = u_Light.w;  
 
     if(u_DisplayType == DISPLAY_TONE){
         //Sober filter
@@ -105,20 +116,46 @@ void main() {
         }
         float mag = sqrt((magX)*(magX) + (magY)*(magY));
         mag = clamp(mag, 0.0, 1.0);
-        out_Color = vec4(color * mag + color, 1.0);
+        out_Color = vec4(color * (1.0 - mag) * 5.0 + color, 1.0);
     }
     else
     {
-        if(u_DisplayType == DISPLAY_BLOOM){
-            vec3 c = vec3(0.0);
-            int range = 10;
-            for(int i = -range; i < range; i++)
-            {            
-                float my = float(i) / u_ScreenHeight;
-                c += sampleCol(vec2(fs_Texcoord.s, fs_Texcoord.t+my));       
+        if(u_DisplayType == DISPLAY_BLOOM)
+        {        
+            if(specular.w == 101)
+            {         
+                vec3 c = vec3(0.0);
+                int range = 20;
+                for(int i = -range; i < range; i++)
+                {            
+                    float sd = 6.0;
+                    float my = float(i) / u_ScreenHeight;
+                    c += sampleCol(vec2(fs_Texcoord.s, fs_Texcoord.t+my))  * (1.0 / (2.0 * 3.141516 * sd * sd) * exp(- (i*i)/(2.0*sd*sd))) * 1000.0;       
+                }
+                c /= 2.0 * range;
+                out_Color = vec4(c , 1.0);   
+            }         
+            else
+            {
+                out_Color = vec4(color , 1.0);                
             }
-            c /= 2.0 * range;
-            out_Color = vec4(c , 1.0);
+        }
+        else if(u_DisplayType == DISPLAY_OCCLUSION)
+        {
+             int range = 2;
+             vec3 c = vec3(0.0);
+            for(int i = -range; i < range; i++)
+            {  
+                 for(int j = -range; j < range; j++)
+                {  
+                    float mx = float(i) / u_ScreenWidth;
+                    float my = float(j) / u_ScreenHeight;
+                    c += sampleCol(vec2(fs_Texcoord.s+mx, fs_Texcoord.t+my));
+                }
+            }
+            range *= 2;
+            c /= range * range;
+            out_Color = vec4(c , 1.0);  
         }
         else{
             float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));

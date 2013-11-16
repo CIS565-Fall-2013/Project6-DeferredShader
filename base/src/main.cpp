@@ -487,9 +487,31 @@ void initFBO(int w, int h) {
     glActiveTexture(GL_TEXTURE9);
 
     glGenTextures(1, &postTexture);
-
+	//glGenTextures(1, &specularTexture);
     //Set up post FBO
     glBindTexture(GL_TEXTURE_2D, postTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+
+	glBindTexture(GL_TEXTURE_2D, specularTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+
+	glBindTexture(GL_TEXTURE_2D, positionTexture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -506,14 +528,20 @@ void initFBO(int w, int h) {
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_BACK);
 	color_loc = glGetFragDataLocation(ambient_prog,"out_Color");
+	//position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLenum draw[1];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
+	//draw[position_loc] = GL_COLOR_ATTACHMENT1;
     glDrawBuffers(1, draw);
 
     // attach the texture to FBO depth attachment point
     test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, specularTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[specular_loc], specularTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, positionTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
 
 	// check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -526,7 +554,30 @@ void initFBO(int w, int h) {
 	glActiveTexture(GL_TEXTURE9);
 
     glGenTextures(1, &postTexture2);
+	//glGenTextures(1, &specularTexture);
+
+
 	glBindTexture(GL_TEXTURE_2D, postTexture2);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+	glBindTexture(GL_TEXTURE_2D, specularTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+	glBindTexture(GL_TEXTURE_2D, positionTexture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -543,16 +594,20 @@ void initFBO(int w, int h) {
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_BACK);
 	color_loc = glGetFragDataLocation(post_prog,"out_Color");
-	if(color_loc == -1)
-		cout<<"Wo Cao"<<endl;
+	//position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLenum draw2[1];
     draw2[color_loc] = GL_COLOR_ATTACHMENT0;
+	//draw2[position_loc] = GL_COLOR_ATTACHMENT1;
     glDrawBuffers(1, draw2);
 
     // attach the texture to FBO depth attachment point
     test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, postTexture2);
     glFramebufferTexture(GL_FRAMEBUFFER, draw2[color_loc], postTexture2, 0);
+	glBindTexture(GL_TEXTURE_2D, specularTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[specular_loc], specularTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, positionTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -738,7 +793,7 @@ void draw_quad() {
 
     glBindVertexArray(0);
 }
-
+std::vector<vec4> allLight;
 void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     float radius = strength;
     vec4 light = cam.get_view() * vec4(pos, 1.0); 
@@ -749,6 +804,11 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     light.w = radius;
     glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
     glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
+
+	allLight.push_back(light);
+
+	//glUniform4fv(glGetUniformLocation(post_prog, "u_Light"), 1, &(light[0]));
+	//glUniform4fv(glGetUniformLocation(post_prog2, "u_Light"), 1, &(light[0]));
 
     vec4 left = vp * vec4(pos + radius*cam.start_left, 1.0);
     vec4 up = vp * vec4(pos + radius*cam.up, 1.0);
@@ -833,7 +893,7 @@ int time = 0;
 float l1z = 0.0f;
 float l2z = 5.0f;
 
-float speed = 0.01f;
+float speed = 0.00f;
 float up1z = speed;
 float up2z = -speed;
 
@@ -883,7 +943,7 @@ void display(void)
 
 		int count = 0;
 		//float ly = -2.0;
-		/*for(float ly = - 1.0 ; ly >= -6.0; ly -= 2.0)
+		for(float ly = - 1.0 ; ly >= -6.0; ly -= 2.0)
 		for(float i = 0.1; i < 6.0; i+= 0.8)
 		{
 			if(count %2 == 0)
@@ -891,11 +951,11 @@ void display(void)
 			else
 				draw_light(vec3(i, ly, l2z), 1.0, sc, vp, NEARP);
 			count++;
-		}		*/
+		}
         
 		draw_light(vec3(2.5, -2.5, 5.0), 5.0, sc, vp, NEARP);		
 
-		//draw_light(vec3(10.0, -10.0, 10.0), 4000.0, sc, vp, NEARP);		
+		//draw_light(vec3(10.0, -10.0, 10.0), 50.0, sc, vp, NEARP);		
 
         glDisable(GL_SCISSOR_TEST);
 
@@ -930,6 +990,14 @@ void display(void)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
+
+	glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, specularTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Speculartex"),1);
+
+	glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, positionTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Positiontex"),2);
     
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
@@ -942,19 +1010,28 @@ void display(void)
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
 	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
+	
     draw_quad();
 	glDisable(GL_BLEND);
 
 	//Stage 4 One more stage for convotional
 	setTextures();
 	glUseProgram(post_prog2);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);	
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_TEXTURE_2D);    
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture2);
     glUniform1i(glGetUniformLocation(post_prog2, "u_Posttex"),0);
+
+	glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, specularTexture);
+    glUniform1i(glGetUniformLocation(post_prog2, "u_Speculartex"),1);
+
+	glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, positionTexture);
+    glUniform1i(glGetUniformLocation(post_prog2, "u_Positiontex"),2);
     
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
@@ -967,8 +1044,8 @@ void display(void)
     glUniform1i(glGetUniformLocation(post_prog2, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog2, "u_ScreenWidth"), width);
 	glUniform1i(glGetUniformLocation(post_prog2, "u_DisplayType"), display_type);
-    draw_quad();
 
+	draw_quad();	
 
     glEnable(GL_DEPTH_TEST);
     updateTitle();
@@ -1070,6 +1147,9 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		case('7'):
 			display_type = DISPLAY_BLOOM;
+			break;
+		case('8'):
+			display_type = DISPLAY_OCCLUSION;
 			break;
         case('0'):
             display_type = DISPLAY_TOTAL;

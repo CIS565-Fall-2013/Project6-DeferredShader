@@ -11,6 +11,8 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_TONE 6
+#define DISPLAY_BLOOM 7
+#define DISPLAY_OCCLUSION 8
 
 
 /////////////////////////////////////
@@ -163,24 +165,25 @@ float SSAOWorld(float curr_depth, vec3 position, vec3 normal)
 {
     float occlusion = 0.0f;
 
+    vec3 random = (getRandomNormal(fs_Texcoord));    
     for(int i = 0; i < NUM_WS_SAMPLES; i++)
-    {
-        vec3 random = normalize(getRandomNormal(vec2(fs_Texcoord.s + float(i) / u_ScreenWidth, fs_Texcoord.t + float(i) / u_ScreenHeight)));
+    {      
         float r = length(poissonSphere[i]);
-        //vec3 dir = normalize(reflect(poissonSphere[i], random));
-        vec3 dir = normalize(poissonSphere[i]);
+        vec3 dir = normalize(reflect(poissonSphere[i], random));
+        //vec3 dir = normalize(poissonSphere[i]);
 
         vec3 ranPos = position + sign(dot(normal, dir)) * dir * r * SPHERE_RADIUS;
 
-        vec4 clipPos = u_Persp * vec4(ranPos, 1.0);
-        clipPos = clipPos / clipPos.w;
-        clipPos = clipPos / 2.0 + 0.5;
+        vec4 screenPos = u_Persp * vec4(ranPos, 1.0);
+        screenPos = screenPos / screenPos.w;
+        screenPos = screenPos / 2.0 + 0.5;
 
-        vec2 newTex = vec2(clipPos.x, clipPos.y);
+        vec2 newTex = vec2(screenPos.x, screenPos.y);
         vec3 o_normal = sampleNrm(newTex);
         vec3 o_position = samplePos(newTex);
         occlusion += gatherOcclusion(normal, position, o_normal, o_position);
     }
+
     return occlusion/16.0;
 }
 
@@ -257,13 +260,7 @@ void main() {
 
     switch (u_DisplayType) {
         case(DISPLAY_DEPTH):
-            out_Color = vec4(vec3(lin_depth),1.0f);
-            //SSAOGird(lin_depth, position, normal);
-            //occlusion = SSAOScreen(lin_depth, position, normal);
-            occlusion = SSAOWorld(lin_depth, position, normal);
-            //occlusion = SSAOGird(lin_depth, position, normal);
-            occlusion = clamp(occlusion * occlusion_strength, 0.0, 1.0);
-           out_Color = vec4(vec3(1.0 - occlusion), 1.0);
+            out_Color = vec4(vec3(lin_depth),1.0f);            
             break;
         case(DISPLAY_NORMAL):
             out_Color = vec4(abs(normal),1.0f);
@@ -273,6 +270,13 @@ void main() {
             break;
         case(DISPLAY_COLOR):
             out_Color = vec4(color, 1.0);
+            break;
+        case(DISPLAY_OCCLUSION):
+            //occlusion = SSAOScreen(lin_depth, position, normal);
+            occlusion = SSAOWorld(lin_depth, position, normal);
+            //occlusion = SSAOGird(lin_depth, position, normal);
+            occlusion = clamp(occlusion * occlusion_strength, 0.0, 1.0);
+            out_Color = vec4(vec3(1.0 - occlusion), 1.0);
             break;
         case(DISPLAY_LIGHTS):            
             break;
