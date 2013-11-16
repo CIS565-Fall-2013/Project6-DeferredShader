@@ -438,12 +438,12 @@ void initFBO(int w, int h) {
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
     GLint specular_loc = glGetFragDataLocation(pass_prog,"out_Specular"); //specular map
-    GLenum draws [4];
+    GLenum draws [3];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
     draws[specular_loc] = GL_COLOR_ATTACHMENT3;
-    glDrawBuffers(4, draws);
+    glDrawBuffers(3, draws);
 
     // attach the texture to FBO depth attachment point
     int test = GL_COLOR_ATTACHMENT0;
@@ -496,6 +496,8 @@ void initFBO(int w, int h) {
     test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], postTexture, 0);
+    //glBindTexture(GL_TEXTURE_2D, specularTexture);
+    //glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], specularTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
