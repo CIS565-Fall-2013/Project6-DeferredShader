@@ -130,15 +130,19 @@ void main() {
 	float s = sqrt(dot(Dx, Dx) + dot(Dy, Dy));
 
 	//test edges with normals
-
 	for (int i = -1; i < 2; ++i) {
 		for (int j = -1; j < 2; ++j) {
 			vec2 offset = fs_Texcoord + vec2(i*stepX, j*stepY);
 			vec3 offsetNormal = sampleNrm(offset);
 
 			//test if normals are really different, if so, there is an edge
-			if (dot(normal, offsetNormal) < 0.85)
+			if (dot(normal, offsetNormal) < 0.85) {
 				s += 1.0;
+				break;
+			}
+		}
+		if (s >= 1.0) {
+			break;
 		}
 	}
 	
