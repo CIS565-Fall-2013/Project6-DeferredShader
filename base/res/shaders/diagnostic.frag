@@ -11,6 +11,7 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_SPECULAR 6
+#define DISPLAY_BLOOM 7
 
 
 /////////////////////////////////////
@@ -25,6 +26,7 @@ uniform sampler2D u_DiffColortex;
 uniform sampler2D u_SpecColortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Bloomtex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -109,7 +111,6 @@ void main() {
     vec3 position = samplePos(fs_Texcoord);
     vec4 diffTexel = texture(u_DiffColortex,fs_Texcoord);
     vec3 color = diffTexel.rgb;
-    float bloom = diffTexel.a;
 	vec3 specColor = sampleSpecCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
@@ -125,17 +126,20 @@ void main() {
             out_Color = vec4(abs(position) / u_Far,1.0f);
             break;
         case(DISPLAY_DIFFUSE):
-            out_Color = vec4(color, bloom);
+		    out_Color = vec4(color, 1.0);
             break;
         case(DISPLAY_SPECULAR):
             out_Color = vec4(specColor, 1.0);
             break;
+		case (DISPLAY_BLOOM):
+			float bloom = texture(u_Bloomtex, fs_Texcoord);
+		    out_Color = vec4(color, 1.0)*bloom;
+			break;
         case(DISPLAY_LIGHTS):
         case(DISPLAY_TOTAL):
             break;
     }	
 
-	//out_Color.r = bloom;
     return;
 }
 

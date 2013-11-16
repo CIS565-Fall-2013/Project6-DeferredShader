@@ -43,6 +43,7 @@ out vec4 out_Normal;
 out vec4 out_Position;
 out vec4 out_Diff_Color;
 out vec4 out_Spec_Color;
+out float out_Bloom;
 
 void main(void)
 {
@@ -50,13 +51,18 @@ void main(void)
     out_Position = vec4(fs_Position.xyz,1.0f); //Tuck position into 0 1 range
 	
 	vec4 diffuseColor = vec4(u_Kd,1.0);
+	
+	out_Bloom = 0.0;
 	if(u_hasDiffTex > 0)
 	{
-		diffuseColor *= texture(u_DiffTex,fs_Texcoord).rgba;
+		vec4 texel  = texture(u_DiffTex,fs_Texcoord);
+		diffuseColor *= vec4(texel.rgb, 1.0);
+		out_Bloom = 1.0-texel.a;
 	}
 	
 	//Pass through diffuse color
-	out_Diff_Color = diffuseColor.rgba;
+	out_Diff_Color = vec4(diffuseColor.rgb, clamp(1.0-diffuseColor.a, 0.0, 1.0));
+	 
 	 
 	if(u_PassthroughMode == HASTEX_OVERLAY){
 		out_Diff_Color += 0.9*vec4(u_hasMaskTex,u_hasSpecTex,u_hasBumpTex,0.0);

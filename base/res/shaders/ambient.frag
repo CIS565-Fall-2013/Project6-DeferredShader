@@ -105,15 +105,14 @@ void main() {
     vec3 position = samplePos(fs_Texcoord);
     vec4 diffTexel = texture(u_DiffColortex,fs_Texcoord);
     vec3 color = diffTexel.rgb;
-    float bloom = diffTexel.a;
     vec3 light = u_Light.xyz;
     float strength = u_Light.w;
     if (lin_depth > 0.99f) {
-        out_Color = vec4(vec3(0.0), bloom);
+        out_Color = vec4(vec3(0.0), 1.0);
     } else {
         float ambient = u_LightIl;
         float diffuse = max(0.0, dot(normalize(light),normal));
-        out_Color = vec4(color*(strength*diffuse + ambient),bloom);
+        out_Color = vec4(color*(strength*diffuse + ambient),1.0);
     }	
     return;
 }

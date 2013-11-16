@@ -66,7 +66,7 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
 	//for(int i = 0; i < mesh.normals.size(); ++i)
 	//    cout << "    " << mesh.normals[i][0] << ", " << mesh.normals[i][1] << ", " << mesh.normals[i][2] << endl;
 
-	
+
 	//Upload tangent data
 	glBindBuffer(GL_ARRAY_BUFFER, out.vbo_tangents);
 	glBufferData(GL_ARRAY_BUFFER, mesh.tangents.size()*sizeof(vec4), 
@@ -238,17 +238,17 @@ void initMesh() {
 				float ds2 =  w2.s-w0.s;
 				float dt1 =  w1.t-w0.t;
 				float dt2 =  w2.t-w0.t;
-				
+
 				float r = 1.0f/(ds1*dt2-ds2*dt1);
 				vec3 T = r*vec3((dt2*v1_v0.x-dt1*v2_v0.x),(dt2*v1_v0.y-dt1*v2_v0.y),(dt2*v1_v0.z-dt1*v2_v0.z));
 				vec3 B = r*vec3((ds1*v2_v0.x-ds2*v1_v0.x),(ds1*v2_v0.y-ds2*v1_v0.y),(ds1*v2_v0.z-ds2*v1_v0.z));
-				
+
 
 				//Gram-schmidt orthogonalization
 				vec3 tangent = normalize(T-n0*dot(n0,T));
 				float handedness = (dot(cross(n0,T), B) < 0.0f)?-1.0f:1.0f;
 				mesh.tangents.push_back(vec4(tangent, handedness));
-				
+
 				tangent = normalize(T-n1*dot(n1,T));
 				handedness = (dot(cross(n1,T), B) < 0.0f)?-1.0f:1.0f;
 				mesh.tangents.push_back(vec4(tangent, handedness));
@@ -256,7 +256,7 @@ void initMesh() {
 				tangent = normalize(T-n2*dot(n2,T));
 				handedness = (dot(cross(n2,T), B) < 0.0f)?-1.0f:1.0f;
 				mesh.tangents.push_back(vec4(tangent, handedness));
-				
+
 
 				mesh.indices.push_back(point++);
 				mesh.indices.push_back(point++);
@@ -343,6 +343,7 @@ GLuint depthTexture = 0;
 GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint diffColorTexture = 0;
+GLuint bloomTexture = 0;
 GLuint specColorTexture = 0;
 GLuint postTexture = 0;
 GLuint FBO[2] = {0, 0};
@@ -501,6 +502,7 @@ void initFBO(int w, int h) {
 	glGenTextures(1, &normalTexture);
 	glGenTextures(1, &positionTexture);
 	glGenTextures(1, &diffColorTexture);
+	glGenTextures(1, &bloomTexture);
 	glGenTextures(1, &specColorTexture);
 
 	//Set up depth FBO
@@ -548,7 +550,6 @@ void initFBO(int w, int h) {
 
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-	
 	//Set up specular color FBO
 	glBindTexture(GL_TEXTURE_2D, specColorTexture);
 
@@ -561,6 +562,18 @@ void initFBO(int w, int h) {
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
 
+	//Set up diffuse color FBO
+	glBindTexture(GL_TEXTURE_2D, bloomTexture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R32F , w, h, 0, GL_RED, GL_FLOAT,0);
+
+
 	// create a framebuffer object
 	glGenFramebuffers(1, &FBO[0]);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
@@ -571,12 +584,14 @@ void initFBO(int w, int h) {
 	GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
 	GLint diff_color_loc = glGetFragDataLocation(pass_prog,"out_Diff_Color");
 	GLint spec_color_loc = glGetFragDataLocation(pass_prog,"out_Spec_Color");
-	GLenum draws [4];
+	GLint bloom_loc = glGetFragDataLocation(pass_prog,"out_Bloom");
+	GLenum draws [5];
 	draws[normal_loc] = GL_COLOR_ATTACHMENT0;
 	draws[position_loc] = GL_COLOR_ATTACHMENT1;
 	draws[diff_color_loc] = GL_COLOR_ATTACHMENT2;
 	draws[spec_color_loc] = GL_COLOR_ATTACHMENT3;
-	glDrawBuffers(4, draws);
+	draws[bloom_loc] = GL_COLOR_ATTACHMENT4;
+	glDrawBuffers(5, draws);
 
 	// attach the texture to FBO depth attachment point
 	glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -589,6 +604,8 @@ void initFBO(int w, int h) {
 	glFramebufferTexture(GL_FRAMEBUFFER, draws[diff_color_loc], diffColorTexture, 0);
 	glBindTexture(GL_TEXTURE_2D, specColorTexture);    
 	glFramebufferTexture(GL_FRAMEBUFFER, draws[spec_color_loc], specColorTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, bloomTexture);    
+	glFramebufferTexture(GL_FRAMEBUFFER, draws[bloom_loc], bloomTexture, 0);
 
 	// check FBO status
 	FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -823,6 +840,7 @@ void setup_quad(GLuint prog)
 	glBindTexture(GL_TEXTURE_2D, specColorTexture);
 	glUniform1i(glGetUniformLocation(prog, "u_SpecColortex"),4);
 
+
 	glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D, random_normal_tex);
 	glUniform1i(glGetUniformLocation(prog, "u_RandomNormaltex"),5);
@@ -830,6 +848,10 @@ void setup_quad(GLuint prog)
 	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
 	glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),6);
+
+	glActiveTexture(GL_TEXTURE7);
+	glBindTexture(GL_TEXTURE_2D, bloomTexture);
+	glUniform1i(glGetUniformLocation(prog, "u_Bloomtex"),7);
 }
 
 void draw_quad() {
@@ -891,6 +913,9 @@ void updateDisplayText(char * disp) {
 		break;
 	case (DISPLAY_SPECULAR):
 		sprintf(disp, "Displaying Specular Color");
+		break;
+	case (DISPLAY_BLOOM):
+		sprintf(disp, "Displaying Bloom Mask");
 		break;
 	case(DISPLAY_POSITION):
 		sprintf(disp, "Displaying Position");
@@ -1025,6 +1050,10 @@ void display(void)
 	glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
 	glUniform1i(glGetUniformLocation(post_prog, "u_RandomScalartex"),5);
 
+	glActiveTexture(GL_TEXTURE7);
+	glBindTexture(GL_TEXTURE_2D, bloomTexture);
+	glUniform1i(glGetUniformLocation(post_prog, "u_Bloomtex"),7);
+
 	glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
 	glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
 	draw_quad();
@@ -1133,6 +1162,10 @@ void keyboard(unsigned char key, int x, int y) {
 		cout << "Display Specular Debug Mode" << endl;
 		display_type = DISPLAY_SPECULAR;
 		break;	
+	case('7'):
+		cout << "Display Bloom Debug Mode" << endl;
+		display_type = DISPLAY_BLOOM;
+		break;	
 	case('0'):
 		cout << "Full Rendering Mode" << endl;
 		display_type = DISPLAY_TOTAL;
@@ -1185,7 +1218,7 @@ void keyboard(unsigned char key, int x, int y) {
 			cout << "Off" << endl;
 		}
 		break;
-		
+
 	case('S'):
 		cout << "Turning Specular Mapping ";
 		specularMappingEnabled ^= true;

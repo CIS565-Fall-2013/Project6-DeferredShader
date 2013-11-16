@@ -18,6 +18,7 @@
 uniform sampler2D u_Posttex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Bloomtex;
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
@@ -67,11 +68,11 @@ const float occlusion_strength = 1.5f;
 void main() {
     vec4 texel = texture(u_Posttex,fs_Texcoord);
 	vec3 color = texel.rgb;
-	float bloom = clamp(1.0-texel.a,0.0,1.0);
+	float bloom = texture(u_Bloomtex, fs_Texcoord);
     float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
     float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
 
-	out_Color = texel.rgba;
+	out_Color = vec4(color, 1.0);
     return;
 }
 
