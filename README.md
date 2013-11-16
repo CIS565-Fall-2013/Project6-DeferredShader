@@ -44,7 +44,7 @@ VIDEO
 -------------------------------------------------------------------------------
 The following is a video of the deferred shading in action
 
-[![ScreenShot](https://raw.github.com/vimanyu/Project6-DeferredShader/master/renders/deferredShader_video_screenshot.png)](http://www.youtube.com/watch?v=s8ehsuIoL_U)
+[![ScreenShot](https://raw.github.com/vimanyu/Project6-DeferredShader/master/renders/deferredShader_video_screenshot.png)](http://www.youtube.com/watch?v=MMZ0mmsKyqM)
 
 -------------------------------------------------------------------------------
 BUILDING AND RUNNING CODE
