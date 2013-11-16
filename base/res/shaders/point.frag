@@ -12,6 +12,7 @@
 #define	DISPLAY_LIGHTS 5
 #define	DISPLAY_OUTLINE 6
 #define	DISPLAY_TOON 7
+#define	DISPLAY_BLOOM 8
 
 
 /////////////////////////////////////
@@ -25,6 +26,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_SpecularColortex;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -68,9 +70,14 @@ vec3 samplePos(vec2 texcoords) {
     return texture(u_Positiontex,texcoords).xyz;
 }
 
-//Helper function to automicatlly sample and unpack positions
+//Helper function to automicatlly sample and unpack colors
 vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
+}
+
+//Helper function to automicatlly sample and unpack specular colors
+vec3 sampleSpecCol(vec2 texcoords) {
+    return texture(u_SpecularColortex,texcoords).xyz;
 }
 
 //Get a random normal vector  given a screen-space texture coordinate
@@ -113,11 +120,31 @@ void main() {
     else
     {
         //Put some code here to actually compute the light from the point light
-		vec3 L = light - position;
-		float lightIntensity = u_LightIl * max(lightRadius-length(L), 0.0) / lightRadius;
+		
+		
+		vec3 N_unit = normalize(normal);					// Normal.
+		vec3 L      = light - position;						// Fragment to light.
+		vec3 L_unit = normalize(L);
+		vec3 E_unit = normalize(-position);					// Fragment to eye.
+		vec3 R_unit = normalize(-reflect(L_unit, N_unit));	// Fragment to reflected light direction.
 
-		float diffuse = max(dot(normalize(normal), normalize(L)), 0.0);
-		out_Color = vec4(clamp(lightIntensity*color*diffuse, 0.0, 1.0), 1.0);
+		float lightIntensity = u_LightIl * max(lightRadius-length(L), 0.0) / lightRadius;
+		
+		// Diffuse term
+		vec3 diffuseColor = color * max(dot(N_unit, L_unit), 0.0);
+		diffuseColor = clamp(diffuseColor, 0.0, 1.0);
+
+		// Specular term
+		vec3 specularColor = sampleSpecCol(fs_Texcoord);
+		{
+			float specularExponent = 15.0;
+			float magnitude = max(dot(R_unit, E_unit), 0.0);
+			specularColor *= pow(magnitude, specularExponent);
+		}
+		specularColor = clamp(specularColor, 0.0, 1.0);
+
+		out_Color = vec4(lightIntensity * (diffuseColor + specularColor), 1.0);
+		//out_Color = vec4(clamp(lightIntensity*color*diffuseTerm, 0.0, 1.0), 1.0);
     }
     return;
 }
