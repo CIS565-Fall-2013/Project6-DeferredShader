@@ -39,35 +39,10 @@ I based my implementation off of last year's GLSL project.
 
 ![alt text](./renders/poisson_disk.jpg "poisson")
 
-![alt text](./renders/no_occlusion.jpg "diffuse only")
-
 ![alt text](./renders/diffuse_occlusion.jpg "diffuse with occlusion")
 
-
-**NOTE**: Implementing separable convolution will require another link in your pipeline and will count as an extra feature if you do performance analysis with a standard one-pass 2D convolution. The overhead of rendering and reading from a texture _may_ offset the extra computations for smaller 2D kernels.
-
-You must implement two of the following extras:
-* The effect you did not choose above
-* Screen space ambient occlusion
-* Compare performance to a normal forward renderer with
-  * No optimizations
-  * Coarse sort geometry front-to-back for early-z
-  * Z-prepass for early-z
-* Optimize g-buffer format, e.g., pack things together, quantize, reconstruct z from normal x and y (because it is normalized), etc.
-  * Must be accompanied with a performance analysis to count
-* Additional lighting and pre/post processing effects! (email first please, if they are good you may add multiple).
-
--------------------------------------------------------------------------------
-README
--------------------------------------------------------------------------------
-All students must replace or augment the contents of this Readme.md in a clear 
-manner with the following:
-
-* A brief description of the project and the specific features you implemented.
-* At least one screenshot of your project running.
-* A 30 second or longer video of your project running.  To create the video you
-  can use http://www.microsoft.com/expression/products/Encoder4_Overview.aspx 
-* A performance evaluation (described in detail below).
+[Here] (http://zxyzhu.github.io/Project5-WebGL/) is a video of my deferred shader
+running. 
 
 -------------------------------------------------------------------------------
 PERFORMANCE EVALUATION
