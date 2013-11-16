@@ -19,7 +19,13 @@ by using the following buffers generated in the primitive-rendering pass:
 * Depth
 * Surface normal
 * Albedo 
-* Velocity field
+* Velocity field  
+
+Mutiple post-processing passes are performed:  
+* SSAO calculation
+* SSAO smoothing
+* Motion blurring
+* Toon shading silhouette (using Sobel filter on both depth and normal)
 
 Rendering result
 ---------------------------------------------------------------------------------
