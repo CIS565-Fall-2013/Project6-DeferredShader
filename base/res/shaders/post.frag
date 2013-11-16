@@ -111,11 +111,11 @@ void main()
 			for (int i = -1; i < 2; ++i)
 			{
 				int j = -1;
-				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 3).xyz * GaussianMat3 [i+1].x);
+				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 2).xyz * GaussianMat3 [i+1].x);
 				++ j;
-				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 3).xyz * GaussianMat3 [i+1].y);
+				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 2).xyz * GaussianMat3 [i+1].y);
 				++ j;
-				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 3).xyz * GaussianMat3 [i+1].z);
+				bloomColour += (texture (u_GlowMask, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 2).xyz * GaussianMat3 [i+1].z);
 				++ j;
 			}  
 			color += color*bloomColour;  
@@ -136,8 +136,10 @@ void main()
 
 		float focalLen = texture (u_depthTex, vec2 (u_mouseTexX, u_mouseTexY)).x;
 		focalLen = linearizeDepth (focalLen, u_Near, u_Far);
+
+		float lenQuant = focalLen / 4.0;
 		depth = abs (focalLen - depth); 
-		depth /= u_lenQuant;
+		depth /= lenQuant;
 //		depth *= 1000.0;
 
 		vec3 bloomColour = vec3(0);
