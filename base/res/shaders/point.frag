@@ -13,6 +13,7 @@
 #define	DISPLAY_TOON 6
 #define	DISPLAY_TOONEDGE 7
 #define	DISPLAY_BLOOM 8
+#define	DISPLAY_SSAO 9
 
 
 /////////////////////////////////////
@@ -121,6 +122,7 @@ void main() {
 		case(DISPLAY_TOON):
 		case(DISPLAY_TOONEDGE):
 		case(DISPLAY_BLOOM):
+		case(DISPLAY_SSAO):
 			break;
         case(DISPLAY_TOTAL):
 			out_Color = vec4(color * clamp(dot(normalize(normal), normalize(light-position)), 0.0, 1.0), 1.0);

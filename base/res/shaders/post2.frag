@@ -13,6 +13,7 @@
 #define	DISPLAY_TOON 6
 #define	DISPLAY_TOONEDGE 7
 #define	DISPLAY_BLOOM 8
+#define	DISPLAY_SSAO 9
 
 #define ONE_OVER_2PI 0.15915494309
 #define kernelWidth 50  // has to be an odd number

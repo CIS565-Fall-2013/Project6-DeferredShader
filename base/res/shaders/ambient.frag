@@ -13,6 +13,7 @@
 #define	DISPLAY_TOON 6
 #define	DISPLAY_TOONEDGE 7
 #define	DISPLAY_BLOOM 8
+#define	DISPLAY_SSAO 9
 
 
 /////////////////////////////////////
@@ -92,6 +93,52 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+// from fall 2012 base code
+const float SS_RADIUS = 0.02f;
+const float constAttenuation  = 1.0;
+const float linearAttenuation = 1.0;
+const float quadAttenuation = 1.0;
+const float bias = 0.1;
+float gatherOcclusion( vec3 pt_normal, vec3 pt_position, vec3 occluder_normal, vec3 occluder_position) {
+
+    //no occluder
+    if(abs(length(occluder_position)) < 1e-6) return 0.0;
+
+	vec3 occluderDir = occluder_position - pt_position;
+	float distance = length(occluderDir);
+	float attenuation = 1.0 / (constAttenuation + linearAttenuation*distance + quadAttenuation*distance*distance);
+	float ambientOcclusion = max(dot(pt_normal, occluderDir) - bias, 0.0) * attenuation;
+    return ambientOcclusion;
+}
+const float SAMPLE_STEP = 0.012f;
+vec2 sampleDirection[4] = 
+	{vec2(1.0, 0.0), vec2(0.0, 1.0), vec2(-1.0, 0.0), vec2(0.0, -1.0)};
+mat2 rot45 = mat2(vec2(0.707, 0.707), vec2(-0.707, 0.707));
+
+const int SSAA_ITER = 4;
+float occlusionWithRegularSamples(vec2 texcoord, vec3 position, vec3 normal, float linearDepth) {
+		
+		float radius = SS_RADIUS*(1.0 - linearDepth);
+		float step = SAMPLE_STEP*(1.0 - linearDepth);
+		float accumOcclusion = 0.0;
+		for(int i = 0; i < SSAA_ITER; ++i)
+		{
+			for(int j = 0; j < sampleDirection.length; ++j)
+			{
+				vec2 dir = radius * sampleDirection[j];
+				vec3 ranNormal = getRandomNormal(texcoord+dir);
+				dir = reflect(-dir, ranNormal.xy);
+				vec3 occ_position = samplePos(texcoord+dir);
+				vec3 occ_normal = sampleNrm(texcoord+dir);
+				accumOcclusion += 1.0 / (SSAA_ITER * sampleDirection.length) * gatherOcclusion(normal, position, occ_normal, occ_position);
+				sampleDirection[j] = rot45*sampleDirection[j];
+			}
+			radius += step;
+		}
+			
+        return -1.0f; 
+}
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
@@ -109,6 +156,7 @@ void main() {
     float strength = u_Light.w;
 	float ambient = u_LightIl;
 	float diffuse;
+	float occlusion = 0.0;
     if (lin_depth > 0.99f) {
         color = vec3(0.0);
     } else {      
@@ -125,6 +173,11 @@ void main() {
 
 		color *= quantizer;
 	}
+	else if(u_DisplayType == DISPLAY_SSAO)
+	{
+		occlusion = occlusionWithRegularSamples(fs_Texcoord, position, normal, lin_depth);
+		color = vec3(1.0)*occlusion;
+	} 
 	out_Color = vec4(color, 1.0);
 	
     return;
