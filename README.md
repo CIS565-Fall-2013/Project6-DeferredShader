@@ -15,6 +15,7 @@ RESULTS:
 ![result](screenshots/sponza_light.png)
 ![result](screenshots/sponza_normal.png)
 ![result](screenshots/sponza_toon.png)
+![result](screenshots/sponza_bloom.png)
 ![result](screenshots/sponza_diffuse_specular.png)
 -------------------------------------------------------------------------------
 INTRODUCTION:
