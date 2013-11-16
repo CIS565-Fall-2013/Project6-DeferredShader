@@ -39,9 +39,6 @@ in vec2 fs_Texcoord;
 out vec4 out_Color;
 ///////////////////////////////////////
 
-
-
-
 uniform float zerothresh = 1.0f;
 uniform float falloff = 0.1f;
 
@@ -91,28 +88,48 @@ float getRandomScalar(vec2 texcoords) {
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
-const float occlusion_strength = 1.5f;
 void main() {
 
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
     float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
 
-    vec3 normal = sampleNrm(fs_Texcoord);
-    vec3 position = samplePos(fs_Texcoord);
-    vec3 color = sampleCol(fs_Texcoord);
-    vec3 light = u_Light.xyz;
-    float lightRadius = u_Light.w;
-    if( u_DisplayType == DISPLAY_LIGHTS )
-    {
-		out_Color = vec4(vec3(0.6, 0.0, 0.0), 1.0);
-    }
+	vec3 light = u_Light.xyz;
+    float strength = u_Light.w;
+	vec3 color = sampleCol(fs_Texcoord);
+	vec3 normal = sampleNrm(fs_Texcoord);
+
+    if (lin_depth > 0.99f) {
+		out_Color = vec4(vec3(0.5), 1.0);
+	}
     else if ( u_DisplayType == DISPLAY_TOTAL )
     {
-		float intensity =  max(0.0, lightRadius-length(position-light))/lightRadius;
-		vec3 lightDir = normalize(light - position);
-		intensity = intensity * max(0.0, dot(lightDir, normal));
-		out_Color = vec4(intensity * u_LightIl * color * vec3(1.0), 1.0);
+		float ambient = u_LightIl;
+		float diffuse = max(0.0, dot(normalize(light),normal));
+		out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
+
+		vec3 red = vec3(1.0, 0.0, 0.0);
+		vec3 accumulated = vec3(0.0);
+		//float sigma = 6.0; //for Gaussian blur
+		for (int i=-20; i<=20; i++) {
+			for (int j=-20; j<=20; j++) {
+				vec2 texCoord = fs_Texcoord + i * vec2(1.0/u_ScreenWidth, 0.0)
+					+ j * vec2(0.0, 1.0/u_ScreenHeight);
+				vec3 color = sampleCol(texCoord);
+				if (distance(color, red) < 0.001) {
+					//float G = 1.0/(2*3.1415926*sigma*sigma) * exp(-(i*i+j*j)/(2*sigma*sigma)); //Gaussian
+					accumulated += (color+vec3(0.3));
+				}
+			}
+		}
+		if (length(accumulated) > 0.001) {
+			out_Color = vec4(accumulated * 0.001 + out_Color.xyz, 0.0);
+		}
     }
+	else if ( u_DisplayType == DISPLAY_LIGHTS ) {
+		float ambient = u_LightIl;
+		float diffuse = max(0.0, dot(normalize(light),normal));
+		out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
+	}
 	else
 	{
 		out_Color = vec4(vec3(0.0), 1.0);

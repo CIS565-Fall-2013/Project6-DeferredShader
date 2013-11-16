@@ -39,9 +39,6 @@ in vec2 fs_Texcoord;
 out vec4 out_Color;
 ///////////////////////////////////////
 
-
-
-
 uniform float zerothresh = 1.0f;
 uniform float falloff = 0.1f;
 
@@ -91,28 +88,58 @@ float getRandomScalar(vec2 texcoords) {
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
-const float occlusion_strength = 1.5f;
 void main() {
 
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
     float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
 
-    vec3 normal = sampleNrm(fs_Texcoord);
-    vec3 position = samplePos(fs_Texcoord);
-    vec3 color = sampleCol(fs_Texcoord);
-    vec3 light = u_Light.xyz;
-    float lightRadius = u_Light.w;
-    if( u_DisplayType == DISPLAY_LIGHTS )
-    {
-		out_Color = vec4(vec3(0.6, 0.0, 0.0), 1.0);
-    }
+	vec3 light = u_Light.xyz;
+    float strength = u_Light.w;
+	vec3 color = sampleCol(fs_Texcoord);
+	vec3 normal = sampleNrm(fs_Texcoord);
+
+	if (lin_depth > 0.99f) {
+		out_Color = vec4(vec3(0.5), 1.0);
+	}
     else if ( u_DisplayType == DISPLAY_TOTAL )
     {
-		float intensity =  max(0.0, lightRadius-length(position-light))/lightRadius;
-		vec3 lightDir = normalize(light - position);
-		intensity = intensity * max(0.0, dot(lightDir, normal));
-		out_Color = vec4(intensity * u_LightIl * color * vec3(1.0), 1.0);
+		vec3 n[8];
+		n[0] = sampleNrm(fs_Texcoord + vec2(-1.0/u_ScreenWidth, 0.0));
+		n[1] = sampleNrm(fs_Texcoord + vec2(1.0/u_ScreenWidth, 0.0));
+		n[2] = sampleNrm(fs_Texcoord + vec2(0.0, -1.0/u_ScreenHeight));
+		n[3] = sampleNrm(fs_Texcoord + vec2(0.0, 1.0/u_ScreenHeight));
+		n[4] = sampleNrm(fs_Texcoord + vec2(-1.0/u_ScreenWidth, -1.0/u_ScreenHeight));
+		n[5] = sampleNrm(fs_Texcoord + vec2(1.0/u_ScreenWidth, -1.0/u_ScreenHeight));
+		n[6] = sampleNrm(fs_Texcoord + vec2(-1.0/u_ScreenWidth, 1.0/u_ScreenHeight));
+		n[7] = sampleNrm(fs_Texcoord + vec2(1.0/u_ScreenWidth, 1.0/u_ScreenHeight));
+
+		bool edge = false;
+		for (int i=0; i<8; i++) {
+			if (dot(normal, n[i]) < 0.6) {
+				edge = true;
+				break;
+			}
+		}
+		if (edge) {
+			out_Color = vec4(vec3(0.0), 1.0);
+		}
+		else {
+			//compute light contribution
+			float ambient = u_LightIl;
+			float diffuse = max(0.0, dot(normalize(light),normal));
+			out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
+
+			out_Color.r = round(out_Color.r/0.25) * 0.25;
+			out_Color.g = round(out_Color.g/0.25) * 0.25;
+			out_Color.b = round(out_Color.b/0.25) * 0.25;
+			out_Color.a = 1.0;
+		}
     }
+	else if ( u_DisplayType == DISPLAY_LIGHTS ) {
+		float ambient = u_LightIl;
+		float diffuse = max(0.0, dot(normalize(light),normal));
+		out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
+	}
 	else
 	{
 		out_Color = vec4(vec3(0.0), 1.0);

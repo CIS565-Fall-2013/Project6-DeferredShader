@@ -16,6 +16,9 @@
     <Filter Include="tinyobjloader">
       <UniqueIdentifier>{cb97dd15-a916-48bc-8245-96e7ec499326}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{11a780d9-e571-49ab-964e-684caf1b8bcb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\main.cpp">
@@ -41,31 +44,40 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\res\shaders\ambient.frag">
-      <Filter>Resource Files</Filter>
+      <Filter>shaders</Filter>
     </None>
     <None Include="..\..\..\res\shaders\diagnostic.frag">
-      <Filter>Resource Files</Filter>
+      <Filter>shaders</Filter>
     </None>
     <None Include="..\..\..\res\shaders\directional.frag">
-      <Filter>Resource Files</Filter>
+      <Filter>shaders</Filter>
     </None>
     <None Include="..\..\..\res\shaders\pass.frag">
-      <Filter>Resource Files</Filter>
+      <Filter>shaders</Filter>
     </None>
     <None Include="..\..\..\res\shaders\pass.vert">
-      <Filter>Resource Files</Filter>
+      <Filter>shaders</Filter>
     </None>
     <None Include="..\..\..\res\shaders\point.frag">
-      <Filter>Resource Files</Filter>
+      <Filter>shaders</Filter>
     </None>
     <None Include="..\..\..\res\shaders\post.frag">
-      <Filter>Resource Files</Filter>
+      <Filter>shaders</Filter>
     </None>
     <None Include="..\..\..\res\shaders\post.vert">
-      <Filter>Resource Files</Filter>
+      <Filter>shaders</Filter>
     </None>
     <None Include="..\..\..\res\shaders\shade.vert">
-      <Filter>Resource Files</Filter>
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\res\shaders\bloom.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\res\shaders\toon.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\..\..\res\shaders\ssao.frag">
+      <Filter>shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

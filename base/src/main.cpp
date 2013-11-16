@@ -25,6 +25,8 @@ const float PI = 3.14159f;
 
 int width, height;
 
+int mode; //0 for point lights, 1 for toon, 2 for bloom, 3 for ambient occlusion
+
 device_mesh_t uploadMesh(const mesh_t & mesh) {
     device_mesh_t out;
     //Allocate vertex array
@@ -217,11 +219,14 @@ GLuint FBO[2] = {0, 0};
 
 GLuint pass_prog;
 GLuint point_prog;
+GLuint toon_prog;
+GLuint bloom_prog;
+GLuint ssao_prog;
 GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
 void initShader() {
-    Utility::shaders_t shaders = Utility::loadShaders("../res/shaders/pass.vert", "../res/shaders/pass.frag");
+    Utility::shaders_t shaders = Utility::loadShaders("../../../res/shaders/pass.vert", "../../../res/shaders/pass.frag");
 
     pass_prog = glCreateProgram();
 
@@ -231,7 +236,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(pass_prog,shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/diagnostic.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/diagnostic.frag");
 
     diagnostic_prog = glCreateProgram();
 
@@ -240,7 +245,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(diagnostic_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/ambient.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/ambient.frag");
 
     ambient_prog = glCreateProgram();
 
@@ -249,7 +254,7 @@ void initShader() {
 
     Utility::attachAndLinkProgram(ambient_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/shade.vert", "../res/shaders/point.frag");
+    shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/point.frag");
 
     point_prog = glCreateProgram();
 
@@ -258,7 +263,34 @@ void initShader() {
 
     Utility::attachAndLinkProgram(point_prog, shaders);
 
-    shaders = Utility::loadShaders("../res/shaders/post.vert", "../res/shaders/post.frag");
+		shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/toon.frag");
+
+    toon_prog = glCreateProgram();
+
+    glBindAttribLocation(toon_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(toon_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(toon_prog, shaders);
+
+		shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/bloom.frag");
+
+    bloom_prog = glCreateProgram();
+
+    glBindAttribLocation(bloom_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(bloom_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(bloom_prog, shaders);
+
+		shaders = Utility::loadShaders("../../../res/shaders/shade.vert", "../../../res/shaders/ssao.frag");
+
+    ssao_prog = glCreateProgram();
+
+    glBindAttribLocation(ssao_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(ssao_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(ssao_prog, shaders);
+
+    shaders = Utility::loadShaders("../../../res/shaders/post.vert", "../../../res/shaders/post.frag");
 
     post_prog = glCreateProgram();
 
@@ -312,7 +344,7 @@ void checkFramebufferStatus(GLenum framebufferStatus) {
 GLuint random_normal_tex;
 GLuint random_scalar_tex;
 void initNoise() {  
-    random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../res/random_normal.png",0,0,0);
+    random_normal_tex = (unsigned int)SOIL_load_OGL_texture("../../../res/random_normal.png",0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -320,7 +352,7 @@ void initNoise() {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    random_scalar_tex = (unsigned int)SOIL_load_OGL_texture("../res/random.png",0,0,0);
+    random_scalar_tex = (unsigned int)SOIL_load_OGL_texture("../../../res/random.png",0,0,0);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -629,7 +661,7 @@ void draw_quad() {
 void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
     float radius = strength;
     vec4 light = cam.get_view() * vec4(pos, 1.0); 
-    if( light.z > NEARP)
+		if(light.z > NEARP)
     {
         return;
     }
@@ -725,34 +757,75 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
+
     if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
     {
-        setup_quad(point_prog);
-        if(doIScissor) glEnable(GL_SCISSOR_TEST);
-        mat4 vp = perspective(45.0f,(float)width/(float)height,NEARP,FARP) * 
-                  cam.get_view();
-        mat4 sc = mat4(width, 0.0,    0.0, 0.0,
-                       0.0,   height, 0.0, 0.0,
-                       0.0,   0.0,    1.0, 0.0,
-                       0.0,   0.0,    0.0, 1.0) *
-                  mat4(0.5, 0.0, 0.0, 0.0,
-                       0.0, 0.5, 0.0, 0.0,
-                       0.0, 0.0, 1.0, 0.0,
-                       0.5, 0.5, 0.0, 1.0);
+			vec4 dir_light(0.1, 1.0, 1.0, 0.0);
+			dir_light = cam.get_view() * dir_light; 
+			dir_light = normalize(dir_light);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+			if (mode == 0) { //draw point lights
+				setup_quad(point_prog);
+				if(doIScissor) glEnable(GL_SCISSOR_TEST);
+				mat4 vp = perspective(45.0f,(float)width/(float)height,NEARP,FARP) * 
+									cam.get_view();
+				mat4 sc = mat4(width, 0.0,    0.0, 0.0,
+												0.0,   height, 0.0, 0.0,
+												0.0,   0.0,    1.0, 0.0,
+												0.0,   0.0,    0.0, 1.0) *
+									mat4(0.5, 0.0, 0.0, 0.0,
+												0.0, 0.5, 0.0, 0.0,
+												0.0, 0.0, 1.0, 0.0,
+												0.5, 0.5, 0.0, 1.0);
+				
+				for (int i=0; i<7; ++i) {
+					float x = -0.6 + i;
+					for (int j=0; j<6; ++j) {
+						float y = -5.5 + j;
+						for (int k=0; k<8; ++k) {
+							float z = -0.9 + k;
+							draw_light(vec3(x, y, z), 0.6, sc, vp, NEARP);
+						}
+					}
+				}
+				glDisable(GL_SCISSOR_TEST);
+				setup_quad(ambient_prog);
+				dir_light.w = 0.3;
+				float strength = 0.09;
+				glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
+				glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
+				draw_quad();
+			}
+			else if (mode == 1) { //toon shading
+				setup_quad(toon_prog);
+				dir_light.w = 0.8;
+				float strength = 0.5;
+				glUniform4fv(glGetUniformLocation(toon_prog, "u_Light"), 1, &(dir_light[0]));
+				glUniform1f(glGetUniformLocation(toon_prog, "u_LightIl"), strength);
+				draw_quad();
+			}
+			else if (mode == 2) { //bloom shading
+				setup_quad(bloom_prog);
+				dir_light.w = 0.8;
+				float strength = 0.5;
+				glUniform4fv(glGetUniformLocation(bloom_prog, "u_Light"), 1, &(dir_light[0]));
+				glUniform1f(glGetUniformLocation(bloom_prog, "u_LightIl"), strength);
+				draw_quad();
+			}
+			else if (mode == 3) { //screen space ambient occlusion
+				setup_quad(ssao_prog);
+				glUniform1f(glGetUniformLocation(ssao_prog, "u_Radius"), 0.2);
+				glUniform1i(glGetUniformLocation(ssao_prog, "u_OcclusionType"), 2);
+				draw_quad();
 
-        glDisable(GL_SCISSOR_TEST);
-        vec4 dir_light(0.1, 1.0, 1.0, 0.0);
-        dir_light = cam.get_view() * dir_light; 
-        dir_light = normalize(dir_light);
-        dir_light.w = 0.3;
-        float strength = 0.09;
-        setup_quad(ambient_prog);
-        glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
-        glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
-        draw_quad();
-    }
+				setup_quad(ambient_prog);
+				dir_light.w = 0.8;
+				float strength = 0.2;
+				glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
+				glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
+				//draw_quad();
+			}
+		}
     else
     {
         setup_quad(diagnostic_prog);
@@ -916,6 +989,9 @@ int main (int argc, char* argv[])
                 return -1;
             }
             loadedScene = true;
+        }
+				else if(strcmp(header.c_str(), "mode")==0){
+						mode = atoi(data.c_str());
         }
     }
 
