@@ -774,6 +774,17 @@ void updateTitle() {
     }
 }
 
+
+void draw_light_loop(mat4 sc, mat4 vp, float NEARP){
+        for(int x = 0; x < 4; x++){
+            for(int y = 0; y < 4; y++){
+                for(int z = 0; z < 4; z++){
+                    draw_light(vec3(x*(1.2) + 0.5, -y*1.2 - 1.5, z*1.2 + 0.5), 1.0, sc, vp, NEARP);
+                }
+            }
+        }
+}
+
 bool doIScissor = true;
 void display(void)
 {
@@ -805,13 +816,14 @@ void display(void)
                        0.5, 0.5, 0.0, 1.0);
 
         setup_quad(point_prog);
-        for(int x = 0; x < 4; x++){
-            for(int y = 0; y < 4; y++){
-                for(int z = 0; z < 4; z++){
-                    draw_light(vec3(x*(1.2) + 0.5, -y*1.2 - 1.5, z*1.2 + 0.5), 1.0, sc, vp, NEARP);
-                }
-            }
-        }
+        draw_light_loop(sc, vp, NEARP);
+        //for(int x = 0; x < 4; x++){
+            //for(int y = 0; y < 4; y++){
+                //for(int z = 0; z < 4; z++){
+                    //draw_light(vec3(x*(1.2) + 0.5, -y*1.2 - 1.5, z*1.2 + 0.5), 1.0, sc, vp, NEARP);
+                //}
+            //}
+        //}
 
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 0.0, 1.0, 0.0);
