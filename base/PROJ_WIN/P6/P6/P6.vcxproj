@@ -85,6 +85,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\res\shaders\ambient.frag" />
+    <None Include="..\..\..\res\shaders\bloomPass1.frag" />
+    <None Include="..\..\..\res\shaders\bloomPass1.vert" />
     <None Include="..\..\..\res\shaders\diagnostic.frag" />
     <None Include="..\..\..\res\shaders\directional.frag" />
     <None Include="..\..\..\res\shaders\pass.frag" />

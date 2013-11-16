@@ -213,25 +213,31 @@ GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint specTexture = 0;
 GLuint bloomMapTexture = 0;
+GLuint bloomMapPass1Texture = 0;
 GLuint postTexture = 0;
-GLuint FBO[2] = {0, 0};
+GLuint FBO[3] = {0, 0, 0};
 
 GLuint pass_prog;
 GLuint point_prog;
 GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
+GLuint bloompass1_prog;
+
 void initShader() {
 #ifdef WIN32
 	const char * pass_vert = "../../../res/shaders/pass.vert";
 	const char * shade_vert = "../../../res/shaders/shade.vert";
 	const char * post_vert = "../../../res/shaders/post.vert";
+	const char * bloomPass1_vert = "../../../res/shaders/bloomPass1.vert";
 
 	const char * pass_frag = "../../../res/shaders/pass.frag";
 	const char * diagnostic_frag = "../../../res/shaders/diagnostic.frag";
 	const char * ambient_frag = "../../../res/shaders/ambient.frag";
 	const char * point_frag = "../../../res/shaders/point.frag";
 	const char * post_frag = "../../../res/shaders/post.frag";
+	const char * bloomPass1_frag = "../../../res/shaders/bloomPass1.frag";
+
 #else
 	const char * pass_vert = "../res/shaders/pass.vert";
 	const char * shade_vert = "../res/shaders/shade.vert";
@@ -308,6 +314,20 @@ void initShader() {
     glBindAttribLocation(post_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(post_prog, shaders);
+	
+	/////////////////////////////
+	// BloomPass1_prog
+#if IS_TWO_PASS_BLOOM == 1
+	shaders = Utility::loadShaders(bloomPass1_vert, bloomPass1_frag);
+
+	bloompass1_prog = glCreateProgram();
+	glBindAttribLocation(bloompass1_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(bloompass1_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+	glBindFragDataLocation(bloompass1_prog, 0, "out_Color");
+
+	Utility::attachAndLinkProgram(bloompass1_prog, shaders);
+#endif
 }
 
 void freeFBO() {
@@ -318,8 +338,15 @@ void freeFBO() {
     glDeleteTextures(1,&postTexture);
 	glDeleteTextures(1,&bloomMapTexture);
 	glDeleteTextures(1,&specTexture);
+
+#if IS_TWO_PASS_BLOOM == 1
+	glDeleteTextures(1,&bloomMapPass1Texture);
+	glDeleteFramebuffers(1,&FBO[2]);
+#endif
+
     glDeleteFramebuffers(1,&FBO[0]);
     glDeleteFramebuffers(1,&FBO[1]);
+
 }
 
 void checkFramebufferStatus(GLenum framebufferStatus) {
@@ -383,6 +410,8 @@ void initNoise() {
 void initFBO(int w, int h) {
     GLenum FBOstatus;
 
+	///////////////////////////////////////////////////////////////////
+	// setting up framebuffer and textures for pass_prog to output to
     glActiveTexture(GL_TEXTURE9);
 
     glGenTextures(1, &depthTexture);
@@ -471,7 +500,10 @@ void initFBO(int w, int h) {
         checkFramebufferStatus(FBOstatus);
     }
 
-    //Post Processing buffer! These are input textures to post.frag. Values are filled by the previous stage in the pipeline
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// setting up framebuffer and textures for ambient_prog, point_prog, and diagnostic_prog to output to
+    // Post Processing buffer! These are input textures to post.frag. Values are filled by the previous stage in the pipeline
     glActiveTexture(GL_TEXTURE9);
 
     glGenTextures(1, &postTexture);
@@ -518,7 +550,7 @@ void initFBO(int w, int h) {
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
 	// LOOK: For FBO[1], the output texture is being set at ambient_prog's out_Color
     //glReadBuffer(GL_BACK);
-	//glReadBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
     color_loc = glGetFragDataLocation(ambient_prog,"out_Color");			// LOOK: This works because in initShaders(), I am explicitly assigning the out_Color,
 	GLint spec_loc = glGetFragDataLocation(ambient_prog, "out_Spec");		// out_Spec, and out_BloomMap to have the same index.
 	GLint bloom_loc = glGetFragDataLocation(ambient_prog, "out_BloomMap");
@@ -543,6 +575,40 @@ void initFBO(int w, int h) {
         printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[1]\n");
         checkFramebufferStatus(FBOstatus);
     }
+
+#if IS_TWO_PASS_BLOOM == 1
+	////////////////////////////////////////////////////////////////////////
+	// setting up framebuffer and textures for bloompass1_prog to output to
+	glActiveTexture(GL_TEXTURE9);
+	glGenTextures(1, &bloomMapPass1Texture);
+	glBindTexture(GL_TEXTURE_2D, bloomMapPass1Texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+
+	glGenFramebuffers(1, &FBO[2]); 
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO[2]);
+	glReadBuffer(GL_NONE);
+	color_loc = glGetFragDataLocation(bloompass1_prog, "out_Color");
+	GLenum drawBuff[1];
+	drawBuff[color_loc] = GL_COLOR_ATTACHMENT0;
+	glDrawBuffers(1, drawBuff);
+
+	glBindTexture(GL_TEXTURE_2D, bloomMapPass1Texture);
+	glFramebufferTexture(GL_FRAMEBUFFER, drawBuff[color_loc], bloomMapPass1Texture, 0);
+
+	// check FBO status
+    FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if(FBOstatus != GL_FRAMEBUFFER_COMPLETE) {
+        printf("GL_FRAMEBUFFER_COMPLETE failed, CANNOT use FBO[2]\n");
+        checkFramebufferStatus(FBOstatus);
+    }
+#endif
 
     // switch back to window-system-provided framebuffer (i.e the default buffer provided by the OpenGL context)
     glClear(GL_DEPTH_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -836,8 +902,6 @@ void display(void)
     if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON || display_type == DISPLAY_BLOOM 
 		|| display_type == DISPLAY_AA || display_type == DISPLAY_SPECULAR)
     {
-		//if (display_type != DISPLAY_BLOOM)
-		//{
         setup_quad(point_prog); // used to render the light source and compute light from point light
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
         mat4 vp = perspective(45.0f,(float)width/(float)height,NEARP,FARP) * 
@@ -864,7 +928,6 @@ void display(void)
 #else
 		draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
 #endif
-		//}
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 
@@ -883,7 +946,25 @@ void display(void)
     }
     glDisable(GL_BLEND);
 
-    //Stage 3 -- RENDER TO SCREEN
+#if IS_TWO_PASS_BLOOM == 1
+	//Stage 2.5 -- Perform first pass of bloom if enabled
+	setTextures();
+	bindFBO(2);
+	
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(bloompass1_prog);
+
+	glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, bloomMapTexture);
+    glUniform1i(glGetUniformLocation(bloompass1_prog, "u_BloomMapTex"),0);
+	glUniform1i(glGetUniformLocation(bloompass1_prog, "u_ScreenHeight"), height);
+    glUniform1i(glGetUniformLocation(bloompass1_prog, "u_ScreenWidth"), width);
+	glUniform1i(glGetUniformLocation(bloompass1_prog, "u_DisplayType"), display_type);
+	draw_quad();
+
+#endif
+    
+	//Stage 3 -- RENDER TO SCREEN
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
     setTextures();
@@ -920,6 +1001,16 @@ void display(void)
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
 	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
+
+#if IS_TWO_PASS_BLOOM == 1
+	glUniform1i(glGetUniformLocation(post_prog, "isTwoPassBloom"), 1);
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D, bloomMapPass1Texture);
+	glUniform1i(glGetUniformLocation(post_prog, "u_BloomMapPass1Tex"),6);
+#else
+	glUniform1i(glGetUniformLocation(post_prog, "isTwoPassBloom"), 0);
+#endif
+
     draw_quad();
 
 	glDisable(GL_BLEND);

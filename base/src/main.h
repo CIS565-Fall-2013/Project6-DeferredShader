@@ -10,6 +10,7 @@
 #include "tiny_obj_loader.h"
 
 #define MULTI_LIGHTS 0
+#define IS_TWO_PASS_BLOOM 1
 
 class Camera {
 public:
@@ -89,7 +90,8 @@ enum Display {
 	DISPLAY_TOON = 6,
 	DISPLAY_BLOOM = 7,
 	DISPLAY_AA = 8,
-	DISPLAY_SPECULAR = 9
+	DISPLAY_SPECULAR = 9,
+	DISPLAY_SEP_BLOOM = 10
 };
 
 char* loadFile(char *fname, GLint &fSize);

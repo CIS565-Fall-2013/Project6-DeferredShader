@@ -22,6 +22,7 @@ uniform sampler2D u_Posttex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_SpecTex;
 uniform sampler2D u_BloomMapTex;
+uniform sampler2D u_BloomMapPass1Tex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -38,6 +39,8 @@ out vec4 out_Color;
 
 uniform float zerothresh = 1.0;
 uniform float falloff = 0.1;
+
+uniform bool isTwoPassBloom;
 
 
 /////////////////////////////////////
@@ -243,7 +246,6 @@ vec3 applyGaussianFilter(vec2 texcoords)
 	}
 	
 	return result * (1 / sum);	
-	//return result;
 }
 
 
@@ -276,10 +278,17 @@ void main() {
 	}
 	else if (u_DisplayType == DISPLAY_BLOOM)
 	{
-		vec4 specColor = vec4(abs(texture(u_SpecTex, fs_Texcoord).rgb), 1.0);
-		vec4 baseColor = vec4(color, 1.0);
-		out_Color = baseColor + vec4(applyGaussianFilter(fs_Texcoord), 1.0);
-		//out_Color =vec4(applyGaussianFilter(fs_Texcoord), 1.0);
+		if (!isTwoPassBloom)
+		{
+			vec4 specColor = vec4(abs(texture(u_SpecTex, fs_Texcoord).rgb), 1.0);
+			vec4 baseColor = vec4(color, 1.0);
+			out_Color = baseColor + vec4(applyGaussianFilter(fs_Texcoord), 1.0);
+		}
+		else
+		{
+			out_Color = texture(u_BloomMapPass1Tex, fs_Texcoord);
+			//out_Color = vec4(1,1,1,1);
+		}
 	}
 	else if (u_DisplayType == DISPLAY_AA)
 	{
@@ -291,7 +300,6 @@ void main() {
 	else if (u_DisplayType == DISPLAY_SPECULAR)
 	{
 		out_Color = vec4(abs(texture(u_SpecTex, fs_Texcoord).rgb), 1.0);
-		//out_Color = vec4(1,0,0,0);
 	}
 	else
 	{
