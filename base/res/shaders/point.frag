@@ -31,6 +31,7 @@ uniform int u_DisplayType;
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 
+uniform vec3 u_LightCol;
 uniform vec4 u_Light;
 uniform float u_LightIl;
 
@@ -120,14 +121,14 @@ void main() {
 		
 		// position is in eye space, so view vector should be negative position?
 		vec3 halfVec = normalize(normalize(vec3(0.0,0.0,-0.0)-position) + normalize(posToLight));
-		float spec = dot(halfVec, normal);
+		float spec = clamp(dot(halfVec, normal),0.0,1.0);
 		if(shininess < 0.0001)
 			spec = 0.0;
 		else
 			spec = pow(spec,shininess);
 
 		float luminance = u_LightIl * max(0.0,(1.0 - length(posToLight)/lightRadius));
-		out_Color = vec4(1.0* luminance*color*(lightRadius*(diffuse)) + vec3(1.0,1.0,1.0) *(luminance * lightRadius * spec),1.0f);
+		out_Color = vec4(1.0* luminance*u_LightCol*color*(lightRadius*(diffuse)) + vec3(1.0,1.0,1.0) *(luminance * u_LightCol * lightRadius * spec),1.0f);
         //out_Color = vec4(1.0,0.0,0.0,1.0);
 		//Put some code here to actually compute the light from the point light
     }

@@ -18,8 +18,10 @@ newmtl blue
 Ka 0 0 0
 Kd 0 0 1
 Ks 0 0 0
+Ns 25.0
 
 newmtl light
 Ka 20 20 20
 Kd 12 12 12
 Ks 0 0 0
+

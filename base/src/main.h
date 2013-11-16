@@ -5,6 +5,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <time.h>
 #include <cstring>
 
 #include "tiny_obj_loader.h"
@@ -98,6 +99,7 @@ enum PostProcess {
 	POST_GLOW_SEPARATED,
 	POST_VIGNETTE,
 	POST_SSAO,
+	POST_SSAO_BLEND,
 	POST_COUNT
 };
 
@@ -111,7 +113,8 @@ enum PostProcessArg {
 	ARG_BLUR_Y,
 	ARG_VIGNETTE,
 	ARG_SSAO_SCALE,
-	ARG_BLEND,
+	ARG_MULT_BLEND,
+	ARG_ADD_BLEND,
 };
 
 char* loadFile(char *fname, GLint &fSize);

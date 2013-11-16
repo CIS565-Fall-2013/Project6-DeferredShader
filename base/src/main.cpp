@@ -26,10 +26,37 @@ const float PI = 3.14159f;
 int width, height;
 
 /***** Uniform variables that are interaction controllable *****/
-int bloomWidth2D = 3;
 int kernelWidthX = 3;
 int kernelWidthY = 3;
 int postProcessMode = 0;
+int numLights = 12345;
+vector<vec3>lightPos;
+vector<vec3>lightCol;
+vector<float> lightInt;
+void setupLights()
+{
+	lightPos.resize(0);
+	lightInt.resize(0);
+	for(int iter=0; iter<numLights;iter++)
+	{
+		float x = 30*((double) rand() / (RAND_MAX)) - 15;
+		float y = 20*((double) rand() / (RAND_MAX)) - 10;
+		float z = 15*((double) rand() / (RAND_MAX)) ;
+
+		float r = ((double) rand() / (RAND_MAX)) ;
+		float g = ((double) rand() / (RAND_MAX)) ;
+		float b = ((double) rand() / (RAND_MAX)) ;
+
+		vec3 col = vec3(r,g,b);
+		col = normalize(col);
+		col = abs(col);
+
+		float l = 1.0*((double) rand() / (RAND_MAX));
+		lightPos.push_back(vec3(x,y,z));
+		lightCol.push_back(col);
+		lightInt.push_back(l);
+	}
+}
 /***************************************************************/
 
 device_mesh_t uploadMesh(const mesh_t & mesh) {
@@ -720,7 +747,7 @@ void draw_quad() {
     glBindVertexArray(0);
 }
 
-void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
+void draw_light(vec3 pos, vec3 col, float strength, mat4 sc, mat4 vp, float NEARP) {
     float radius = strength;
     vec4 light = cam.get_view() * vec4(pos, 1.0); 
     if( light.z > NEARP)
@@ -728,6 +755,7 @@ void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
         return;
     }
     light.w = radius;
+	glUniform3fv(glGetUniformLocation(point_prog, "u_LightCol"), 1, &(col[0]));
     glUniform4fv(glGetUniformLocation(point_prog, "u_Light"), 1, &(light[0]));
     glUniform1f(glGetUniformLocation(point_prog, "u_LightIl"), strength);
 
@@ -800,6 +828,9 @@ void updateModeText(char * mode) {
 			break;
 		case(POST_SSAO):
 			sprintf(mode, "SSAO: Scalable");
+			break;
+		case(POST_SSAO_BLEND):
+			sprintf(mode, "SSAO: Scalable Blended");
 			break;
 	}
 }
@@ -884,7 +915,7 @@ void setupBlendFrameBuffer(int outputFBO, GLuint inputTex1, GLuint inputTex2)
     glBindTexture(GL_TEXTURE_2D, inputTex2);
     glUniform1i(glGetUniformLocation(post_prog, "u_Posttex2"),1);
 
-	glUniform1i(glGetUniformLocation(post_prog, "u_Mode"),ARG_BLEND);
+	glUniform1i(glGetUniformLocation(post_prog, "u_Mode"),ARG_ADD_BLEND);
 
 }
 
@@ -921,8 +952,14 @@ void display(void)
 		for( float i = 0.1 ; i <= 6.0 ; i+=0.85)
 			for(float j = 0.1 ; j <= 6.0 ; j+=0.85)
 				for(float k = 0.1 ; k <= 6.0 ; k+=0.85)
-					draw_light(vec3(i, -j, k), 0.75, sc, vp, NEARP);
-		
+					draw_light(vec3(i, -j, k), vec3(1.0,1.0,1.0), 0.75, sc, vp, NEARP);
+		/*
+		//setupLights();
+		for(int l = 0; l < numLights; l++)
+		{
+			draw_light(lightPos[l],lightCol[l],lightInt[l],sc,vp,NEARP);
+		}
+		*/
         //draw_light(vec3(2.5, -2.5, 4.0), 3.00, sc, vp, NEARP);
 
         glDisable(GL_SCISSOR_TEST);
@@ -970,7 +1007,7 @@ void display(void)
 			draw_quad();
 			setupPostFrameBuffer(2,postTexture3,ARG_BLUR_Y);
 			draw_quad();
-			finalPostProcess = ARG_BLEND;
+			finalPostProcess = ARG_ADD_BLEND;
 			finalTexture = postTexture;
 			finalBlendTexture = postTexture2;
 			break;
@@ -981,12 +1018,18 @@ void display(void)
 			draw_quad();
 			setupPostFrameBuffer(2,postTexture3,ARG_BLUR_Y);
 			draw_quad();
-			finalPostProcess = ARG_BLEND;
+			finalPostProcess = ARG_ADD_BLEND;
 			finalTexture = postTexture;
 			finalBlendTexture = postTexture2;
 			break;
 		case POST_SSAO:
 			finalPostProcess = ARG_SSAO_SCALE;
+			break;
+		case POST_SSAO_BLEND:
+			setupPostFrameBuffer(2,postTexture,ARG_SSAO_SCALE);
+			draw_quad();
+			finalPostProcess = ARG_MULT_BLEND;
+			finalBlendTexture = postTexture2;
 			break;
 	}	
 	
@@ -1108,22 +1151,22 @@ void keyboard(unsigned char key, int x, int y) {
             exit(0.0);
             break;
         case('w'):
-            tz = 0.1;
+            tz = 0.3;
             break;
         case('s'):
-            tz = -0.1;
+            tz = -0.3;
             break;
         case('d'):
-            tx = -0.1;
+            tx = -0.3;
             break;
         case('a'):
-            tx = 0.1;
+            tx = 0.3;
             break;
         case('q'):
-            ty = 0.1;
+            ty = 0.3;
             break;
         case('z'):
-            ty = -0.1;
+            ty = -0.3;
             break;
         case('1'):
             display_type = DISPLAY_DEPTH;
@@ -1169,6 +1212,10 @@ void init() {
 
 int main (int argc, char* argv[])
 {
+
+	srand (time(NULL));
+	setupLights();
+
     bool loadedScene = false;
     for(int i=1; i<argc; i++){
         string header; string data;

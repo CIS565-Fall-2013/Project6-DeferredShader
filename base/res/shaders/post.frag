@@ -20,7 +20,8 @@
 #define ARG_BLUR_Y 6
 #define ARG_VIGNETTE 7
 #define ARG_SSAO_SCALE 8
-#define ARG_BLEND 9
+#define ARG_MULT_BLEND 9
+#define ARG_ADD_BLEND 10
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -268,14 +269,19 @@ void main() {
 		occlusion = 1.0 - occlusion / (4.0 * float(NUM_SAMPLES));
 		occlusion = clamp(pow(occlusion, 1.0 + intensity),0.0,1.0);
 		out_Color = vec4(vec3(occlusion),1.0);
-		out_Color = vec4(occlusion * color.xyz,1.0);
 		//out_Color = vec4(vec3(randNormal),1.0);
 	}
-	else if(u_Mode == ARG_BLEND)
+	else if(u_Mode == ARG_ADD_BLEND)
 	{
 		vec3 col1 = texture(u_Posttex,fs_Texcoord).xyz;
 		vec3 col2 = texture(u_Posttex2,fs_Texcoord).xyz;
 		out_Color = clamp(vec4(col1 + col2, 1.0),0.0,1.0);
+	}
+	else if(u_Mode == ARG_MULT_BLEND)
+	{
+		vec3 col1 = texture(u_Posttex,fs_Texcoord).xyz;
+		vec3 col2 = texture(u_Posttex2,fs_Texcoord).xyz;
+		out_Color = clamp(vec4(col1 * col2, 1.0),0.0,1.0);
 	}
     return;
 }

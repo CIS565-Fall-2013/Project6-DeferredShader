@@ -116,13 +116,13 @@ void main() {
 
 		// position is in eye space, so view vector should be negative position?
 		vec3 halfVec = normalize(normalize(-position) + normalize(light));
-		float spec = dot(halfVec, normal);
+		float spec = clamp(dot(halfVec, normal),0.0,1.0);
 		if(shininess < 0.0001)
 			spec = 0.0;
 		else
 			spec = pow(spec,shininess);
 
-        out_Color = vec4(color*(strength*(diffuse + spec) + ambient),1.0f);
+       out_Color = vec4(0.0);//vec4(color*(strength*(diffuse + spec) + ambient),1.0f);
     }	
     return;
 }
