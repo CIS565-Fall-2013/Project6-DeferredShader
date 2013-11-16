@@ -12,6 +12,8 @@ RESULTS:
 ![result](screenshots/cornell_box_aa_diffuse.png)
 ![result](screenshots/cornell_box_specular.png)
 ![result](screenshots/cornell_box_diffuse_specular.png)
+![result](screenshots/sponza_light.png)
+![result](screenshots/sponza_normal.png)
 ![result](screenshots/sponza_toon.png)
 ![result](screenshots/sponza_diffuse_specular.png)
 -------------------------------------------------------------------------------
