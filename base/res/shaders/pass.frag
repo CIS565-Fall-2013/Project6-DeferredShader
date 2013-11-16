@@ -47,27 +47,11 @@ void main(void)
     out_Normal = vec4(normalize(fs_Normal),0.0f);
     out_Position = vec4(fs_Position.xyz,1.0f); //Tuck position into 0 1 range
 	
-	if(u_hasMaskTex > 0)
-	{
-		//Only discard samples if not in overlay mode
-		if(texture(u_MaskTex,vec2(fs_Texcoord)).x < 1)
-			discard;
-			
-	}
-	
-	
 	vec4 diffuseColor = vec4(u_Kd,1.0);
 	if(u_hasDiffTex > 0)
 	{
-		diffuseColor *=vec4(texture(u_DiffTex,vec2(fs_Texcoord)).rgb,1.0);
+		diffuseColor *=vec4(texture(u_DiffTex,fs_Texcoord).rgb,1.0);
 	}
-	
-	if(u_hasBumpTex > 0)
-	{
-		//TODO: Do Bump Mapping Here
-		ivec2 size = textureSize2D(u_BumpTex,0);
-		
-	}	
 	
 	//Pass through diffuse color
 	out_Diff_Color = diffuseColor*vec4(u_Kd,1.0);
@@ -76,16 +60,51 @@ void main(void)
 		out_Diff_Color += 0.9*vec4(u_hasMaskTex,u_hasDiffTex,u_hasBumpTex,0.0);
 	}else if(u_PassthroughMode == TEXCOORDS_AS_DIFFUSE){
 		out_Diff_Color = vec4(fs_Texcoord.x, fs_Texcoord.y, 0.0, 1.0);
-	}else if(u_PassthroughMode == BUMP_AS_DIFFUSE){
-		out_Diff_Color = vec4(texture(u_BumpTex,vec2(fs_Texcoord)).rgb,1.0);
-	}else if(u_PassthroughMode == MASK_OVERLAY){
-		out_Diff_Color = vec4(texture(u_MaskTex,vec2(fs_Texcoord)).rgb,1.0);
-	}//ELSE NO_CHANGE
+	}
+	
+	
+	if(u_hasMaskTex > 0)
+	{
+		//Only discard samples if not in overlay mode
+		if(texture(u_MaskTex,fs_Texcoord).x < 1)
+			discard;
+		if(u_PassthroughMode == MASK_OVERLAY){
+			out_Diff_Color = vec4(texture(u_MaskTex,fs_Texcoord).rgb,1.0);
+		}
+		
+	}
+	
+	
+	
+	if(u_hasBumpTex > 0)
+	{
+		//TODO: Do Bump Mapping Here
+		ivec2 size = textureSize2D(u_BumpTex,0);
+		float scaling = 0.1;//Strength factor
+		const vec3 offsetDir = vec3(-1,0,1);
+		vec2 offset = 1.0/size;
+		
+		float s11 = texture(u_BumpTex, fs_Texcoord).x;//Height at center
+		float s01 = texture(u_BumpTex, fs_Texcoord+offset*offsetDir.xy).x;//Left
+		float s21 = texture(u_BumpTex, fs_Texcoord+offset*offsetDir.zy).x;//Right
+		float s10 = texture(u_BumpTex, fs_Texcoord+offset*offsetDir.yx).x;//Down
+		float s12 = texture(u_BumpTex, fs_Texcoord+offset*offsetDir.yz).x;//Up
+		vec3 va = normalize(vec3(scaling,0.0,s21-s01));
+		vec3 vb = normalize(vec3(0.0,scaling,s12-s10));
+		vec4 bump = normalize(vec4( cross(va,vb), s11 ));
+		if(u_PassthroughMode == BUMP_AS_DIFFUSE){
+			out_Diff_Color = bump;
+		}
+		
+		//Modify using 
+		out_Normal = vec4(vec3(bump),0.0);
+	}	
+	
 	
 	//Pass through specular color
 	out_Spec_Color = vec4(u_Ks, 1.0);
 	if(u_hasSpecTex > 0)
 	{
-		out_Spec_Color *=vec4(texture(u_SpecTex,vec2(fs_Texcoord)).rgb,1.0);
+		out_Spec_Color *=vec4(texture(u_SpecTex,fs_Texcoord).rgb,1.0);
 	}
 }
