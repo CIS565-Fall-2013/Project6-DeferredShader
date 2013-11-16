@@ -42,20 +42,20 @@ void main() {
 		}
     }*/
 
-	float x = texCord.x - 2.0/u_ScreenWidth; 
-	float y = texCord.y - 2.0/u_ScreenHeight ;
+	float x = texCord.x - 20.0/u_ScreenWidth; 
+	float y = texCord.y - 20.0/u_ScreenHeight ;
 
-	for(int i = 0 ; i < 5 ; i++)
+/*	for(int i = 0 ; i < 20 ; i++)
 	{
-		for(int j = 0 ; j < 5 ; j++)
+		for(int j = 0 ; j < 20 ; j++)
 		{
-			totcolor += (sampleCol(vec2(x,y))  * sampleBloom(vec2(x,y)) * guassian[k]/273.0); //
+			totcolor += (sampleCol(vec2(x,y))  * sampleBloom(vec2(x,y)) * 1.0/400.0 ); //guassian[k]/273.0
 			k++;
 			y= y + 1.0/u_ScreenHeight;
 		}
-		y = texCord.y - 2.0/u_ScreenHeight;
+		y = texCord.y - 20.0/u_ScreenHeight;
 		x = x + 1.0/u_ScreenWidth;
-	}
+	} */
 
 	//out_Color = vec4(sampleCol(texCord)* sampleBloom(texCord),1.0) ;
 	out_Color = vec4(totcolor,1.0) ;

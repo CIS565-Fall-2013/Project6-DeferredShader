@@ -11,6 +11,7 @@
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_BLOOM 6
+#define DISPLAY_TOON 7
 
 
 /////////////////////////////////////
@@ -129,6 +130,7 @@ void main() {
             out_Color = vec4(bloom, 1.0);
             break;
         case(DISPLAY_LIGHTS):
+		case(DISPLAY_TOON):
         case(DISPLAY_TOTAL):
             break;
     }	

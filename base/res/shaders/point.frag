@@ -103,6 +103,11 @@ void main() {
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
     out_Color = vec4(0,0,0,1.0);
+
+	float gray1 = 0.3;
+	float gray2 = 0.6;
+	vec3 alight = vec3(0.0,-5.2,5.2);
+
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
@@ -114,8 +119,18 @@ void main() {
     else
     {
 		if(length(position - light) < lightRadius)
-		out_Color = vec4(color * dot(normalize(normal),normalize(light - position)) * (1.0 - (length(position - light)/lightRadius))  , 1.0);
-		//out_Color = vec4(color * dot(normalize(normal),normalize(light - position))  , 1.0);
+			out_Color = vec4(color * dot(normalize(normal),normalize(light - position)) * (1.0 - (length(position - light)/lightRadius))  , 1.0);
+
+       // out_Color = vec4(color * dot(normalize(normal),normalize(alight - position))  ,1.0);
+
+		/*else
+		{ */
+		//if(dot(normalize(normal),normalize(light - position))  < 0.3)
+			//out_Color = vec4(color * dot(normalize(normal),normalize(alight - position)) * gray1 ,1.0);
+		//else
+		   //out_Color = vec4(color * dot(normalize(normal),normalize(alight - position))  ,1.0);
+		//}
+		//out_Color = vec4(color * dot(normalize(normal),normalize(alight - position))  , 1.0);
         //Put some code here to actually compute the light from the point light
     }
     return;

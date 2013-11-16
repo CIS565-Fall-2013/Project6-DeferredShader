@@ -107,7 +107,19 @@ void main() {
         out_Color = vec4(vec3(0.0), 1.0);
     } else {
         float ambient = u_LightIl;
-        float diffuse = max(0.0, dot(normalize(light),normal));
+        float diffuse = max(0.0, dot(light,normal));
+
+	/*	if ( diffuse > 0.0 && diffuse <= 0.2)
+		diffuse = 0.2;
+		else if( diffuse > 0.2 && diffuse <= 0.4)
+		diffuse = 0.4;
+		else if( diffuse > 0.4 && diffuse <= 0.6)
+		diffuse = 0.6;
+		else if( diffuse > 0.6 && diffuse <= 0.8)
+		diffuse = 0.8;
+		else if( diffuse > 0.8 && diffuse <= 1.0)
+		diffuse = 1.0; */
+
         out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
     }	
     return;

@@ -609,7 +609,7 @@ mat4x4 get_mesh_world() {
 float FARP;
 float NEARP;
 void draw_mesh() {
-    FARP = 100.0f;
+    FARP = 200.0f;
     NEARP = 0.1f;
 
     glUseProgram(pass_prog);
@@ -754,6 +754,9 @@ void updateDisplayText(char * disp) {
 		case(DISPLAY_BLOOM):
             sprintf(disp, "Displaying Bloom");
             break;
+		case(DISPLAY_TOON):
+            sprintf(disp, "Displaying Toon");
+            break;
     }
 }
 
@@ -799,7 +802,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL|| display_type == DISPLAY_TOON || display_type == DISPLAY_PART  )
     {
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -823,7 +826,7 @@ void display(void)
 				}}}
 
         glDisable(GL_SCISSOR_TEST);
-        vec4 dir_light(0.1, 1.0, 1.0, 0.0);
+        vec4 dir_light(0.1, 1.0, 1.0, 0.0);//vec3(0.0,-5.2,5.2)
         dir_light = cam.get_view() * dir_light; 
         dir_light = normalize(dir_light);
         dir_light.w = 0.3;
@@ -854,6 +857,10 @@ void display(void)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
+
+	glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_Depthtex"),1);
     
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
@@ -865,6 +872,9 @@ void display(void)
 
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
+	glUniform1f(glGetUniformLocation(post_prog, "u_Far"), FARP);
+    glUniform1f(glGetUniformLocation(post_prog, "u_Near"), NEARP);
+	glUniform1i(glGetUniformLocation(post_prog, "u_DisplayType"), display_type);
     draw_quad();
 
     glEnable(GL_DEPTH_TEST);
@@ -965,6 +975,12 @@ void keyboard(unsigned char key, int x, int y) {
 		case('6'):
             display_type = DISPLAY_BLOOM;
             break;
+		case('7'):
+            display_type = DISPLAY_TOON;
+            break;
+		case('8'):
+			display_type = DISPLAY_PART;
+			break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;
