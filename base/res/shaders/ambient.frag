@@ -68,10 +68,6 @@ vec3 samplePos(vec2 texcoords) {
     return texture(u_Positiontex,texcoords).xyz;
 }
 
-//Helper function to automicatlly sample and unpack positions
-vec3 sampleCol(vec2 texcoords) {
-    return texture(u_DiffColortex,texcoords).xyz;
-}
 
 
 //Helper function to automicatlly sample and unpack positions
@@ -107,15 +103,17 @@ void main() {
 
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
-    vec3 color = sampleCol(fs_Texcoord);
+    vec4 diffTexel = texture(u_DiffColortex,fs_Texcoord);
+    vec3 color = diffTexel.rgb;
+    float bloom = diffTexel.a;
     vec3 light = u_Light.xyz;
     float strength = u_Light.w;
     if (lin_depth > 0.99f) {
-        out_Color = vec4(vec3(0.0), 1.0);
+        out_Color = vec4(vec3(0.0), bloom);
     } else {
         float ambient = u_LightIl;
         float diffuse = max(0.0, dot(normalize(light),normal));
-        out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
+        out_Color = vec4(color*(strength*diffuse + ambient),bloom);
     }	
     return;
 }
