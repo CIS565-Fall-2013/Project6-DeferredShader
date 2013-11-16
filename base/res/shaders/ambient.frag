@@ -111,7 +111,7 @@ vec2 pixToNDC(float pix_x, float pix_y){
 }
 
 //assume the kernel is already FLIPPED
-vec3 convolveFlipped(mat3 kernel, float pix_x, float pix_y) {
+float convolveFlipped(mat3 kernel, float pix_x, float pix_y) {
     //color 00 is the color at (0,0) of the kernel centered at (pix_x, pix_y)
     //color xy is the color at (x, y) of the kernel centered at (pix_x, pix_y)
     vec3 color_00 =  sampleCol(pixToNDC(pix_x-1,pix_y-1));
@@ -129,7 +129,7 @@ vec3 convolveFlipped(mat3 kernel, float pix_x, float pix_y) {
     //ASSUMING THE KERNEL IS ALREAYD FLIPPED! 
     vec3 finalColor = kernel[0][0]*color_00 + kernel[1][0]*color_10 + kernel[2][0]*color_20 + kernel[0][1]*color_01 + kernel[1][1]*color_11 + kernel[2][1]*color_21 + kernel[0][2]*color_02 + kernel[1][2]*color_12 + kernel[2][2]*color_22; 
 
-    return finalColor;
+    return (1.0/3.0)*(finalColor.x + finalColor.y + finalColor.z);
 }
 
 ///////////////////////////////////
@@ -190,11 +190,13 @@ void main() {
                                     0, 0, 0,
                                     1, 2, 1));
 
-        vec3 GxRGB = convolveFlipped(xFilt, ss_x, ss_y);
-        vec3 GyRGB = convolveFlipped(yFilt, ss_x, ss_y);
+        float GxRGB = convolveFlipped(xFilt, ss_x, ss_y);
+        float GyRGB = convolveFlipped(yFilt, ss_x, ss_y);
         //find average gradient in X and Y as a scalar, based on average of gradient in red, green, blue channels
-        float GxAvg = (1.0/3.0) * (GxRGB.r + GxRGB.g + GxRGB.b);
-        float GyAvg = (1.0/3.0) * (GyRGB.r + GyRGB.g + GyRGB.b);
+        /*float GxAvg = (1.0/3.0) * (GxRGB.r + GxRGB.g + GxRGB.b);*/
+        /*float GyAvg = (1.0/3.0) * (GyRGB.r + GyRGB.g + GyRGB.b);*/
+        float GxAvg = GxRGB;
+        float GyAvg = GyRGB;
         float G = sqrt( GxAvg*GxAvg + GyAvg*GyAvg ); //magnitude of gradient
 
         float threshold = 0.1;
