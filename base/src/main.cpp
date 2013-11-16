@@ -842,10 +842,11 @@ void draw_quad() {
 	glBindVertexArray(0);
 }
 
+bool doIScissor = true;
 void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
 	float radius = strength;
 	vec4 light = cam.get_view() * vec4(pos, 1.0); 
-	if( light.z > NEARP)
+	if( light.z > NEARP && doIScissor)
 	{
 		return;
 	}
@@ -929,7 +930,6 @@ void updateTitle() {
 	}
 }
 
-bool doIScissor = true;
 void display(void)
 {
 	// Stage 1 -- RENDER TO G-BUFFER
