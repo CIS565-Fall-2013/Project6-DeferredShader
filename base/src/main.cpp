@@ -438,12 +438,12 @@ void initFBO(int w, int h) {
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
     GLint specular_loc = glGetFragDataLocation(pass_prog,"out_Specular"); //specular map
-    GLenum draws [3];
+    GLenum draws [4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
     draws[specular_loc] = GL_COLOR_ATTACHMENT3;
-    glDrawBuffers(3, draws);
+    glDrawBuffers(4, draws);
 
     // attach the texture to FBO depth attachment point
     int test = GL_COLOR_ATTACHMENT0;
@@ -613,7 +613,7 @@ void draw_mesh() {
 
     for(int i=0; i<draw_meshes.size(); i++){
         glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
-        glUniform3fv(glGetUniformLocation(pass_prog, "u_Shininess"), 1, &(draw_meshes[i].shininess));
+        glUniform1f(glGetUniformLocation(pass_prog, "u_Shininess"), draw_meshes[i].shininess);
         glBindVertexArray(draw_meshes[i].vertex_array);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
         glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
