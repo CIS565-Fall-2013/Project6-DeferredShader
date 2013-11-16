@@ -107,7 +107,7 @@ normal.z = sqrt(1- normal.x*normal.x - normal.y*normal.y);
 ```
 
 Model|Lighting|Without packed G-Buffer(fps)|With packed G-Buffer(fps)
----|---|---
+---|---|---|---
 cornell_box.obj|Blinn-Phong|64.48|66.87
 cornell_box.obj|Bloom|7.29|7.28
 sponza.obj|Blinn-Phong|32.54|33.60
