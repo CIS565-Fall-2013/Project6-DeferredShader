@@ -108,7 +108,7 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
-	float shininess = sampleCol(fs_Texcoord);
+	float shininess = sampleShininess(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
 

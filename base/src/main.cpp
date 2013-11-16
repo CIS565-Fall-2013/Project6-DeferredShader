@@ -800,6 +800,15 @@ void updateDisplayText(char * disp) {
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
             break;
+		case(DISPLAY_SPECULAR):
+            sprintf(disp, "Displaying Shininess");
+            break;
+		case(DISPLAY_TOON):
+            sprintf(disp, "Displaying Toon Shading");
+            break;
+		case(DISPLAY_BLOOM):
+            sprintf(disp, "Displaying Bloom");
+            break;
     }
 }
 
@@ -894,7 +903,8 @@ void display(void)
     }
     glDisable(GL_BLEND);
 
-
+	if (display_type == DISPLAY_BLOOM)
+	{
 	//Bloom Pass 1
     setTextures();
 	bindFBO(2);
@@ -915,7 +925,7 @@ void display(void)
 	glUniform1i(glGetUniformLocation(bloom_prog, "u_DisplayType"), display_type);
     draw_quad();
 
-
+	}
     //Stage 3 -- RENDER TO SCREEN
     setTextures();
     glUseProgram(post_prog);
@@ -1076,7 +1086,7 @@ void initLights()
 	float stepX = 1.0f;
 	float stepY = 1.0f;
 	
-	float min = 0.01f;
+	float min = 0.1f;
 	float max = 5.3f;
 
 	for(float i=min; i<max;i=i+stepX)
@@ -1094,8 +1104,8 @@ void initLights()
 			l.pos = glm::vec3(min,-i,j);
 			lights.push_back(l);
 
-			//l.pos = glm::vec3(max,-i,j);
-			//lights.push_back(l);
+			l.pos = glm::vec3(max,-i,j);
+			lights.push_back(l);
 
 
 			//l.pos = glm::vec3(i,-min,j);
@@ -1106,11 +1116,11 @@ void initLights()
 			lights.push_back(l);
 		}
 
-		light_t l;
-		l.pos = glm::vec3(4.0,-4.0,3.0);
-		l.radius = 2.0f;
-		l.strength = 1.0;
-		lights.push_back(l);
+		//light_t l;
+		//l.pos = glm::vec3(4.0,-4.0,3.0);
+		//l.radius = 2.0f;
+		//l.strength = 1.0;
+		//lights.push_back(l);
 }
 
 int main (int argc, char* argv[])
