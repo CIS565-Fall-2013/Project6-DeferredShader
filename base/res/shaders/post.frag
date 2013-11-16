@@ -13,7 +13,8 @@
 #define	DISPLAY_TOON 6
 #define	DISPLAY_TOONEDGE 7
 #define	DISPLAY_BLOOM 8
-#define	DISPLAY_SSAO 9
+#define DISPLAY_GLOWMAP  9
+#define	DISPLAY_SSAO 10
 
 #define ONE_OVER_2PI 0.15915494309
 #define kernelWidth 50   // has to be an odd number
@@ -150,7 +151,7 @@ void main() {
 		float gradientDir = atan(verticalDir, horizontalDir);
 		out_Color = vec4(gradient*vec3(1.0) + color, 1.0);
 	}
-	else if(u_DisplayType == DISPLAY_BLOOM){
+	else if(u_DisplayType == DISPLAY_BLOOM || u_DisplayType == DISPLAY_GLOWMAP){
 
 	    // modify background color
 		float exp_depth = texture(u_Depthtex, fs_Texcoord).r;

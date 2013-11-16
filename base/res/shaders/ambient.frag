@@ -13,7 +13,8 @@
 #define	DISPLAY_TOON 6
 #define	DISPLAY_TOONEDGE 7
 #define	DISPLAY_BLOOM 8
-#define	DISPLAY_SSAO 9
+#define DISPLAY_GLOWMAP  9
+#define	DISPLAY_SSAO 10
 
 
 /////////////////////////////////////

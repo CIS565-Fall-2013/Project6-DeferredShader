@@ -13,7 +13,8 @@
 #define	DISPLAY_TOON 6
 #define	DISPLAY_TOONEDGE 7
 #define	DISPLAY_BLOOM 8
-#define	DISPLAY_SSAO 9
+#define DISPLAY_GLOWMAP  9
+#define	DISPLAY_SSAO 10
 
 #define ONE_OVER_2PI 0.15915494309
 #define kernelWidth 50  // has to be an odd number
@@ -71,7 +72,7 @@ float convolution1D(float[kernelWidth] kernel, float[kernelWidth] input){
 
 void main() {
 
-	if(u_DisplayType != DISPLAY_BLOOM){
+	if(u_DisplayType != DISPLAY_BLOOM && u_DisplayType != DISPLAY_GLOWMAP){
 		vec3 color = sampleCol(fs_Texcoord);
 		out_Color = vec4(color, 1.0);
 	}
@@ -97,13 +98,14 @@ void main() {
 			verticalOffset -= 1.0;
 		}
 
-		//float blurred = convolutionGaussian(gaussianKernel, input);
 		float blurred = convolution1D(gaussianKernel1D, input1D);
 
-		//color = input[(kernelWidth-1)/2][(kernelWidth-1)/2]*vec3(1.0);
-		ambientColor = (1-blurred)*ambientColor + blurred*vec3(1.0);
-
-		out_Color = vec4(ambientColor, 1.0);
+		if(u_DisplayType == DISPLAY_GLOWMAP) out_Color = vec4(blurred*vec3(1.0), 1.0);
+		else{
+			ambientColor = (1-blurred)*ambientColor + blurred*vec3(1.0);
+			out_Color = vec4(ambientColor, 1.0);
+		}
+		
 	}
     return;
 }

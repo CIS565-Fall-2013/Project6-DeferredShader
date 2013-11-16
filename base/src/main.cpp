@@ -788,6 +788,9 @@ void updateDisplayText(char * disp) {
 		case(DISPLAY_BLOOM):
 			sprintf(disp, "Displaying Blooming");
 			break;
+		case(DISPLAY_GLOWMAP):
+			sprintf(disp, "Displaying Glow map");
+			break;
 		case(DISPLAY_SSAO):
 			sprintf(disp, "Displaying Screen Space Ambient Occlusion");
             break;
@@ -837,7 +840,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON || display_type == DISPLAY_TOONEDGE || display_type == DISPLAY_BLOOM || display_type == DISPLAY_SSAO)
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL || display_type == DISPLAY_TOON || display_type == DISPLAY_TOONEDGE || display_type == DISPLAY_BLOOM || display_type == DISPLAY_GLOWMAP|| display_type == DISPLAY_SSAO)
     {
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -1038,6 +1041,9 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		case('7'):
 			display_type = DISPLAY_BLOOM;
+			break;
+		case('&'):
+			display_type = DISPLAY_GLOWMAP;
 			break;
 		case('8'):
 			display_type = DISPLAY_SSAO;
