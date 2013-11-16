@@ -6,6 +6,36 @@ Fall 2013
 Due Friday 11/15/2013
 -------------------------------------------------------------------------------
 
+Implemented:
+- Bloom (Press '8'): applies 13x13 box filter on anything that is white-ish. 
+First tried with 5x5 Gaussian but was not blurry enough and was slowing down
+too much.
+
+![Bloom](6.png)
+
+- Toon (Press '7'): also press '6' to get outline.
+
+![toon](2.png)
+![outline](1.png)
+
+
+- Point light sources
+
+![Point light](3.png)
+![Point light 2](4.png)
+
+- Additional G buffer: Specular color (tall blue rectangle has red specular color)
+
+![Specular highlight](5.png)
+
+- Store normal.x and normal.y into color.w and specularColor.w and compute
+normal.z by sqrt(1-x*x-y*y). Unfortunately I was not able to observe performance
+improvement:
+
+![Bloom](7.png)
+
+
+
 -------------------------------------------------------------------------------
 NOTE:
 -------------------------------------------------------------------------------
