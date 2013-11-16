@@ -49,6 +49,7 @@ Another tricky part of the toon shading is the edge detection. If using post-sha
  
  And below is the Toon shading result
  ![Toon Shading](https://github.com/heguanyu/Project6-DeferredShader/blob/master/img/toonshade.jpg?raw=true)
+ ![Toon Shading2](https://github.com/heguanyu/Project6-DeferredShader/blob/master/img/toonshade2.jpg?raw=true)
 -------------------------------------------------------------------------------
 BLOOM SHADING
 -------------------------------------------------------------------------------
@@ -111,9 +112,12 @@ This process is handled in the ambient.frag, before the diffuse happens.
 Below are 2 comparison of the result of crytek-sponza's scene. The first one without SSAO, the second one with SSAO
 
 ![SSAO Compare 1](https://github.com/heguanyu/Project6-DeferredShader/blob/master/img/SSAO-compare.jpg?raw=true)
+
 ![SSAO Compare 2](https://github.com/heguanyu/Project6-DeferredShader/blob/master/img/SSAO-compare2.jpg?raw=true)
 
+Below are something interesting: when I increase the scope of the SSAO, it turns out sth like a stone carve effect
 
+![SSAO overshoot](https://github.com/heguanyu/Project6-DeferredShader/blob/master/img/large-radius-SSAO.jpg?raw=true)
 -------------------------------------------------------------------------------
 Setting Up the project
 -------------------------------------------------------------------------------
