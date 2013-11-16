@@ -64,12 +64,13 @@ Key|Action
 '7'| View toon shading
 '8'| View bloom effect
 '0'| Standard view
+'r'| Reset camera
+'x'| Toggle OpenGL Scissors
 
 Apart from this, WSADQZ and mouse can be used for movement.
 
-
 -------------------------------------------------------------------------------
-PERFORMANCE ANALYSIS
+PERFORMANCE ANALYSIS 1: Packed G Buffer
 -------------------------------------------------------------------------------
 There is another branch on github named "PackedGBuffer" in which I have packed my G-Buffer in a different manner.
 
@@ -105,8 +106,37 @@ For this, the third component of the normal was made on the fly using thie formu
 normal.z = sqrt(1- normal.x*normal.x - normal.y*normal.y);
 ```
 
+Model|Lighting|Without packed G-Buffer(fps)|With packed G-Buffer(fps)
+---|---|---
+cornell_box.obj|Blinn-Phong|64.48|66.87
+cornell_box.obj|Bloom|7.29|7.28
+sponza.obj|Blinn-Phong|32.54|33.60
+sponza.obj|Bloom|6.52|6.54
+
+-------------------------------------------------------------------------------
+PERFORMANCE ANALYSIS 2: Effect of Bloom kernel
+-------------------------------------------------------------------------------
+Model: Cornell_box
+
+Blinn-Phong without bloom: 64.48 fps
+
+**With Bloom**
+
+Kernel Size| FPS
+---|---
+100 X 100| 7.29
+50 X 50| 13.10
+25 X 25| 22.42
+10 X 10| 35.93
+5 X 5| 47.29
+
+
 ---
 ACKNOWLEDGEMENTS
 ---
 Referred this paper for toon shading,
 http://www.cs.rutgers.edu/~decarlo/671/readings/decaudin_1996.pdf
+
+Referred this page for bloom(glow) effect. Implemented separable convolution technique
+http://http.developer.nvidia.com/GPUGems/gpugems_ch21.html
+
