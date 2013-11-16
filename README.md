@@ -5,8 +5,8 @@ CIS565: Project 6: Deferred Shader
 -------------------------------------------------------------------------------
 RESULTS:
 -------------------------------------------------------------------------------
-![result](screenshots/cornell_normal.png)
-![result](screenshots/cornell_depth.png)
+![result](screenshots/cornell_box_normals.png)
+![result](screenshots/cornell_box_depth.png)
 ![result](screenshots/cornell_box_toon.png)
 ![result](screenshots/cornell_box_bloom.png)
 ![result](screenshots/cornell_box_aa_diffuse.png)
