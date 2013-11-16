@@ -65,7 +65,7 @@ Key|Action
 '8'| View bloom effect
 '0'| Standard view
 
-Apart from this WSADQZ and mouse can be used for movement.
+Apart from this, WSADQZ and mouse can be used for movement.
 
 
 -------------------------------------------------------------------------------
