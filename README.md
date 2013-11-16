@@ -1,6 +1,47 @@
+
+![lights_plus_bloom](base/images/lights_p_bloom.png)
+
 -------------------------------------------------------------------------------
 CIS565: Project 6: Deferred Shader
 -------------------------------------------------------------------------------
+
+The goal of this project was to explore and learn about deferred shading techniques
+
+For this project I've implemented: 
+* Bloom 
+* "Toon" Shading (with basic silhouetting)
+* Point light sources
+
+I have a g-buffer slot added, but didn't end up using it for anything, so that
+doesn't exactly count. 
+
+---
+Images:
+---
+Toon Shading:
+![toon_shading](base/images/toon_shading.png)
+
+Toon Shading with Bloom ( just for fun ):
+![toon_plus_bloom](base/images/toon_plus_bloom.png)
+
+---
+Video:
+---
+A painfully buggy video attempting to show off various features ( I've gotta redo this one ). 
+http://youtu.be/yHgk-cvPy9Q
+
+---
+Performance Analysis:
+---
+Mode vs FPS:
+* No Bloom: ~59
+* Bloom width 10: ~25
+* Bloom width 25: ~12
+* Bloom width 50: ~5
+* Silhouetting: ~40
+* ... 
+
+
 Fall 2013
 -------------------------------------------------------------------------------
 Due Friday 11/15/2013

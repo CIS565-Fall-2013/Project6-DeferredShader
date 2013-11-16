@@ -10,6 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define	DISPLAY_ID 6
 
 
 /////////////////////////////////////
@@ -21,6 +22,7 @@ uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
+uniform sampler2D u_idtex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -39,8 +41,6 @@ in vec2 fs_Texcoord;
 
 out vec4 out_Color;
 ///////////////////////////////////////
-
-
 
 
 uniform float zerothresh = 1.0f;
@@ -101,6 +101,7 @@ void main() {
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
+    vec3 id = texture(u_idtex,fs_Texcoord).xyz;
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
 
@@ -118,6 +119,9 @@ void main() {
             out_Color = vec4(color, 1.0);
             break;
         case(DISPLAY_LIGHTS):
+	case(DISPLAY_ID):
+	    out_Color = vec4(id, 1.0);
+	    break;
         case(DISPLAY_TOTAL):
             break;
     }	

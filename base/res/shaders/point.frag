@@ -21,6 +21,7 @@ uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
+uniform sampler2D u_idtex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
@@ -38,9 +39,6 @@ in vec2 fs_Texcoord;
 
 out vec4 out_Color;
 ///////////////////////////////////////
-
-
-
 
 uniform float zerothresh = 1.0f;
 uniform float falloff = 0.1f;
@@ -93,6 +91,7 @@ float getRandomScalar(vec2 texcoords) {
 //////////////////////////////////
 const float occlusion_strength = 1.5f;
 void main() {
+    vec3 lightdir;
 
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
     float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
@@ -102,14 +101,41 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
+
+    out_Color = vec4(0,0,0,1.0);
+					
     out_Color = vec4(0,0,0,1.0);
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
+	// This does something sensible for some reason
+	out_Color = vec4( 0.0f, 1.0f, 0.0f, 1.0f );
     }
     else
     {
         //Put some code here to actually compute the light from the point light
+	// Start with simple diffuse lighting
+
+	// Don't render things pointing away from us
+	if ( dot(position, normal) > 0.0f )
+	  return;
+
+	lightdir = light - position;	
+	// Only render those fragments that are close enough ... doesn't seem to do the right thing :/
+	float radius = length(lightdir)/lightRadius;
+	if ( radius > 1.0 )
+	  return;
+
+	// Light magnitude with linear falloff
+	// TODO: better lighting falloff 
+	float mag = u_LightIl*(1.0-radius);
+
+	// Diffuse term in light
+	float diffuse = max(dot( normalize(lightdir.xyz), normal ), 0.0f);
+	// TODO: Specular term ... do later ...
+	
+	out_Color = vec4(mag*diffuse*color, 1.0); 
+	
     }
     return;
 }
