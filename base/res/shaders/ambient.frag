@@ -94,11 +94,12 @@ float getRandomScalar(vec2 texcoords) {
 }
 
 // from fall 2012 base code
-const float SS_RADIUS = 0.02f;
+const float SS_RADIUS = 0.01f;
 const float constAttenuation  = 1.0;
-const float linearAttenuation = 1.0;
-const float quadAttenuation = 1.0;
-const float bias = 0.1;
+const float linearAttenuation = 20.0;
+const float quadAttenuation = 50.0;
+const float bias = 0.05;
+const float AOIntensity = 2.0;
 float gatherOcclusion( vec3 pt_normal, vec3 pt_position, vec3 occluder_normal, vec3 occluder_position) {
 
     //no occluder
@@ -110,7 +111,7 @@ float gatherOcclusion( vec3 pt_normal, vec3 pt_position, vec3 occluder_normal, v
 	float ambientOcclusion = max(dot(pt_normal, occluderDir) - bias, 0.0) * attenuation;
     return ambientOcclusion;
 }
-const float SAMPLE_STEP = 0.012f;
+const float SAMPLE_STEP = 0.01f;
 vec2 sampleDirection[4] = 
 	{vec2(1.0, 0.0), vec2(0.0, 1.0), vec2(-1.0, 0.0), vec2(0.0, -1.0)};
 mat2 rot45 = mat2(vec2(0.707, 0.707), vec2(-0.707, 0.707));
@@ -130,13 +131,13 @@ float occlusionWithRegularSamples(vec2 texcoord, vec3 position, vec3 normal, flo
 				dir = reflect(-dir, ranNormal.xy);
 				vec3 occ_position = samplePos(texcoord+dir);
 				vec3 occ_normal = sampleNrm(texcoord+dir);
-				accumOcclusion += 1.0 / (SSAA_ITER * sampleDirection.length) * gatherOcclusion(normal, position, occ_normal, occ_position);
+				accumOcclusion += 1.0 / (SSAA_ITER * sampleDirection.length) * gatherOcclusion(normal, position, occ_normal, occ_position) * AOIntensity;
 				sampleDirection[j] = rot45*sampleDirection[j];
 			}
 			radius += step;
 		}
 			
-        return -1.0f; 
+        return accumOcclusion; 
 }
 
 ///////////////////////////////////
@@ -165,7 +166,7 @@ void main() {
     }
 	if(u_DisplayType == DISPLAY_TOON || u_DisplayType == DISPLAY_TOONEDGE )
 	{
-		if(diffuse > 0.0 && diffuse < 0.2)	quantizer = 0.1;
+		if(diffuse > 0.0 && diffuse < 0.2)	quantizer = 0.4;
 		if(diffuse > 0.2 && diffuse < 0.4)	quantizer = 0.3;
 		if(diffuse > 0.4 && diffuse < 0.6)	quantizer = 0.5;
 		if(diffuse > 0.6 && diffuse < 0.8)	quantizer = 0.7;
@@ -176,7 +177,7 @@ void main() {
 	else if(u_DisplayType == DISPLAY_SSAO)
 	{
 		occlusion = occlusionWithRegularSamples(fs_Texcoord, position, normal, lin_depth);
-		color = vec3(1.0)*occlusion;
+		color = clamp(color - vec3(1.0)*occlusion, vec3(0.0), vec3(1.0));
 	} 
 	out_Color = vec4(color, 1.0);
 	
