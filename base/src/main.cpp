@@ -757,6 +757,9 @@ void updateDisplayText(char * disp) {
 		case(DISPLAY_TOON):
             sprintf(disp, "Displaying Toon");
             break;
+		case(DISPLAY_FISH):
+            sprintf(disp, "Displaying Fish eye");
+            break;
     }
 }
 
@@ -802,7 +805,7 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
-    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL|| display_type == DISPLAY_TOON || display_type == DISPLAY_PART  )
+    if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL|| display_type == DISPLAY_TOON || display_type == DISPLAY_PART || display_type == DISPLAY_FISH || display_type == DISPLAY_BLOOM)
     {
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
@@ -980,6 +983,9 @@ void keyboard(unsigned char key, int x, int y) {
             break;
 		case('8'):
 			display_type = DISPLAY_PART;
+			break;
+		case('9'):
+			display_type = DISPLAY_FISH;
 			break;
         case('0'):
             display_type = DISPLAY_TOTAL;

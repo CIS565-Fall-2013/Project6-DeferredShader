@@ -12,7 +12,7 @@
 #define	DISPLAY_LIGHTS 5
 #define	DISPLAY_TOON 7
 #define	DISPLAY_PART 8
-
+#define	DISPLAY_FISH 9
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -176,7 +176,14 @@ void main() {
 	cood.y = (floor(cood.y * u_ScreenHeight / 10.0) / u_ScreenHeight) * 10.0 ;
 	out_Color = vec4(sampleCol(cood),1.0f);
 	}
-
+	//Fish eye effect 
+	else if (u_DisplayType == DISPLAY_FISH)
+	{
+	vec2 nc = fs_Texcoord - 0.5;
+	float z = sqrt(1.0 - nc.x * nc.x - nc.y * nc.y);
+	float a = 1.0 / (z * tan(15.0* 0.5 ));
+	out_Color = vec4(sampleCol(nc*a + 0.5),1.0f);
+	}
 	//EMBOSS Post processing effect
 
 	vec2 cood = fs_Texcoord;
@@ -185,15 +192,9 @@ void main() {
 	float r = min(abs(xcol.x - ycol.x) + 0.5, 1.0);
 	float g = min(abs(xcol.y - ycol.y) + 0.5, 1.0);
 	float b = min(abs(xcol.z - ycol.z) + 0.5, 1.0);
-	out_Color = vec4(vec3(r,g,b),1.0f);
+	//out_Color = vec4(vec3(r,g,b),1.0f);
 
-	//Fish eye effect 
-
-	vec2 nc = fs_Texcoord - 0.5;
-	float z = sqrt(1.0 - nc.x * nc.x - nc.y * nc.y);
-	float a = 1.0 / (z * tan(45.0* 0.5));
-	out_Color = vec4(sampleCol(cood*a + 0.5),1.0f);
-
+	
 
     return;
 }

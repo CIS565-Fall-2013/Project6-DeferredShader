@@ -127,7 +127,7 @@ void main() {
             out_Color = vec4(color, 1.0);
             break;
 		case(DISPLAY_BLOOM):
-            out_Color = vec4(bloom, 1.0);
+           // out_Color = vec4(bloom, 1.0);
             break;
         case(DISPLAY_LIGHTS):
 		case(DISPLAY_TOON):

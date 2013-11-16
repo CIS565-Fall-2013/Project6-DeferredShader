@@ -1,5 +1,7 @@
 #version 330
 
+#define	DISPLAY_BLOOM 6
+
 uniform sampler2D u_Colortex;
 uniform sampler2D u_Bloomtex;
 in vec2 fs_Texcoord;
@@ -7,6 +9,7 @@ out vec4 out_Color;
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
+uniform int u_DisplayType;
 
 /////////////////////////////////////
 //				UTILITY FUNCTIONS
@@ -29,6 +32,8 @@ float sampleBloom(vec2 texcoords) {
 void main() {
 
 	vec3 totcolor = vec3(0.0,0.0,0.0);
+	if(u_DisplayType == DISPLAY_BLOOM)
+	{
 	vec2 texCord = fs_Texcoord;
 	const float guassian[25] = {1,4,7,4,1,4,16,26,16,4,7,26,41,26,7,4,16,26,15,4,1,4,7,4,1};
 	int k = 0;
@@ -45,7 +50,7 @@ void main() {
 	float x = texCord.x - 20.0/u_ScreenWidth; 
 	float y = texCord.y - 20.0/u_ScreenHeight ;
 
-/*	for(int i = 0 ; i < 20 ; i++)
+	for(int i = 0 ; i < 20 ; i++)
 	{
 		for(int j = 0 ; j < 20 ; j++)
 		{
@@ -55,9 +60,10 @@ void main() {
 		}
 		y = texCord.y - 20.0/u_ScreenHeight;
 		x = x + 1.0/u_ScreenWidth;
-	} */
+	} 
 
 	//out_Color = vec4(sampleCol(texCord)* sampleBloom(texCord),1.0) ;
+	}
 	out_Color = vec4(totcolor,1.0) ;
 	
 	
