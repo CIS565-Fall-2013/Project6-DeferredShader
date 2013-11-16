@@ -8,6 +8,7 @@ DEFERRED SHADING
 ![Point lights, specular](screenshots/deferred_toon.png)
 * Toon shading. I adapted a [Lighthouse3D toon-shading tutorial](http://www.lighthouse3d.com/tutorials/glsl-tutorial/toon-shading-version-iii/) to use deferred shading rather than "regular" shading. 
 * I use thresholding to draw color bands, and Sobel Filtering of the color part of the G-buffer to do contours.  
+
 --------------------------------------------------------------------------------
 CREDITS
 --------------------------------------------------------------------------------
