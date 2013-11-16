@@ -25,7 +25,11 @@ const float PI = 3.14159f;
 
 int width, height;
 float inv_width, inv_height;
-bool bloomEnabled = true, toonEnabled = false;
+bool bloomEnabled = true, toonEnabled = false, DOFEnabled = false;
+
+int mouse_buttons = 0;
+int mouse_old_x = 0, mouse_dof_x = 0;
+int mouse_old_y = 0, mouse_dof_y = 0;
 
 device_mesh_t uploadMesh(const mesh_t & mesh) {
     device_mesh_t out;
@@ -769,6 +773,9 @@ void updateTitle() {
 		if (toonEnabled)
 			strcat (disp, " Toon Shaded");
 
+		if (DOFEnabled)
+			strcat (disp, " DOF On");
+
         sprintf(title, "CIS565 OpenGL Frame | %s FPS: %4.2f", disp, frame*1000.0/(currenttime-timebase));
         //sprintf(title, "CIS565 OpenGL Frame | %4.2f FPS", frame*1000.0/(currenttime-timebase));
         glutSetWindowTitle(title);
@@ -869,6 +876,14 @@ void display(void)
     glBindTexture(GL_TEXTURE_2D, glowmaskTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_GlowMask"),1);
 
+	glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_normalTex"),2);
+
+	glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, positionTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_positionTex"),3);
+
 	glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glUniform1i(glGetUniformLocation(post_prog, "u_RandomNormaltex"),4);
@@ -881,8 +896,15 @@ void display(void)
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
 	glUniform1f(glGetUniformLocation(post_prog, "u_InvScrHeight"), inv_height);
     glUniform1f(glGetUniformLocation(post_prog, "u_InvScrWidth"), inv_width);
+	glUniform1f(glGetUniformLocation(post_prog, "u_mouseTexX"), mouse_dof_x*inv_width);
+	glUniform1f(glGetUniformLocation(post_prog, "u_mouseTexY"), mouse_dof_y*inv_height);
+	glUniform1f(glGetUniformLocation(post_prog, "u_lenQuant"), 0.0025);
+	glUniform1f(glGetUniformLocation(post_prog, "u_Far"), FARP);
+    glUniform1f(glGetUniformLocation(post_prog, "u_Near"), NEARP);
 	glUniform1i(glGetUniformLocation(post_prog, "u_BloomOn"), bloomEnabled);
-    draw_quad();
+    glUniform1i(glGetUniformLocation(post_prog, "u_toonOn"), toonEnabled);
+	glUniform1i(glGetUniformLocation(post_prog, "u_DOFOn"), DOFEnabled);
+	draw_quad();
 
     glEnable(GL_DEPTH_TEST);
     updateTitle();
@@ -906,9 +928,6 @@ void reshape(int w, int h)
 }
 
 
-int mouse_buttons = 0;
-int mouse_old_x = 0;
-int mouse_old_y = 0;
 void mouse(int button, int state, int x, int y)
 {
     if (state == GLUT_DOWN) {
@@ -919,6 +938,12 @@ void mouse(int button, int state, int x, int y)
 
     mouse_old_x = x;
     mouse_old_y = y;
+
+	if (button == GLUT_RIGHT_BUTTON)
+	{
+		mouse_dof_x = mouse_old_x;
+		mouse_dof_y = mouse_old_y;
+	}
 }
 
 void motion(int x, int y)
@@ -999,6 +1024,10 @@ void keyboard(unsigned char key, int x, int y) {
 		case 'T':
 			toonEnabled = !toonEnabled;
 			break;
+		case 'f':
+		case 'F':
+			DOFEnabled = !DOFEnabled;
+            break;
     }
 
     if (abs(tx) > 0 ||  abs(tz) > 0 || abs(ty) > 0) {
@@ -1040,8 +1069,8 @@ int main (int argc, char* argv[])
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-    width = 1280;	inv_width = 1.0/width;
-    height = 720;	inv_height = 1.0/height;
+    width = 1280;	inv_width = 1.0/(width-1);
+    height = 720;	inv_height = 1.0/(height-1);
     glutInitWindowSize(width,height);
     glutCreateWindow("CIS565 OpenGL Frame");
     glewInit();
