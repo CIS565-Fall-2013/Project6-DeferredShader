@@ -911,27 +911,37 @@ void display(void)
 			0.5, 0.5, 0.0, 1.0);
 
 		//Floor fixtures
-		draw_light(vec3(-9.36, -1.5, 0.8), 1.0, sc, vp, NEARP);
-		draw_light(vec3(-9.36, 2.25, 0.8), 1.0, sc, vp, NEARP);
-		draw_light(vec3(-2.25, -1.5, 0.8), 1.0, sc, vp, NEARP);
-		draw_light(vec3(-2.25, 2.25, 0.8), 1.0, sc, vp, NEARP);
-		draw_light(vec3(1.25, -1.5, 0.8), 1.0, sc, vp, NEARP);
-		draw_light(vec3(1.25, 2.25, 0.8), 1.0, sc, vp, NEARP);
-		draw_light(vec3(8.25, -1.5, 0.8), 1.0, sc, vp, NEARP);
-		draw_light(vec3(8.25, 2.25, 0.8), 1.0, sc, vp, NEARP);
+		draw_light(vec3(-9.36, -1.5, 0.8), 2.0, sc, vp, NEARP);
+		draw_light(vec3(-9.36, 2.25, 0.8), 2.0, sc, vp, NEARP);
+		draw_light(vec3(-2.25, -1.5, 0.8), 2.0, sc, vp, NEARP);
+		draw_light(vec3(-2.25, 2.25, 0.8), 2.0, sc, vp, NEARP);
+		draw_light(vec3(1.25, -1.5, 0.8), 2.0, sc, vp, NEARP);
+		draw_light(vec3(1.25, 2.25, 0.8), 2.0, sc, vp, NEARP);
+		draw_light(vec3(8.25, -1.5, 0.8), 2.0, sc, vp, NEARP);
+		draw_light(vec3(8.25, 2.25, 0.8), 2.0, sc, vp, NEARP);
 
 		//Lamps
-		draw_light(vec3(4.8, 2.0, 1.6), 2.0, sc, vp, NEARP);
-		draw_light(vec3(4.8, -1.2, 1.6), 2.0, sc, vp, NEARP);
-		draw_light(vec3(-6.0, 2.0, 1.6), 2.0, sc, vp, NEARP);
-		draw_light(vec3(-6.0, -1.2, 1.6), 2.0, sc, vp, NEARP);
+		draw_light(vec3(4.8, 2.0, 1.6), 5.0, sc, vp, NEARP);
+		draw_light(vec3(4.8, -1.2, 1.6), 5.0, sc, vp, NEARP);
+		draw_light(vec3(-6.0, 2.0, 1.6), 5.0, sc, vp, NEARP);
+		draw_light(vec3(-6.0, -1.2, 1.6), 5.0, sc, vp, NEARP);
+
+		//Overhead lights
+		draw_light(vec3(5.0, 0.0, 9.0), 7.0, sc, vp, NEARP);
+		draw_light(vec3(1.25, 0.0, 9.0), 7.0, sc, vp, NEARP);
+		draw_light(vec3(-2.5, 0.0, 9.0), 7.0, sc, vp, NEARP);
+		draw_light(vec3(-6.25, 0.0, 9.0), 7.0, sc, vp, NEARP);
+
+		//Lion lighting
+		draw_light(vec3(12.0, 0.0, 3.5), 7.0, sc, vp, NEARP);
+		draw_light(vec3(-12.0, 0.0, 3.5), 7.0, sc, vp, NEARP);
 
 		glDisable(GL_SCISSOR_TEST);
-		vec4 dir_light(0.1, 1.0, 1.0, 0.0);
+		vec4 dir_light(0.1, 1.0, 10.0, 0.0);
 		dir_light = cam.get_view() * dir_light; 
 		dir_light = normalize(dir_light);
 		dir_light.w = 0.3;
-		float strength = 1.0;
+		float strength = 0.25;
 		setup_quad(ambient_prog);
 		glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
 		glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
