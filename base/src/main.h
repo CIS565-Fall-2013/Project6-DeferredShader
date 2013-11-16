@@ -33,6 +33,7 @@ std::vector<tinyobj::shape_t> shapes;
 typedef struct {
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec3> normals;
+	std::vector<glm::vec4> tangents;
 	std::vector<glm::vec2> texcoords;
 	std::vector<unsigned short> indices;
 
@@ -53,6 +54,7 @@ typedef struct {
 	unsigned int num_indices;
 	unsigned int vbo_vertices;
 	unsigned int vbo_normals;
+	unsigned int vbo_tangents;
 	unsigned int vbo_texcoords;
 	
 	glm::vec3 Ka;
@@ -84,6 +86,7 @@ namespace mesh_attributes {
 	enum {
 		POSITION,
 		NORMAL,
+		TANGENT,
 		TEXCOORD
 	};
 }

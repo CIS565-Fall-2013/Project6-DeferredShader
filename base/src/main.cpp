@@ -42,6 +42,7 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
 	//Allocate vbos for data
 	glGenBuffers(1, &(out.vbo_vertices));
 	glGenBuffers(1, &(out.vbo_normals));
+	glGenBuffers(1, &(out.vbo_tangents));
 	glGenBuffers(1, &(out.vbo_indices));
 	glGenBuffers(1, &(out.vbo_texcoords));
 
@@ -64,6 +65,14 @@ device_mesh_t uploadMesh(const mesh_t & mesh) {
 	//cout << mesh.normals.size() << " norms:" << endl;
 	//for(int i = 0; i < mesh.normals.size(); ++i)
 	//    cout << "    " << mesh.normals[i][0] << ", " << mesh.normals[i][1] << ", " << mesh.normals[i][2] << endl;
+
+	
+	//Upload tangent data
+	glBindBuffer(GL_ARRAY_BUFFER, out.vbo_tangents);
+	glBufferData(GL_ARRAY_BUFFER, mesh.tangents.size()*sizeof(vec4), 
+		&mesh.tangents[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(mesh_attributes::TANGENT, 4, GL_FLOAT, GL_FALSE,0,0);
+	glEnableVertexAttribArray(mesh_attributes::TANGENT);
 
 	//Upload texture coord data
 	glBindBuffer(GL_ARRAY_BUFFER, out.vbo_texcoords);
@@ -208,6 +217,47 @@ void initMesh() {
 					mesh.texcoords.push_back(tex);
 					mesh.texcoords.push_back(tex);
 				}
+
+				//Mesh binormals and tangents
+				//Load last face as members
+				vec3 v0 =  mesh.vertices[mesh.vertices.size()-3];
+				vec3 v1 =  mesh.vertices[mesh.vertices.size()-2];
+				vec3 v2 =  mesh.vertices[mesh.vertices.size()-1];
+
+				vec2 w0 = mesh.texcoords[mesh.texcoords.size()-3];
+				vec2 w1 = mesh.texcoords[mesh.texcoords.size()-2];
+				vec2 w2 = mesh.texcoords[mesh.texcoords.size()-1];
+
+				vec3 n0 = mesh.normals[mesh.normals.size()-3];
+				vec3 n1 = mesh.normals[mesh.normals.size()-2];
+				vec3 n2 = mesh.normals[mesh.normals.size()-1];
+
+				vec3 v1_v0 = v1-v0;
+				vec3 v2_v0 = v2-v0;
+				float ds1 =  w1.s-w0.s;
+				float ds2 =  w2.s-w0.s;
+				float dt1 =  w1.t-w0.t;
+				float dt2 =  w2.t-w0.t;
+				
+				float r = 1.0f/(ds1*dt2-ds2*dt1);
+				vec3 T = r*vec3((dt2*v1_v0.x-dt1*v2_v0.x),(dt2*v1_v0.y-dt1*v2_v0.y),(dt2*v1_v0.z-dt1*v2_v0.z));
+				vec3 B = r*vec3((ds1*v2_v0.x-ds2*v1_v0.x),(ds1*v2_v0.y-ds2*v1_v0.y),(ds1*v2_v0.z-ds2*v1_v0.z));
+				
+
+				//Gram-schmidt orthogonalization
+				vec3 tangent = normalize(T-n0*dot(n0,T));
+				float handedness = (dot(cross(n0,T), B) < 0.0f)?-1.0f:1.0f;
+				mesh.tangents.push_back(vec4(tangent, handedness));
+				
+				tangent = normalize(T-n1*dot(n1,T));
+				handedness = (dot(cross(n1,T), B) < 0.0f)?-1.0f:1.0f;
+				mesh.tangents.push_back(vec4(tangent, handedness));
+
+				tangent = normalize(T-n2*dot(n2,T));
+				handedness = (dot(cross(n2,T), B) < 0.0f)?-1.0f:1.0f;
+				mesh.tangents.push_back(vec4(tangent, handedness));
+				
+
 				mesh.indices.push_back(point++);
 				mesh.indices.push_back(point++);
 				mesh.indices.push_back(point++);
@@ -331,6 +381,7 @@ void initShader() {
 
 	glBindAttribLocation(pass_prog, mesh_attributes::POSITION, "Position");
 	glBindAttribLocation(pass_prog, mesh_attributes::NORMAL, "Normal");
+	glBindAttribLocation(pass_prog, mesh_attributes::TANGENT, "Tangent");
 	glBindAttribLocation(pass_prog, mesh_attributes::TEXCOORD, "Texcoord");
 
 	Utility::attachAndLinkProgram(pass_prog,shaders);
@@ -844,7 +895,7 @@ void updateDisplayText(char * disp) {
 		sprintf(disp, "Displaying Position");
 		break;
 	case(DISPLAY_TOTAL):
-		sprintf(disp, "Displaying Diffuse");
+		sprintf(disp, "Displaying Total");
 		break;
 	case(DISPLAY_LIGHTS):
 		sprintf(disp, "Displaying Lights");
@@ -927,10 +978,10 @@ void display(void)
 		draw_light(vec3(-6.0, -1.2, 1.6), 5.0, sc, vp, NEARP);
 
 		//Overhead lights
-		draw_light(vec3(5.0, 0.0, 9.0), 7.0, sc, vp, NEARP);
-		draw_light(vec3(1.25, 0.0, 9.0), 7.0, sc, vp, NEARP);
-		draw_light(vec3(-2.5, 0.0, 9.0), 7.0, sc, vp, NEARP);
-		draw_light(vec3(-6.25, 0.0, 9.0), 7.0, sc, vp, NEARP);
+		draw_light(vec3(5.0, 0.0, 10.0), 7.0, sc, vp, NEARP);
+		draw_light(vec3(1.25, 0.0, 10.0), 7.0, sc, vp, NEARP);
+		draw_light(vec3(-2.5, 0.0, 10.0), 7.0, sc, vp, NEARP);
+		draw_light(vec3(-6.25, 0.0, 10.0), 7.0, sc, vp, NEARP);
 
 		//Lion lighting
 		draw_light(vec3(12.0, 0.0, 3.5), 7.0, sc, vp, NEARP);
