@@ -12,6 +12,7 @@
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_BLOOM 6
 #define DISPLAY_TOON 7
+#define PI 3.1415926535
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -25,9 +26,11 @@ uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
+// Add bloom texture
+uniform sampler2D u_Bloomtex;
+
 uniform float u_Far;
 uniform float u_Near;
-uniform int u_OcclusionType;
 uniform int u_DisplayType;
 
 uniform int u_ScreenWidth;
@@ -90,39 +93,32 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+// Gaussian Convolution
+float conv(float x, float sigma) {
+    float gaussian = 1.0 / sqrt(2.0 * PI) / sigma * exp(-x * x / 2.0 / sigma / sigma);
+    return gaussian;
+}
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
 const float occlusion_strength = 1.5f;
-void main() {
+void main() { 
+    if (u_DisplayType == DISPLAY_BLOOM)
+        continue;
+    
+    // Initialize
+    float kernel_width = 8.0;
+    float sigma = sqrt(kernel_width/2/3);
+    vec4 bloom_color = vec4(0.0);
 
-    float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
-    float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
-
-    vec3 normal = sampleNrm(fs_Texcoord);
-    vec3 position = samplePos(fs_Texcoord);
-    vec3 color = sampleCol(fs_Texcoord);
-    vec3 light = u_Light.xyz;
-    float lightRadius = u_Light.w;
-
-    switch (u_DisplayType) {
-        case(DISPLAY_DEPTH):
-            out_Color = vec4(vec3(lin_depth),1.0f);
-            break;
-        case(DISPLAY_NORMAL):
-            out_Color = vec4(abs(normal),1.0f);
-            break;
-        case(DISPLAY_POSITION):
-            out_Color = vec4(abs(position) / u_Far,1.0f);
-            break;
-        case(DISPLAY_COLOR):
-            out_Color = vec4(color, 1.0);
-            break;
-        case(DISPLAY_LIGHTS):
-        case(DISPLAY_TOTAL):
-            break;
-    }	
-
+    for (int x = - kernel_width / 2.0; x < kernel_width / 2.0; x ++) {
+        for (int y = - kernel_width / 2.0; y < kernel_width / 2.0; y ++) {
+            vec2 incremental = vec2(x / u_ScreenWidth, y / u_ScreenHeight); 
+            bloom_color += texture(u_Bloomtex, fs_Texcoord + incremental) * conv((float)x, sigma) * conv((float)y, sigma);
+        }
+    }
+    out_Color = color;
+    
     return;
 }
-

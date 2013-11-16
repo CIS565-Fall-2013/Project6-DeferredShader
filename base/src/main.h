@@ -37,6 +37,7 @@ typedef struct {
 	std::vector<unsigned short> indices;
     std::string texname;
     glm::vec3 color;
+    glm::vec3 bloom;
 } mesh_t;
 
 typedef struct {
@@ -47,6 +48,7 @@ typedef struct {
 	unsigned int vbo_normals;
 	unsigned int vbo_texcoords;
     glm::vec3 color;
+    glm::vec3 bloom;
     std::string texname;
 } device_mesh_t;
 
@@ -83,7 +85,10 @@ enum Display {
     DISPLAY_POSITION = 2,
     DISPLAY_COLOR = 3,
     DISPLAY_TOTAL = 4,
-    DISPLAY_LIGHTS = 5
+    DISPLAY_LIGHTS = 5,
+    DISPLAY_BLOOM = 6,
+    DISPLAY_TOON = 7,
+    DISPLAY_SSAO =8
 };
 
 char* loadFile(char *fname, GLint &fSize);

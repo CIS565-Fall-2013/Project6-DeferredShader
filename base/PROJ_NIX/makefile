@@ -1,6 +1,6 @@
 LFLAGS := -lglut -lGL -lGLEW 
 CFLAGS := -Wall
-IFLAGS := -I../../shared32/glm/ -I../../shared32/freeglut -I../../shared32/glew -I../src/SOIL -I../src/tiny_obj_loader
+IFLAGS := -I../../shared32/glm/ -I../../shared32/freeglut/include/ -I../../shared32/glew/include/ -I../src/SOIL -I../src/tiny_obj_loader
 
 565DefferedShader: Utility.o tiny_obj_loader.o main.o image_helper.o stb_image_aug.o image_DXT.o SOIL.o
 	g++ *.o -o 565DefferedShader $(LFLAGS)

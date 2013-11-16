@@ -10,7 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-
+#define DISPLAY_BLOOM 6
+#define DISPLAY_TOON 7
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -23,6 +24,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_Bloomtex;
 
 uniform float u_Far;
 uniform float u_Near;
