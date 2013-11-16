@@ -74,6 +74,10 @@ vec3 samplePos(vec2 texcoords) {
     return texture(u_Positiontex,texcoords).xyz;
 }
 
+float sampleSpecular(vec2 texcoords) {
+    return texture(u_Speculartex,texcoords).x;
+}
+
 //Helper function to automicatlly sample and unpack positions
 vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
@@ -87,6 +91,11 @@ vec3 getRandomNormal(vec2 texcoords) {
                 (texcoords.t)*(u_ScreenHeight)/sz.y)).rgb;
 }
 
+//from my pathtracer
+vec3 calcReflectionDirection(vec3 normal, vec3 incident) {
+  float cosI = dot( normalize(normal), normalize(incident) );
+  return normalize(incident + 2 * cosI * normal);
+}
 
 //Get a random scalar given a screen-space texture coordinate
 //Fetches from a random texture
@@ -136,6 +145,7 @@ void main() {
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
     float strength = u_Light.w;
+    vec3 lightVec = light - position;
     if (lin_depth > 0.99f) {
         out_Color = vec4(vec3(0.0), 1.0);
     } else {
@@ -159,8 +169,14 @@ void main() {
             final_color = vec4(diffuse*color*(strength + ambient),1.0f);
         }
         /*vec4 cs_normal = u_View * u_Model * vec4(normal,1);//normal in camera space*/
-        /*vec3 cam_view_dir = vec3(0, 0, -1);*/
-        /*float norm_dot_dir = max(0.0, dot(normalize(cam_view_dir), -normalize(normal)));*/
+        vec3 cam_view_dir = vec3(0, 0, -1);
+
+        float specular = sampleSpecular(fs_Texcoord);
+        vec3 incident = -normalize(lightVec);
+        vec3 reflectDir = calcReflectionDirection(normal, incident);
+        float specular_dot = max(0.0, dot(reflectDir, cam_view_dir));
+        float specular_term = pow(specular_dot, specular);
+        float norm_dot_dir = max(0.0, dot(normalize(cam_view_dir), -normalize(normal)));
 
         float ss_x = fs_Texcoord.x * u_ScreenWidth;
         float ss_y = fs_Texcoord.y * u_ScreenHeight;
