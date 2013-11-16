@@ -963,6 +963,9 @@ void keyboard(unsigned char key, int x, int y) {
         case('5'):
             display_type = DISPLAY_LIGHTS;
             break;
+        case('6'):
+            display_type = DISPLAY_SPECULAR;
+            break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;

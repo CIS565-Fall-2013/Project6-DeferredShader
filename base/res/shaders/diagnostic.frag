@@ -128,7 +128,7 @@ void main() {
             out_Color = vec4(color, 1.0);
             break;
         case(DISPLAY_SPECULAR):
-            out_Color = vec4(maxSpecular, maxSpecular, maxSpecular, 1.0);
+            out_Color = vec4(specFraction, specFraction, specFraction, 1.0);
             break;
         case(DISPLAY_LIGHTS):
             break;
