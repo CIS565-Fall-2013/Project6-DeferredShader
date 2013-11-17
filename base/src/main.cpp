@@ -29,6 +29,12 @@ bool diffuseMappingEnabled = true;
 bool specularMappingEnabled = true;
 bool bumpMappingEnabled = true;
 bool maskingEnabled = true;
+bool useBloom = true;
+
+enum Display display_type = DISPLAY_TOTAL;
+enum Passthrough passthrough_type = NO_CHANGE;
+float FARP;
+float NEARP;
 
 device_mesh_t uploadMesh(const mesh_t & mesh) {
 	device_mesh_t out;
@@ -742,10 +748,6 @@ mat4x4 get_mesh_world() {
 }
 
 
-enum Display display_type = DISPLAY_TOTAL;
-enum Passthrough passthrough_type = NO_CHANGE;
-float FARP;
-float NEARP;
 void draw_mesh() {
 	FARP = 100.0f;
 	NEARP = 0.1f;
@@ -865,7 +867,7 @@ void draw_quad() {
 	glBindVertexArray(0);
 }
 
-bool doIScissor = true;
+bool doIScissor = false;
 void draw_light(vec3 pos, float strength, mat4 sc, mat4 vp, float NEARP) {
 	float radius = strength;
 	vec4 light = cam.get_view() * vec4(pos, 1.0); 
@@ -1057,6 +1059,7 @@ void display(void)
 
 	glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
 	glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
+	glUniform1i(glGetUniformLocation(post_prog, "u_UseBloom"), useBloom?1.0:0.0);
 	draw_quad();
 
 	glEnable(GL_DEPTH_TEST);
@@ -1170,6 +1173,16 @@ void keyboard(unsigned char key, int x, int y) {
 	case('0'):
 		cout << "Full Rendering Mode" << endl;
 		display_type = DISPLAY_TOTAL;
+		break;
+	case('L'):
+		cout << "Turning Bloom ";
+		useBloom ^= true;
+		if(useBloom)
+		{
+			cout << "On" << endl;
+		}else{
+			cout << "Off" << endl;
+		}
 		break;
 	case('t'):
 		cout << "Passthrough Texture Coordinates as Diffuse Color" << endl;

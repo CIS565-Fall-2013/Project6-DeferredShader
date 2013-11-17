@@ -106,6 +106,7 @@ enum Display {
 	DISPLAY_LIGHTS = 5,
 	DISPLAY_SPECULAR = 6,
 	DISPLAY_BLOOM = 7
+
 };
 
 

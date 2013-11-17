@@ -22,6 +22,8 @@ uniform sampler2D u_Bloomtex;
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
+uniform int u_UseBloom;
+
 
 in vec2 fs_Texcoord;
 
@@ -84,22 +86,23 @@ void main() {
 	out_Color = vec4(color, 1.0);
 	//out_Color = vec4(vec3(0.0), 1.0);
 	
-	//Bloom color
-    float xScale = 1.0/u_ScreenWidth;
-	float yScale = 1.0/u_ScreenHeight;
-	
-	vec3 bloomColor = vec3(0.0);
-	for(int x = -KERNEL_SIZE; x <= KERNEL_SIZE; x++)
-	{
-		for(int y = -KERNEL_SIZE; y <= KERNEL_SIZE; y++)
+	if(u_UseBloom > 0.0){
+		//Bloom color
+		float xScale = 1.0/u_ScreenWidth;
+		float yScale = 1.0/u_ScreenHeight;
+		
+		vec3 bloomColor = vec3(0.0);
+		for(int x = -KERNEL_SIZE; x <= KERNEL_SIZE; x++)
 		{
-			vec2 texCoord = fs_Texcoord + vec2(x*xScale,y*yScale);
-			bloomColor +=  2.0*boxFilter(x,y)*texture(u_Bloomtex,texCoord).rgb;
+			for(int y = -KERNEL_SIZE; y <= KERNEL_SIZE; y++)
+			{
+				vec2 texCoord = fs_Texcoord + vec2(x*xScale,y*yScale);
+				bloomColor +=  2.0*boxFilter(x,y)*texture(u_Bloomtex,texCoord).rgb;
+			}
 		}
+		
+		out_Color += vec4(bloomColor,0.0);
 	}
-	
-	out_Color += vec4(bloomColor,0.0);
-	
     return;
 }
 
