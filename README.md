@@ -90,8 +90,8 @@ The following chart shows how size and precision of render targets affect perfor
 
 ![Comparison between MRT layouts](chart.jpg)  
 
-The chart shows how FPS changes when rendering using different render target precisions and sizes.  
-The tests were run on a GTX660M laptop.  
+The chart shows how FPS changes when rendering using different amounts of render targets and precision.  
+The tests were run on a nVidia GTX660M laptop.  
 
 Although 8-bit precision textures yields better performance, error arises when using them for shading.  
  
