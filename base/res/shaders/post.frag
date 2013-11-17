@@ -19,10 +19,15 @@ uniform sampler2D u_Posttex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 uniform sampler2D u_Bloomtex;
+uniform sampler2D u_Depthtex;
+uniform sampler2D u_Normaltex;
 
 uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 uniform int u_UseBloom;
+uniform int u_UseToon;
+uniform float u_Far;
+uniform float u_Near;
 
 
 in vec2 fs_Texcoord;
@@ -40,6 +45,10 @@ uniform float falloff = 0.1f;
 /////////////////////////////////////
 //				UTILITY FUNCTIONS
 /////////////////////////////////////
+
+float linearizeDepth(float exp_depth, float near, float far) {
+    return	(2 * near) / (far + near -  exp_depth * (far - near)); 
+}
 
 //Helper function to automicatlly sample and unpack positions
 vec3 sampleCol(vec2 texcoords) {
@@ -63,6 +72,41 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+//Returns gradient squared
+vec3 sobel(sampler2D tex, vec2 texcoords) {
+	float xScale = 1.0/u_ScreenWidth;
+	float yScale = 1.0/u_ScreenHeight;
+	
+	vec2 off = vec2(xScale,yScale);
+	
+	vec3 ul = texture(tex, texcoords-vec2(-1.0, 1.0)*off).xyz;
+	vec3 u  = texture(tex, texcoords-vec2( 0.0, 1.0)*off).xyz*2.0;
+	vec3 ur = texture(tex, texcoords-vec2( 1.0, 1.0)*off).xyz;
+	vec3 r  = texture(tex, texcoords-vec2( 1.0, 0.0)*off).xyz*2.0;
+	vec3 dr = texture(tex, texcoords-vec2( 1.0,-1.0)*off).xyz;
+	vec3 d  = texture(tex, texcoords-vec2( 1.0,-1.0)*off).xyz*2.0;
+	vec3 dl = texture(tex, texcoords-vec2( 0.0,-1.0)*off).xyz;
+	vec3 l  = texture(tex, texcoords-vec2(-1.0, 0.0)*off).xyz*2.0;
+	
+	vec3 horizontal = (ul+l+dl)-(ur+r+dr);
+	vec3 vertical   = (ul+u+ur)-(dl+d+dr);
+	
+	vec3 gradient_sq = horizontal*horizontal+vertical*vertical;
+	
+	return gradient_sq;
+}
+
+vec4 quantize(vec4 color_in, int numBins)
+{
+	//Assume intial distribution between 0 and 1
+	color_in.rgb *= numBins;
+    color_in.rgb += vec3(.5,.5,.5);
+    ivec3 intrgb = ivec3(color_in.rgb);
+    color_in.rgb = vec3(intrgb)/numBins;
+	return color_in;
+}
+
+
 
 const int KERNEL_SIZE = 20;
 
@@ -84,7 +128,7 @@ void main() {
 
 	//Base color
 	out_Color = vec4(color, 1.0);
-	//out_Color = vec4(vec3(0.0), 1.0);
+	
 	
 	if(u_UseBloom > 0.0){
 		//Bloom color
@@ -102,6 +146,21 @@ void main() {
 		}
 		
 		out_Color += vec4(bloomColor,0.0);
+	}
+	
+	if(u_UseToon > 0.0)
+	{
+		//Toon Shading
+		float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
+		float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);	
+		
+		//Silouette
+		vec3 gradient_sq = sobel(u_Normaltex, fs_Texcoord);
+		if(length(gradient_sq) > 7.0){
+			out_Color = vec4(0.0);
+		}
+		//quantize colors
+		out_Color = quantize(out_Color,4);
 	}
     return;
 }

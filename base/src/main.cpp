@@ -29,7 +29,8 @@ bool diffuseMappingEnabled = true;
 bool specularMappingEnabled = true;
 bool bumpMappingEnabled = true;
 bool maskingEnabled = true;
-bool useBloom = true;
+bool useBloom = false;
+bool useToon = true;
 
 enum Display display_type = DISPLAY_TOTAL;
 enum Passthrough passthrough_type = NO_CHANGE;
@@ -1045,6 +1046,16 @@ void display(void)
 	glBindTexture(GL_TEXTURE_2D, postTexture);
 	glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
 
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
+	glUniform1i(glGetUniformLocation(post_prog, "u_Depthtex"),1);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glUniform1i(glGetUniformLocation(post_prog, "u_Normaltex"),2);
+
+
+
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D, random_normal_tex);
 	glUniform1i(glGetUniformLocation(post_prog, "u_RandomNormaltex"),4);
@@ -1060,6 +1071,9 @@ void display(void)
 	glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
 	glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
 	glUniform1i(glGetUniformLocation(post_prog, "u_UseBloom"), useBloom?1.0:0.0);
+	glUniform1i(glGetUniformLocation(post_prog, "u_UseToon"), useToon?1.0:0.0);
+	glUniform1f(glGetUniformLocation(post_prog, "u_Far"), FARP);
+	glUniform1f(glGetUniformLocation(post_prog, "u_Near"), NEARP);
 	draw_quad();
 
 	glEnable(GL_DEPTH_TEST);
@@ -1178,6 +1192,16 @@ void keyboard(unsigned char key, int x, int y) {
 		cout << "Turning Bloom ";
 		useBloom ^= true;
 		if(useBloom)
+		{
+			cout << "On" << endl;
+		}else{
+			cout << "Off" << endl;
+		}
+		break;
+	case('T'):
+		cout << "Turning Toon Shading ";
+		useToon ^= true;
+		if(useToon)
 		{
 			cout << "On" << endl;
 		}else{
