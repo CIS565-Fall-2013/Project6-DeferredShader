@@ -62,12 +62,13 @@ float getRandomScalar(vec2 texcoords) {
 }
 
 
-const int KERNEL_SIZE = 5;
+const int KERNEL_SIZE = 20;
 
-float blurWeight(float x, float y)
+float boxFilter(float x, float y)
 {
 	//TODO: Find better weight function
-    return ( exp(-(x*x+y*y) / (2.0)));
+	int width = KERNEL_SIZE*2+1;
+    return 1.0/float(width*width);
 }
 
 
@@ -81,11 +82,11 @@ void main() {
 
 	//Base color
 	out_Color = vec4(color, 1.0);
+	//out_Color = vec4(vec3(0.0), 1.0);
 	
 	//Bloom color
-    ivec2 sz = textureSize(u_Bloomtex,0);
-	float xScale = sz.x/u_ScreenWidth;
-	float yScale = sz.y/u_ScreenHeight;
+    float xScale = 1.0/u_ScreenWidth;
+	float yScale = 1.0/u_ScreenHeight;
 	
 	vec3 bloomColor = vec3(0.0);
 	for(int x = -KERNEL_SIZE; x <= KERNEL_SIZE; x++)
@@ -93,7 +94,7 @@ void main() {
 		for(int y = -KERNEL_SIZE; y <= KERNEL_SIZE; y++)
 		{
 			vec2 texCoord = fs_Texcoord + vec2(x*xScale,y*yScale);
-			bloomColor +=  blurWeight(x,y)*texture(u_Bloomtex,texCoord).rgb;
+			bloomColor +=  2.0*boxFilter(x,y)*texture(u_Bloomtex,texCoord).rgb;
 		}
 	}
 	

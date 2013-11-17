@@ -431,6 +431,7 @@ void freeFBO() {
 	glDeleteTextures(1,&diffColorTexture);
 	glDeleteTextures(1,&specColorTexture);
 	glDeleteTextures(1,&postTexture);
+	glDeleteTextures(1,&bloomTexture);
 	glDeleteFramebuffers(1,&FBO[0]);
 	glDeleteFramebuffers(1,&FBO[1]);
 }
