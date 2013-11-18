@@ -1,12 +1,9 @@
 -------------------------------------------------------------------------------
-CIS565: Project 6: Deferred Shader
+Deferred Shader
 -------------------------------------------------------------------------------
 Fall 2013
 -------------------------------------------------------------------------------
-Due Friday 11/15/2013
--------------------------------------------------------------------------------
 
--------------------------------------------------------------------------------
 NOTE:
 -------------------------------------------------------------------------------
 This project requires any graphics card with support for a modern OpenGL 
@@ -17,7 +14,10 @@ this project.
 -------------------------------------------------------------------------------
 INTRODUCTION:
 -------------------------------------------------------------------------------
-In this project, you will get introduced to the basics of deferred shading. You will write GLSL and OpenGL code to perform various tasks in a deferred lighting pipeline such as creating and writing to a G-Buffer.
+This project implements a three stage deffered shader pipeline. 
+Stage 1 renders geometry and samples model textures.
+Stage 2 performs point and ambient lighting calculations
+Stage 3 does any post processing effects
 
 -------------------------------------------------------------------------------
 CONTENTS:
@@ -32,28 +32,10 @@ The Project6 root directory contains the following subdirectories:
 * shared32/ contains freeglut, glm, and glew.
 
 ---
-BASE CODE TOUR
+CODE TOUR
 ---
 
-Most of your edits will be confined to the various fragment shader programs and main.cpp.
-
-Some methods worth exploring are:
-
-[initShader](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L223):
-This method initializes each shader program from specified source files. Note that the source name is declared inside a `#ifdef WIN32` guard block. This is done to reflect the relative directory structure between the linux and windows versions of the code.
-
-[initFBO](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L360):
-This method initializes the framebuffer objects used as render targets for the first and second stage of the pipeline. When you go to add another slot to the G buffer you will need to modify to first FBO accordingly. Try finding all the places where `colorTexture` is used (ctrl+F in windows will be helpful) and look at how textures are created, freed, added to the FBO, and assigned to the appropriate shader programs before adding your own. Also keep in mind that textures can be reused as inputs in other pipeline stages, for instance you might want access to the normals both in the lighting stage and in the post process stage.
-
-[draw_mesh](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L574),
-[draw_quad](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L647),
-[draw_light](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L657):
-These methods render the scene geometry, viewing quad, and point light quad to the screen. The draw_light method in particular is interesting because it will set up the scissor window for efficient rendering of point lights.
-
-[display](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L742):
-This is where the graphical work of your program is done. The method is separated into three stages with the majority of work being done in stage 2.
-
-Stage 1 renders the scene geometry to the G-Buffer
+Stage 1 samples model textures renders the scene geometry to the G-Buffer
 * pass.vert
 * pass.frag
 
@@ -67,7 +49,8 @@ Stage 3 renders the post processing
 * post.vert
 * post.frag
 
-[keyboard](https://github.com/CIS565-Fall-2013/Project6-DeferredShader/blob/master/base/src/main.cpp#L870):
+Keyboard controls
+[keyboard](https://github.com/cboots/Deferred-Shading/blob/master/base/src/main.cpp#L1178):
 This is a good reference for the key mappings in the program. 
 WASDQZ - Movement
 X - Toggle scissor test
@@ -77,7 +60,28 @@ R - Reload shaders
 3 - View Diffuse color
 4 - View eye space positions
 5 - View lighting debug mode
+6 - View Specular Mapping
+7 - View Only Bloomed Geometry
 0 - Standard view
+
+x - Toggle Scissor Test
+r - Reload Shaders
+p - Print camera position to console
+j - Toggle timing measurements to console (averaged since last reset)
+SPACE - Reset timing averages
+
+Shift-L - Toggle Bloom
+Shift-T - Toggle Toon Shading
+Shift-D - Toggle Diffuse Mapping
+Shift-S - Toggle Specular Mapping
+Shift-B - Toggle Bump Mapping
+Shift-M - Toggle Transparency Masking
+
+c - Reset  diffuse color to default
+t - Change diffuse color to texture coordinate visualization
+h - Overlay diffuse color with visualization of available textures
+b - Change diffuse color to bump map visualization if available
+m - Change diffuse color to white if mask texture is available
 
 -------------------------------------------------------------------------------
 REQUIREMENTS:
