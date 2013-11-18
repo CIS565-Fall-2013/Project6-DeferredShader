@@ -30,7 +30,8 @@ bool specularMappingEnabled = true;
 bool bumpMappingEnabled = true;
 bool maskingEnabled = true;
 bool useBloom = false;
-bool useToon = true;
+bool useToon = false;
+bool logTime = false;
 
 enum Display display_type = DISPLAY_TOTAL;
 enum Passthrough passthrough_type = NO_CHANGE;
@@ -959,13 +960,40 @@ void updateTitle() {
 	}
 }
 
+
+double t_ms_s1 = 0.0, t_ms_s2 = 0.0, t_ms_s3 = 0.0;
+int frameCount = 0;
 void display(void)
 {
+	double freq;
+	LARGE_INTEGER beginTime;
+	LARGE_INTEGER endTime;
+	if(logTime){
+		frameCount++;
+		LARGE_INTEGER timerFreq;
+		QueryPerformanceFrequency( &timerFreq );
+		freq = 1.0f / timerFreq.QuadPart;
+
+
+
+		//Measure stage 1 runtime
+		QueryPerformanceCounter( &beginTime );
+	}
+
 	// Stage 1 -- RENDER TO G-BUFFER
 	bindFBO(0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	draw_mesh();
 	//At this point, G-Buffer has appropriate geometry rendered
+
+	if(logTime){
+		glFinish();
+		QueryPerformanceCounter( &endTime );
+		t_ms_s1 = ((frameCount - 1)*t_ms_s1+( endTime.QuadPart - beginTime.QuadPart )* freq*1000.0)/float(frameCount);
+
+		//Measure stage two runtime
+		QueryPerformanceCounter( &beginTime );
+	}
 
 	// Stage 2 -- RENDER TO P-BUFFER
 	setTextures();
@@ -1034,6 +1062,14 @@ void display(void)
 	}
 	glDisable(GL_BLEND);
 
+	if(logTime){
+		glFinish();
+		QueryPerformanceCounter( &endTime );
+		t_ms_s2 = ((frameCount - 1)*t_ms_s2+( endTime.QuadPart - beginTime.QuadPart )* freq*1000.0)/float(frameCount);
+
+		//Stage 3 timing
+		QueryPerformanceCounter( &beginTime );
+	}
 	//Stage 3 -- RENDER TO SCREEN
 	setTextures();
 	glUseProgram(post_prog);
@@ -1076,11 +1112,20 @@ void display(void)
 	glUniform1f(glGetUniformLocation(post_prog, "u_Near"), NEARP);
 	draw_quad();
 
+	if(logTime){
+		glFinish();
+		QueryPerformanceCounter( &endTime );
+		t_ms_s3 = ((frameCount - 1)*t_ms_s3+( endTime.QuadPart - beginTime.QuadPart )* freq*1000.0)/float(frameCount);
+	}
 	glEnable(GL_DEPTH_TEST);
 	updateTitle();
 
 	glutPostRedisplay();
 	glutSwapBuffers();
+
+	if(logTime){
+		printf("Time (ms) s1: %3.5f, s2: %3.5f, s3 %3.5f\n", t_ms_s1, t_ms_s2, t_ms_s3);
+	}
 }
 
 
@@ -1286,6 +1331,14 @@ void keyboard(unsigned char key, int x, int y) {
 		}else{
 			cout << "Off" << endl;
 		}
+		break;
+	case(' '):
+		cout << "Reset Metrics" << endl;
+		frameCount = 0;
+		break;
+	case('j'):
+		logTime ^= true;
+		frameCount = 0;
 		break;
 	}
 
