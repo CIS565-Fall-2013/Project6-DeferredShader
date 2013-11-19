@@ -12,6 +12,7 @@
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_BLOOM 6
 #define DISPLAY_TOON 7
+#define DISPLAY_SSAO 8
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -142,11 +143,9 @@ void main() {
             out_Color = vec4(vec3(0.0), 1.0);
         }
         else {
-            //compute light contribution
             float amb = u_LightIl;
             float diffuse = max(0.0, dot(normalize(light),normal));
-            out_Color = vec4(color*(lightRadius*diffuse + amb),1.0f);
-				
+            out_Color = vec4(color*(lightRadius*diffuse + amb),1.0f);	
             out_Color.r = round(out_Color.r/0.5) * 0.5;
             out_Color.g = round(out_Color.g/0.5) * 0.5;
             out_Color.b = round(out_Color.b/0.5) * 0.5;

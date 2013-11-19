@@ -12,6 +12,7 @@
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_BLOOM 6
 #define DISPLAY_TOON 7
+#define DISPLAY_SSAO 8
 
 
 /////////////////////////////////////

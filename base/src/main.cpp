@@ -222,6 +222,7 @@ GLuint diagnostic_prog;
 GLuint post_prog;
 GLuint bloom_prog;
 GLuint toon_prog;
+GLuint ssao_prog;
 void initShader() {
 #ifdef WIN32
 	const char * pass_vert = "../../../res/shaders/pass.vert";
@@ -235,6 +236,7 @@ void initShader() {
 	const char * post_frag = "../../../res/shaders/post.frag";
 	const char * bloom_frag = "../../../res/shaders/bloom.frag";
 	const char * toon_frag = "../../../res/shaders/toon.frag";
+	const char * ssao_frag = "../../../res/shaders/ssao.frag";
 #else
 	const char * pass_vert = "../res/shaders/pass.vert";
 	const char * shade_vert = "../res/shaders/shade.vert";
@@ -247,6 +249,7 @@ void initShader() {
 	const char * post_frag = "../res/shaders/post.frag";
 	const char * bloom_frag = "../res/shaders/bloom.frag";
 	const char * toon_frag = "../res/shaders/toon.frag";
+	const char * ssao_frag = "../res/shaders/ssao.frag";
 #endif
 	Utility::shaders_t shaders = Utility::loadShaders(pass_vert, pass_frag);
 
@@ -313,6 +316,16 @@ void initShader() {
     glBindAttribLocation(toon_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(toon_prog, shaders);
+
+	//ssao
+	shaders = Utility::loadShaders(shade_vert, ssao_frag);
+
+    ssao_prog = glCreateProgram();
+
+    glBindAttribLocation(ssao_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(ssao_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(ssao_prog, shaders);
 }
 
 void freeFBO() {
@@ -741,6 +754,9 @@ void updateDisplayText(char * disp) {
 		case(DISPLAY_TOON):
             sprintf(disp, "Displaying Toon");
             break;
+		case(DISPLAY_SSAO):
+			sprintf(disp, "Displaying SSAO");
+            break;
     }
 }
 
@@ -834,18 +850,28 @@ void display(void)
         draw_quad();
     }else if(display_type == DISPLAY_BLOOM){
 		setup_quad(bloom_prog);
-        dir_light.w = 0.8;
+        dir_light.w = 0.7;
         float strength = 0.5;
         glUniform4fv(glGetUniformLocation(bloom_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(bloom_prog, "u_LightIl"), strength);
         draw_quad();
 	}else if(display_type == DISPLAY_TOON){
 		setup_quad(toon_prog);
-        dir_light.w = 0.8;
+        dir_light.w = 0.7;
         float strength = 0.5;
         glUniform4fv(glGetUniformLocation(toon_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(toon_prog, "u_LightIl"), strength);
         draw_quad();
+	}else if(display_type == DISPLAY_SSAO){
+		setup_quad(ssao_prog);
+        glUniform1f(glGetUniformLocation(ssao_prog, "u_Distance"), 0.5);
+        draw_quad();
+
+        setup_quad(ambient_prog);
+        dir_light.w = 0.7;
+        float strength = 0.2;
+        glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
+        glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
 	}
     else
     {
@@ -978,6 +1004,9 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		case('7'):
 			display_type = DISPLAY_TOON;
+			break;
+		case('8'):
+			display_type = DISPLAY_SSAO;
 			break;
         case('0'):
             display_type = DISPLAY_TOTAL;

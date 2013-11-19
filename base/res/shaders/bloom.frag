@@ -12,6 +12,7 @@
 #define	DISPLAY_LIGHTS 5
 #define DISPLAY_BLOOM 6
 #define DISPLAY_TOON 7
+#define DISPLAY_SSAO 8
 
 
 /////////////////////////////////////
@@ -110,7 +111,6 @@ void main() {
         float ambient = u_LightIl;
         float diffuse = max(0.0, dot(normalize(light),normal));
         out_Color = vec4(color*(lightRadius*diffuse + ambient),1.0f);
-
         vec3 sum = vec3(0.0);
         for (int i=-40; i<=40; i+=4) {
                 for (int j=-40; j<=40; j+=4) {
@@ -120,7 +120,7 @@ void main() {
                         sum += (color+vec3(0.3));
                 }
         }
-		out_Color = vec4(sum * 0.001 + out_Color.xyz, 0.0);
+		out_Color = vec4(out_Color.xyz + sum * 0.001, 0.0);
     }
     return;
 }
