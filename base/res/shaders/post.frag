@@ -10,6 +10,8 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_BLOOM 6
+#define DISPLAY_TOON 7
 
 
 /////////////////////////////////////
@@ -67,7 +69,7 @@ const float occlusion_strength = 1.5f;
 void main() {
     vec3 color = sampleCol(fs_Texcoord);
     float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
-    float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
+    float vin = 0.0;//min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
     out_Color = vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
     return;
 }

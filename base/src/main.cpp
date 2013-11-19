@@ -220,6 +220,8 @@ GLuint point_prog;
 GLuint ambient_prog;
 GLuint diagnostic_prog;
 GLuint post_prog;
+GLuint bloom_prog;
+GLuint toon_prog;
 void initShader() {
 #ifdef WIN32
 	const char * pass_vert = "../../../res/shaders/pass.vert";
@@ -231,6 +233,8 @@ void initShader() {
 	const char * ambient_frag = "../../../res/shaders/ambient.frag";
 	const char * point_frag = "../../../res/shaders/point.frag";
 	const char * post_frag = "../../../res/shaders/post.frag";
+	const char * bloom_frag = "../../../res/shaders/bloom.frag";
+	const char * toon_frag = "../../../res/shaders/toon.frag";
 #else
 	const char * pass_vert = "../res/shaders/pass.vert";
 	const char * shade_vert = "../res/shaders/shade.vert";
@@ -241,6 +245,8 @@ void initShader() {
 	const char * ambient_frag = "../res/shaders/ambient.frag";
 	const char * point_frag = "../res/shaders/point.frag";
 	const char * post_frag = "../res/shaders/post.frag";
+	const char * bloom_frag = "../res/shaders/bloom.frag";
+	const char * toon_frag = "../res/shaders/toon.frag";
 #endif
 	Utility::shaders_t shaders = Utility::loadShaders(pass_vert, pass_frag);
 
@@ -287,6 +293,26 @@ void initShader() {
     glBindAttribLocation(post_prog, quad_attributes::TEXCOORD, "Texcoord");
 
     Utility::attachAndLinkProgram(post_prog, shaders);
+
+	//bloom
+	shaders = Utility::loadShaders(shade_vert, bloom_frag);
+
+    bloom_prog = glCreateProgram();
+
+    glBindAttribLocation(bloom_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(bloom_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(bloom_prog, shaders);
+
+	//toon
+	shaders = Utility::loadShaders(shade_vert, toon_frag);
+
+    toon_prog = glCreateProgram();
+
+    glBindAttribLocation(toon_prog, quad_attributes::POSITION, "Position");
+    glBindAttribLocation(toon_prog, quad_attributes::TEXCOORD, "Texcoord");
+
+    Utility::attachAndLinkProgram(toon_prog, shaders);
 }
 
 void freeFBO() {
@@ -709,6 +735,12 @@ void updateDisplayText(char * disp) {
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
             break;
+		case(DISPLAY_BLOOM):
+            sprintf(disp, "Displaying Bloom");
+            break;
+		case(DISPLAY_TOON):
+            sprintf(disp, "Displaying Toon");
+            break;
     }
 }
 
@@ -754,8 +786,12 @@ void display(void)
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
+	vec4 dir_light(0.1, 1.0, 1.0, 0.0);
+    dir_light = cam.get_view() * dir_light; 
+    dir_light = normalize(dir_light);
     if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
     {
+
         setup_quad(point_prog);
         if(doIScissor) glEnable(GL_SCISSOR_TEST);
         mat4 vp = perspective(45.0f,(float)width/(float)height,NEARP,FARP) * 
@@ -771,17 +807,46 @@ void display(void)
 
         draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
 
+       // glDisable(GL_SCISSOR_TEST);
+       // vec4 dir_light(0.1, 1.0, 1.0, 0.0);
+        //dir_light = cam.get_view() * dir_light; 
+        //dir_light = normalize(dir_light);
+       // dir_light.w = 0.3;
+        //float strength = 0.5;
+        //setup_quad(ambient_prog);
+		for (int i = 0; i < 8; ++i) {
+                for (int j=0; j<8; ++j) {
+                        for (int k=0; k<8; ++k) {
+                                draw_light(vec3(-0.6 + i, -5.5 + j, -0.9 + k), 0.6, sc, vp, NEARP);
+                        }
+                }
+        }
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 
         dir_light = normalize(dir_light);
+        setup_quad(ambient_prog);
         dir_light.w = 0.3;
         float strength = 0.09;
-        setup_quad(ambient_prog);
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
+
         draw_quad();
-    }
+    }else if(display_type == DISPLAY_BLOOM){
+		setup_quad(bloom_prog);
+        dir_light.w = 0.8;
+        float strength = 0.5;
+        glUniform4fv(glGetUniformLocation(bloom_prog, "u_Light"), 1, &(dir_light[0]));
+        glUniform1f(glGetUniformLocation(bloom_prog, "u_LightIl"), strength);
+        draw_quad();
+	}else if(display_type == DISPLAY_TOON){
+		setup_quad(toon_prog);
+        dir_light.w = 0.8;
+        float strength = 0.5;
+        glUniform4fv(glGetUniformLocation(toon_prog, "u_Light"), 1, &(dir_light[0]));
+        glUniform1f(glGetUniformLocation(toon_prog, "u_LightIl"), strength);
+        draw_quad();
+	}
     else
     {
         setup_quad(diagnostic_prog);
@@ -908,6 +973,12 @@ void keyboard(unsigned char key, int x, int y) {
         case('5'):
             display_type = DISPLAY_LIGHTS;
             break;
+		case('6'):
+			display_type = DISPLAY_BLOOM;
+			break;
+		case('7'):
+			display_type = DISPLAY_TOON;
+			break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;

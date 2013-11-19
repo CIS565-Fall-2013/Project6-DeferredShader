@@ -105,18 +105,22 @@ void main() {
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
     out_Color = vec4(0,0,0,1.0);
-    if( u_DisplayType == DISPLAY_LIGHTS )
+    if( u_DisplayType == DISPLAY_BLOOM )
     {
-        //Put some code here to visualize the fragment associated with this point light
-		out_Color = vec4(vec3(0.6, 0.6, 0.0), 1.0);
-    }
-    else
-    {
-        //Put some code here to actually compute the light from the point light
-		float intensity =  max(0.0, lightRadius-length(position-light))/lightRadius;
-        vec3 lightDir = normalize(light - position);
-        intensity = intensity * max(0.0, dot(normal, lightDir));
-        out_Color = vec4(intensity * u_LightIl * color, 1.0);
+        float ambient = u_LightIl;
+        float diffuse = max(0.0, dot(normalize(light),normal));
+        out_Color = vec4(color*(lightRadius*diffuse + ambient),1.0f);
+
+        vec3 sum = vec3(0.0);
+        for (int i=-40; i<=40; i+=4) {
+                for (int j=-40; j<=40; j+=4) {
+                        vec2 texCoord = fs_Texcoord + i * vec2(1.0/u_ScreenWidth, 0.0)
+                                + j * vec2(0.0, 1.0/u_ScreenHeight);
+                        vec3 color = sampleCol(texCoord);
+                        sum += (color+vec3(0.3));
+                }
+        }
+		out_Color = vec4(sum * 0.001 + out_Color.xyz, 0.0);
     }
     return;
 }
