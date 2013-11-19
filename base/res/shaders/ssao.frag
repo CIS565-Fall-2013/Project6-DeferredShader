@@ -91,13 +91,13 @@ float getRandomScalar(vec2 texcoords) {
 //Design this function based on specified constraints
 float gatherOcclusion( vec3 pt_normal, vec3 pt_position, vec3 occluder_normal, vec3 occluder_position ) {
     vec3 diff = occluder_position - pt_position;
-    float distance = length(diff);
+    float d = length(diff);
 	float returnValue = 1.0;
-    if (distance > u_Distance)
+    if (d > u_Distance)
         returnValue *= 0.0;
     if (distance(pt_normal, occluder_normal) < 0.1)
         returnValue *= 0.0;
-    returnValue *= (u_Distance-distance)/u_Distance * max(0.0, dot(normalize(diff), pt_normal));
+    returnValue *= (u_Distance-d)/u_Distance * max(0.0, dot(normalize(diff), pt_normal));
     return returnValue;
 }
 
