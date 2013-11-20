@@ -10,6 +10,10 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_TOON 6
+#define DISPLAY_BLUR 7
+#define DISPLAY_DOF 8
+#define DISPLAY_GLOW 9
 
 
 /////////////////////////////////////
@@ -40,12 +44,8 @@ in vec2 fs_Texcoord;
 out vec4 out_Color;
 ///////////////////////////////////////
 
-
-
-
 uniform float zerothresh = 1.0f;
 uniform float falloff = 0.1f;
-
 
 /////////////////////////////////////
 //				UTILITY FUNCTIONS
@@ -57,9 +57,15 @@ float linearizeDepth(float exp_depth, float near, float far) {
     return	(2 * near) / (far + near -  exp_depth * (far - near)); 
 }
 
+vec3 retrieveNormal(vec2 n){
+    vec3 normal = vec3(n.x, n.y, 0.0); 
+	normal.z = sqrt(1.0 - dot(n.xy, n.xy));
+    return normal;
+}
+
 //Helper function to automatically sample and unpack normals
 vec3 sampleNrm(vec2 texcoords) {
-    return texture(u_Normaltex,texcoords).xyz;
+    return retrieveNormal(texture(u_Normaltex,texcoords).xy);
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -67,9 +73,10 @@ vec3 samplePos(vec2 texcoords) {
     return texture(u_Positiontex,texcoords).xyz;
 }
 
-//Helper function to automicatlly sample and unpack positions
+//Helper function to automatically sample and unpack color
 vec3 sampleCol(vec2 texcoords) {
-    return texture(u_Colortex,texcoords).xyz;
+     vec3 u = texture(u_Colortex,texcoords).xyz;
+	 return vec3(float(u.x) / 255.0, float(u.y) / 255.0, float(u.z) / 255.0);
 }
 
 //Get a random normal vector  given a screen-space texture coordinate
@@ -117,8 +124,12 @@ void main() {
         case(DISPLAY_COLOR):
             out_Color = vec4(color, 1.0);
             break;
+		case(DISPLAY_GLOW):
         case(DISPLAY_LIGHTS):
         case(DISPLAY_TOTAL):
+		case(DISPLAY_TOON):
+		case(DISPLAY_BLUR):
+		case(DISPLAY_DOF):
             break;
     }	
 

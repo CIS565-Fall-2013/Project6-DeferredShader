@@ -10,6 +10,9 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_TOON 6
+#define DISPLAY_BLUR 7
+#define DISPLAY_DOF 8
 
 
 /////////////////////////////////////

@@ -10,6 +10,9 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_TOON 6
+#define DISPLAY_BLUR 7
+#define DISPLAY_DOF 8
 
 
 /////////////////////////////////////
@@ -57,8 +60,8 @@ float linearizeDepth(float exp_depth, float near, float far) {
 }
 
 //Helper function to automatically sample and unpack normals
-vec3 sampleNrm(vec2 texcoords) {
-    return texture(u_Normaltex,texcoords).xyz;
+vec2 sampleNrm(vec2 texcoords) {
+    return texture(u_Normaltex,texcoords).xy;
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -88,6 +91,13 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+vec3 retrieveNormal(vec2 n){
+    vec3 normal = vec3(n.x, n.y, 0.0); 
+	normal.z = sqrt(1.0 - dot(n.xy, n.xy));
+    return normal;
+}
+
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
@@ -97,7 +107,7 @@ void main() {
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
     float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
 
-    vec3 normal = sampleNrm(fs_Texcoord);
+    vec3 normal = retrieveNormal(sampleNrm(fs_Texcoord));
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
@@ -105,11 +115,13 @@ void main() {
     out_Color = vec4(0,0,0,1.0);
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
-        //Put some code here to visualize the fragment associated with this point light
+		out_Color = vec4(1.0f,0.0f,0.0f,0.5f);
     }
     else
     {
-        //Put some code here to actually compute the light from the point light
+		float attenuation = (lightRadius - length(light - position)) / lightRadius;
+		vec4 diffuse_color = clamp(vec4(dot(normalize(normal), normalize(light - position)) * color, 1.0f), 0.0, 1.0f);
+		out_Color = clamp( u_LightIl * attenuation * lightRadius * diffuse_color , 0.0f, 1.0f);
     }
     return;
 }
