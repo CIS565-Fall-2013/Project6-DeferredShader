@@ -29,7 +29,6 @@ uniform sampler2D u_RandomScalartex;
 
 uniform float u_Far;
 uniform float u_Near;
-uniform int u_OcclusionType;
 uniform int u_DisplayType;
 
 uniform int u_ScreenWidth;
@@ -105,14 +104,24 @@ void main() {
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
-    float strength = u_Light.w;
-    if (lin_depth > 0.99f) {
-        out_Color = vec4(vec3(0.0), 1.0);
-    } else {
+    float lightRadius = u_Light.w;
+    out_Color = vec4(0,0,0,1.0);
+    if( u_DisplayType == DISPLAY_BLOOM )
+    {
         float ambient = u_LightIl;
         float diffuse = max(0.0, dot(normalize(light),normal));
-        out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
-    }	
+        out_Color = vec4(color*(lightRadius*diffuse + ambient),1.0f);
+        vec3 sum = vec3(0.0);
+        for (int i=-40; i<=40; i+=4) {
+                for (int j=-40; j<=40; j+=4) {
+                        vec2 texCoord = fs_Texcoord + i * vec2(1.0/u_ScreenWidth, 0.0)
+                                + j * vec2(0.0, 1.0/u_ScreenHeight);
+                        vec3 color = sampleCol(texCoord);
+                        sum += (color+vec3(0.3));
+                }
+        }
+		out_Color = vec4(out_Color.xyz + sum * 0.001, 0.0);
+    }
     return;
 }
 

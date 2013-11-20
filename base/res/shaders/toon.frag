@@ -14,7 +14,6 @@
 #define DISPLAY_TOON 7
 #define DISPLAY_SSAO 8
 
-
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
 ////////////////////////////////////
@@ -29,7 +28,6 @@ uniform sampler2D u_RandomScalartex;
 
 uniform float u_Far;
 uniform float u_Near;
-uniform int u_OcclusionType;
 uniform int u_DisplayType;
 
 uniform int u_ScreenWidth;
@@ -105,14 +103,55 @@ void main() {
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
-    float strength = u_Light.w;
-    if (lin_depth > 0.99f) {
-        out_Color = vec4(vec3(0.0), 1.0);
-    } else {
-        float ambient = u_LightIl;
-        float diffuse = max(0.0, dot(normalize(light),normal));
-        out_Color = vec4(color*(strength*diffuse + ambient),1.0f);
-    }	
+    float lightRadius = u_Light.w;
+    out_Color = vec4(0,0,0,1.0);
+    if( u_DisplayType == DISPLAY_TOON )
+	{
+		out_Color = vec4(1,1,1,1);
+        vec3 normals[8];
+        normals[0] = sampleNrm(fs_Texcoord + vec2(-2.0/u_ScreenWidth, -2.0/u_ScreenHeight));
+        normals[1] = sampleNrm(fs_Texcoord + vec2(2.0/u_ScreenWidth, -2.0/u_ScreenHeight));
+        normals[2] = sampleNrm(fs_Texcoord + vec2(-2.0/u_ScreenWidth, 2.0/u_ScreenHeight));
+        normals[3] = sampleNrm(fs_Texcoord + vec2(2.0/u_ScreenWidth, 2.0/u_ScreenHeight));
+		normals[4] = sampleNrm(fs_Texcoord + vec2(-2.0/u_ScreenWidth, 0.0));
+        normals[5] = sampleNrm(fs_Texcoord + vec2(2.0/u_ScreenWidth, 0.0));
+        normals[6] = sampleNrm(fs_Texcoord + vec2(0.0, -2.0/u_ScreenHeight));
+        normals[7] = sampleNrm(fs_Texcoord + vec2(0.0, 2.0/u_ScreenHeight));
+
+		vec3 pos[8];
+        pos[0] = samplePos(fs_Texcoord + vec2(-2.0/u_ScreenWidth, -2.0/u_ScreenHeight));
+        pos[1] = samplePos(fs_Texcoord + vec2(2.0/u_ScreenWidth, -2.0/u_ScreenHeight));
+        pos[2] = samplePos(fs_Texcoord + vec2(-2.0/u_ScreenWidth, 2.0/u_ScreenHeight));
+        pos[3] = samplePos(fs_Texcoord + vec2(2.0/u_ScreenWidth, 2.0/u_ScreenHeight));
+		pos[4] = samplePos(fs_Texcoord + vec2(-2.0/u_ScreenWidth, 0.0));
+        pos[5] = samplePos(fs_Texcoord + vec2(2.0/u_ScreenWidth, 0.0));
+        pos[6] = samplePos(fs_Texcoord + vec2(0.0, -2.0/u_ScreenHeight));
+        pos[7] = samplePos(fs_Texcoord + vec2(0.0, 2.0/u_ScreenHeight));
+
+        bool isEdge = false;
+        for (int i=0; i<8; i++) {
+            if (dot(normal, normals[i]) < 0.8) {
+                isEdge = true;
+                break;
+            }
+			if (length(position-pos[i]) > 1.0){
+				isEdge = true;
+				break;
+			}
+        }
+        if (isEdge) {
+            out_Color = vec4(vec3(0.0), 1.0);
+        }
+        else {
+            float amb = u_LightIl;
+            float diffuse = max(0.0, dot(normalize(light),normal));
+            out_Color = vec4(color*(lightRadius*diffuse + amb),1.0f);	
+            out_Color.r = round(out_Color.r/0.5) * 0.5;
+            out_Color.g = round(out_Color.g/0.5) * 0.5;
+            out_Color.b = round(out_Color.b/0.5) * 0.5;
+            out_Color.a = 1.0;
+        }
+    }
     return;
 }
 

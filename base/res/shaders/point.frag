@@ -10,6 +10,9 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_BLOOM 6
+#define DISPLAY_TOON 7
+#define DISPLAY_SSAO 8
 
 
 /////////////////////////////////////
@@ -106,10 +109,15 @@ void main() {
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
         //Put some code here to visualize the fragment associated with this point light
+		out_Color = vec4(vec3(0.6, 0.6, 0.0), 1.0);
     }
     else
     {
         //Put some code here to actually compute the light from the point light
+		float intensity =  max(0.0, lightRadius-length(position-light))/lightRadius;
+        vec3 lightDir = normalize(light - position);
+        intensity = intensity * max(0.0, dot(normal, lightDir));
+        out_Color = vec4(intensity * u_LightIl * color, 1.0);
     }
     return;
 }
