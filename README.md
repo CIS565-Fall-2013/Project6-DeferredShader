@@ -29,6 +29,10 @@ bloom effect
 
 toon effect
 
+<center>![ssao](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/sponza_ssao.png "screenshots")
+
+screen space ambient occlusion
+
 <center>![ssao](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/ssao.png "screenshots")
 
 screen space ambient occlusion
