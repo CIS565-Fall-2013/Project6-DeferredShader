@@ -19,34 +19,37 @@ Here are some screenshots:
 
 <center>![diffuse](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/diffuse.png "screenshots")
 
-This is diffuse with point light sources 
+diffuse with point light sources 
 
 <center>![bloom](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/bloom.png "screenshots")
 
-
+bloom effect
 
 <center>![toon](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/toon.png "screenshots")
 
+toon effect
+
 <center>![ssao](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/ssao.png "screenshots")
+
+screen space ambient occlusion
 
 <center>![depth](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/depth.png "screenshots")
 
+depth mode
+
 <center>![normals](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/normals.png "screenshots")
+
+normals mode
 
 <center>![color](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/color.png "screenshots")
 
+color mode
+
 <center>![position](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/position.png "screenshots")
 
+screen space position mode
 
-Here's a video: http://www.youtube.com/watch?v=WD7VULD4eeU
-
--------------------------------------------------------------------------------
-<center>BUG RENDERS:
--------------------------------------------------------------------------------
-
-Here's a pretty cool specular bug render that I stumbled over when I accidentally flipped my camera to position ray.
-
-<center>![specular dragon bug](https://raw.github.com/josephto/Project4-Rasterizer/master/renders/dragonSpecWeird.png "screenshots")
+Here's a video: http://www.youtube.com/watch?v=LJ39Sb76KdU
 
 -------------------------------------------------------------------------------
 <center>PERFORMANCE REPORT:
