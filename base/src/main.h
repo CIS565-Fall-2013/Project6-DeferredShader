@@ -37,6 +37,7 @@ typedef struct {
 	std::vector<unsigned short> indices;
     std::string texname;
     glm::vec3 color;
+	glm::vec3 glow;
 } mesh_t;
 
 typedef struct {
@@ -47,6 +48,7 @@ typedef struct {
 	unsigned int vbo_normals;
 	unsigned int vbo_texcoords;
     glm::vec3 color;
+	glm::vec3 glow;
     std::string texname;
 } device_mesh_t;
 
@@ -73,7 +75,8 @@ namespace mesh_attributes {
 namespace quad_attributes {
     enum {
         POSITION,
-        TEXCOORD
+        TEXCOORD,
+		COLOR
     };
 }
 
@@ -83,7 +86,11 @@ enum Display {
     DISPLAY_POSITION = 2,
     DISPLAY_COLOR = 3,
     DISPLAY_TOTAL = 4,
-    DISPLAY_LIGHTS = 5
+    DISPLAY_LIGHTS = 5,
+	DISPLAY_TOON = 6,
+	DISPLAY_BLUR = 7,
+	DISPLAY_DOF = 8, 
+	DISPLAY_GLOW = 9
 };
 
 char* loadFile(char *fname, GLint &fSize);

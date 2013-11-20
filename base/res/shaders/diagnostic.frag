@@ -10,6 +10,10 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_TOON 6
+#define DISPLAY_BLUR 7
+#define DISPLAY_DOF 8
+#define DISPLAY_GLOW 9
 
 
 /////////////////////////////////////
@@ -40,12 +44,8 @@ in vec2 fs_Texcoord;
 out vec4 out_Color;
 ///////////////////////////////////////
 
-
-
-
 uniform float zerothresh = 1.0f;
 uniform float falloff = 0.1f;
-
 
 /////////////////////////////////////
 //				UTILITY FUNCTIONS
@@ -67,7 +67,7 @@ vec3 samplePos(vec2 texcoords) {
     return texture(u_Positiontex,texcoords).xyz;
 }
 
-//Helper function to automicatlly sample and unpack positions
+//Helper function to automatically sample and unpack color
 vec3 sampleCol(vec2 texcoords) {
     return texture(u_Colortex,texcoords).xyz;
 }
@@ -117,8 +117,12 @@ void main() {
         case(DISPLAY_COLOR):
             out_Color = vec4(color, 1.0);
             break;
+		case(DISPLAY_GLOW):
         case(DISPLAY_LIGHTS):
         case(DISPLAY_TOTAL):
+		case(DISPLAY_TOON):
+		case(DISPLAY_BLUR):
+		case(DISPLAY_DOF):
             break;
     }	
 
