@@ -60,6 +60,7 @@ color, blur it and add the color to the original diffuse coloring.  Using this t
 as Suzanne with glowing red eyes even though the original diffuse material has blue eyes.
 
 <div align="center">
+<img src="https://raw.github.com/harmoli/Project6-DeferredShader/master/renders/glowing_suzanne.JPG" "Glowing Suzanne">
 <img src="https://raw.github.com/harmoli/Project6-DeferredShader/master/renders/evil_suzanne.JPG" "Suzanne with Glowing Red eyes">
 </div>
 
@@ -88,6 +89,8 @@ along the disk, rotating the sample in a random angle.  We do not blur the AO, s
 -----
 
 ## Video
+
+https://vimeo.com/79866921
 
 -----
 
