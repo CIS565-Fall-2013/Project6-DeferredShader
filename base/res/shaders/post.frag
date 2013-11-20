@@ -58,15 +58,21 @@ float texelWidth = 1.0f / float(u_ScreenWidth);
 
 //Helper function to automicatlly sample and unpack positions
 vec3 sampleCol(vec2 texcoords) {
-    return texture(u_Posttex,texcoords).xyz;
+     return texture(u_Posttex,texcoords).xyz;
 }
 
 vec3 sampleGlow(vec2 texcoords){
     return texture(u_Glowtex,texcoords).xyz;
 }
 
+vec3 retrieveNormal(vec2 n){
+    vec3 normal = vec3(n.x, n.y, 0.0); 
+	normal.z = sqrt(1.0 - dot(n.xy, n.xy));
+    return normal;
+}
+
 vec3 sampleNormal(vec2 texcoords){
-    return texture(u_Normaltex, texcoords).xyz;
+    return retrieveNormal(texture(u_Normaltex, texcoords).xy);
 }
 
 //Get a random normal vector  given a screen-space texture coordinate

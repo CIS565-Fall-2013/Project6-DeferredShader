@@ -60,8 +60,8 @@ float linearizeDepth(float exp_depth, float near, float far) {
 }
 
 //Helper function to automatically sample and unpack normals
-vec3 sampleNrm(vec2 texcoords) {
-    return texture(u_Normaltex,texcoords).xyz;
+vec2 sampleNrm(vec2 texcoords) {
+    return texture(u_Normaltex,texcoords).xy;
 }
 
 //Helper function to automicatlly sample and unpack positions
@@ -91,6 +91,13 @@ float getRandomScalar(vec2 texcoords) {
                 texcoords.t*u_ScreenHeight/sz.y)).r;
 }
 
+vec3 retrieveNormal(vec2 n){
+    vec3 normal = vec3(n.x, n.y, 0.0); 
+	normal.z = sqrt(1.0 - dot(n.xy, n.xy));
+    return normal;
+}
+
+
 ///////////////////////////////////
 // MAIN
 //////////////////////////////////
@@ -100,7 +107,7 @@ void main() {
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
     float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
 
-    vec3 normal = sampleNrm(fs_Texcoord);
+    vec3 normal = retrieveNormal(sampleNrm(fs_Texcoord));
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
