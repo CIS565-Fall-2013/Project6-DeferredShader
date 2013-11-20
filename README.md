@@ -59,18 +59,32 @@ Here's a video: http://www.youtube.com/watch?v=LJ39Sb76KdU
 <center>PERFORMANCE REPORT:
 -------------------------------------------------------------------------------
 
-Here's a table with some performance analysis that I conducted on my code. I tested how many secs it took for each frame to rasterize depending on if backface culling was turned on or off. I used the the full stanford dragon model for all these tests.
+A performance analysis on how the number of point lights affects the frame rate.
 
-Number of Faces | With Backface Culling | Without Backface Culling
-------------------|------------------------|---------------------
-100,000    |  0.017 sec/frame | 0.021 sec/frame
-200,000    |  0.024 sec/frame | 0.033 sec/frame
-300,000    |  0.033 sec/frame | 0.043 sec/frame
-400,000    |  0.041 sec/frame | 0.055 sec/frame
-500,000    |  0.052 sec/frame | 0.068 sec/frame
-600,000    |  0.064 sec/frame | 0.083 sec/frame
-700,000    |  0.074 sec/frame | 0.095 sec/frame
-800,000    |  0.087 sec/frame | 0.111 sec/frame
-871,000    |  0.095 sec/frame | 0.126 sec/frame
+Number of Lights | Frames per Second 
+------------------|------------------------
+1 | ~60 fps
+8 | ~60 fps
+27 | ~60 fps
+64 | ~60 fps
+125 | ~60 fps
+216 | ~34 fps
+343 | ~23 fps
+512 | ~18 fps
+729 | ~15 fps
+1000 | ~13 fps
+1331 | ~12 fps
+1728 | ~12 fps
+2197 | ~12 fps
+2744 | ~12 fps
+
+Because there's the frame rate is capped to the 60 fps refresh rate of my computer's display, it's not surprising that the first 5 entires are all around 60 fps. However, what seems to be interesting is that once the number of points lights reaches a certain number, the frame rate doesn't drop off anymore.
+
+
+
+
+
+
+
 
 Despite the fact that my backface culling was a naive implementation, it still succeeded in speeding up my code. With the ability to ignore faces that weren't facing the camera, my rasterizer was able to show a rather decent speed up in the amount of time it took to compute and rasterize each frame.

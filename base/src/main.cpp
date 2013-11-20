@@ -830,9 +830,10 @@ void display(void)
        // dir_light.w = 0.3;
         //float strength = 0.5;
         //setup_quad(ambient_prog);
-		for (float i = 0; i < 16; i+=.5) {
-                for (float j=0; j<16; j+=.5) {
-                        for (float k=0; k<16; k+=.5) {
+		int n = 14;
+		for (float i = 0; i < n; i+=.5) {
+                for (float j=0; j<n; j+=.5) {
+                        for (float k=0; k<n; k+=.5) {
                                 draw_light(vec3(-0.6 + i, -5.5 + j, -0.9 + k), 0.6, sc, vp, NEARP);
                         }
                 }
