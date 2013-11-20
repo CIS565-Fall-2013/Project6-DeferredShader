@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
-<center>Project 4: CUDA Rasterizer
+<center>Project 6: Deferred Shader
 -------------------------------------------------------------------------------
 <center>Fall 2013
 -------------------------------------------------------------------------------
@@ -7,9 +7,9 @@
 -------------------------------------------------------------------------------
 <center>INTRODUCTION:
 -------------------------------------------------------------------------------
-This project is a CUDA based rasterizer that utilizes the GPU to generate rasterized images very quickly. This project implements a simplified version of a standard rasterized graphics pipeline, similar to the OpenGL pipeline. I've implemented vertex shading, primitive assembly, perspective transformation, rasterization, fragment shading, and rendering. The project reads in obj files and proceeds to render out rasterized images. 
+In this project, I was introduced to the basics of deferred shading. I wrote GLSL and OpenGL code to perform various tasks in a deferred lighting pipeline such as creating and writing to a G-Buffer.
 
-My rasterizer supports basic diffuse and specular shadng and lighting. I've implemented backface culling, color interpolation between the vertices, and mouse based interactive camera support. My code also support smooth normals.
+The features I implemented include toon shading, bloom effect, screen space ambient occlusion, and point lights.
 
 -------------------------------------------------------------------------------
 <center>RENDERS:
