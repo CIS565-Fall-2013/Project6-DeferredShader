@@ -15,35 +15,28 @@ My rasterizer supports basic diffuse and specular shadng and lighting. I've impl
 <center>RENDERS:
 -------------------------------------------------------------------------------
 
-Here are some renders:
+Here are some screenshots:
 
-<center>![dragon diffuse](https://raw.github.com/josephto/Project4-Rasterizer/master/renders/dragonDiff.png "screenshots")
+<center>![diffuse](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/diffuse.png "screenshots")
 
-Diffuse full stanford dragon
+This is diffuse with point light sources 
 
-<center>![dragon specular](https://raw.github.com/josephto/Project4-Rasterizer/master/renders/dragonSpec.png "screenshots")
+<center>![bloom](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/bloom.png "screenshots")
 
-Specular full stanford dragon
 
-<center>![dragon color interpolation diffuse](https://raw.github.com/josephto/Project4-Rasterizer/master/renders/dragonColorInterpDiff.png "screenshots")
 
-Diffuse color interpolation stanford dragon
+<center>![toon](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/toon.png "screenshots")
 
-<center>![dragon color interpolation specular](https://raw.github.com/josephto/Project4-Rasterizer/master/renders/dragonColorInterpSpec.png "screenshots")
+<center>![ssao](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/ssao.png "screenshots")
 
-Specular color interpolation stanford dragon
+<center>![depth](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/depth.png "screenshots")
 
-<center>![bunny normals diffuse](https://raw.github.com/josephto/Project4-Rasterizer/master/renders/bunnyNormalsDiff.png "screenshots") 
+<center>![normals](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/normals.png "screenshots")
 
-Diffuse bunny colored with normals
+<center>![color](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/color.png "screenshots")
 
-<center>![cow colored with normals](https://raw.github.com/josephto/Project4-Rasterizer/master/renders/cowNormals.png "screenshots")
+<center>![position](https://raw.github.com/josephto/Project6-DeferredShader/master/Renders/position.png "screenshots")
 
-Cow colored with just normals
-
-<center>![diffuse skull](https://raw.github.com/josephto/Project4-Rasterizer/master/renders/skullDiff.png "screenshots")
-
-Diffuse Skull
 
 Here's a video: http://www.youtube.com/watch?v=WD7VULD4eeU
 
