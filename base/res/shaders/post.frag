@@ -37,6 +37,7 @@ uniform float u_Far;
 uniform bool u_BloomOn;
 uniform bool u_toonOn;
 uniform bool u_DOFOn;
+uniform bool u_DOFDebug;
 
 in vec2 fs_Texcoord;
 
@@ -137,10 +138,9 @@ void main()
 		float focalLen = texture (u_depthTex, vec2 (u_mouseTexX, u_mouseTexY)).x;
 		focalLen = linearizeDepth (focalLen, u_Near, u_Far);
 
-		float lenQuant = focalLen / 4.0;
+		float lenQuant = 0.01;
 		depth = abs (focalLen - depth); 
 		depth /= lenQuant;
-//		depth *= 1000.0;
 
 		vec3 bloomColour = vec3(0);
 		if (depth >= 3.0)
@@ -159,7 +159,11 @@ void main()
 				bloomColour += (texture (u_Posttex, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
 				++ j;
 			}
-			color = bloomColour;
+
+			if (!u_DOFDebug)
+				color = bloomColour;
+			else
+				color = vec3 (1.0, 0.0, 0.0);
 		}
 
 		else if (depth >= 2.0)
@@ -174,7 +178,10 @@ void main()
 				bloomColour += (texture (u_Posttex, vec2 (fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight)).xyz * GaussianMat3 [i+1].z);
 				++ j;
 			}
-			color = bloomColour;
+			if (!u_DOFDebug)
+				color = bloomColour;
+			else
+				color = vec3 (0.0, 1.0, 0.0);
 		}
 		else if (depth >= 1.0)
 		{
@@ -186,7 +193,11 @@ void main()
 				}
 			}
 			bloomColour /= 4.0;
-			color = bloomColour;
+			
+			if (!u_DOFDebug)
+				color = bloomColour;
+			else
+				color = vec3 (0.0, 0.0, 1.0);
 		}
 	}
 

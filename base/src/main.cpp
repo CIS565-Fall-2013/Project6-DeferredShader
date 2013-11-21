@@ -25,7 +25,7 @@ const float PI = 3.14159f;
 
 int width, height;
 float inv_width, inv_height;
-bool bloomEnabled = true, toonEnabled = false, DOFEnabled = false;
+bool bloomEnabled = true, toonEnabled = false, DOFEnabled = false, DOFDebug = true;
 
 int mouse_buttons = 0;
 int mouse_old_x = 0, mouse_dof_x = 0;
@@ -892,18 +892,23 @@ void display(void)
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glUniform1i(glGetUniformLocation(post_prog, "u_RandomScalartex"),5);
 
+	glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_depthTex"),6);
+
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
 	glUniform1f(glGetUniformLocation(post_prog, "u_InvScrHeight"), inv_height);
     glUniform1f(glGetUniformLocation(post_prog, "u_InvScrWidth"), inv_width);
 	glUniform1f(glGetUniformLocation(post_prog, "u_mouseTexX"), mouse_dof_x*inv_width);
-	glUniform1f(glGetUniformLocation(post_prog, "u_mouseTexY"), mouse_dof_y*inv_height);
+	glUniform1f(glGetUniformLocation(post_prog, "u_mouseTexY"), abs(height-mouse_dof_y)*inv_height);
 	glUniform1f(glGetUniformLocation(post_prog, "u_lenQuant"), 0.0025);
 	glUniform1f(glGetUniformLocation(post_prog, "u_Far"), FARP);
     glUniform1f(glGetUniformLocation(post_prog, "u_Near"), NEARP);
 	glUniform1i(glGetUniformLocation(post_prog, "u_BloomOn"), bloomEnabled);
     glUniform1i(glGetUniformLocation(post_prog, "u_toonOn"), toonEnabled);
 	glUniform1i(glGetUniformLocation(post_prog, "u_DOFOn"), DOFEnabled);
+	glUniform1i(glGetUniformLocation(post_prog, "u_DOFDebug"), DOFDebug);
 	draw_quad();
 
     glEnable(GL_DEPTH_TEST);
@@ -1028,6 +1033,10 @@ void keyboard(unsigned char key, int x, int y) {
 		case 'F':
 			DOFEnabled = !DOFEnabled;
             break;
+		case 'G':
+		case 'g':
+			DOFDebug = !DOFDebug;
+			break;
     }
 
     if (abs(tx) > 0 ||  abs(tz) > 0 || abs(ty) > 0) {
