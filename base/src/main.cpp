@@ -24,6 +24,12 @@ using namespace glm;
 const float PI = 3.14159f;
 
 int width, height;
+float inv_width, inv_height;
+bool bloomEnabled = true, toonEnabled = false, DOFEnabled = false, DOFDebug = true;
+
+int mouse_buttons = 0;
+int mouse_old_x = 0, mouse_dof_x = 0;
+int mouse_old_y = 0, mouse_dof_y = 0;
 
 device_mesh_t uploadMesh(const mesh_t & mesh) {
     device_mesh_t out;
@@ -161,7 +167,7 @@ void initMesh() {
             mesh.color = vec3(shape.material.diffuse[0],
                               shape.material.diffuse[1],
                               shape.material.diffuse[2]);
-            mesh.texname = shape.material.diffuse_texname;
+            mesh.texname = shape.material.name;//diffuse_texname;
             draw_meshes.push_back(uploadMesh(mesh));
             f=f+process;
         }
@@ -212,6 +218,7 @@ GLuint normalTexture = 0;
 GLuint positionTexture = 0;
 GLuint colorTexture = 0;
 GLuint postTexture = 0;
+GLuint glowmaskTexture = 0;
 GLuint FBO[2] = {0, 0};
 
 
@@ -366,6 +373,7 @@ void initFBO(int w, int h) {
     glGenTextures(1, &normalTexture);
     glGenTextures(1, &positionTexture);
     glGenTextures(1, &colorTexture);
+	glGenTextures (1, &glowmaskTexture);
 
     //Set up depth FBO
     glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -412,7 +420,16 @@ void initFBO(int w, int h) {
 
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
 
-    // creatwwe a framebuffer object
+    //Set up glowmap FBO
+    glBindTexture(GL_TEXTURE_2D, glowmaskTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F , w, h, 0, GL_RGBA, GL_FLOAT,0);
+	glGenerateMipmap (GL_TEXTURE_2D);
+
+	// creatwwe a framebuffer object
     glGenFramebuffers(1, &FBO[0]);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
 
@@ -421,11 +438,15 @@ void initFBO(int w, int h) {
     GLint normal_loc = glGetFragDataLocation(pass_prog,"out_Normal");
     GLint position_loc = glGetFragDataLocation(pass_prog,"out_Position");
     GLint color_loc = glGetFragDataLocation(pass_prog,"out_Color");
-    GLenum draws [3];
+    GLint glowmask_loc = glGetFragDataLocation(pass_prog,"out_GlowMask");
+
+	GLenum draws [4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+	draws[glowmask_loc] = GL_COLOR_ATTACHMENT3;
+
+	glDrawBuffers(4, draws);
 
     // attach the texture to FBO depth attachment point
     int test = GL_COLOR_ATTACHMENT0;
@@ -437,6 +458,8 @@ void initFBO(int w, int h) {
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], positionTexture, 0);
     glBindTexture(GL_TEXTURE_2D, colorTexture);    
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], colorTexture, 0);
+	glBindTexture(GL_TEXTURE_2D, glowmaskTexture);    
+    glFramebufferTexture(GL_FRAMEBUFFER, draws[glowmask_loc], glowmaskTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -593,7 +616,12 @@ void draw_mesh() {
         glUniform3fv(glGetUniformLocation(pass_prog, "u_Color"), 1, &(draw_meshes[i].color[0]));
         glBindVertexArray(draw_meshes[i].vertex_array);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_meshes[i].vbo_indices);
-        glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
+        
+		float glowmask = 0.0f;
+		if (draw_meshes [i].texname == "light")
+			glowmask = 1.0f;
+		glUniform1f (glGetUniformLocation (pass_prog, "glowmask"), glowmask);
+		glDrawElements(GL_TRIANGLES, draw_meshes[i].num_indices, GL_UNSIGNED_SHORT,0);
     }
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
@@ -642,6 +670,10 @@ void setup_quad(GLuint prog)
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glUniform1i(glGetUniformLocation(prog, "u_RandomScalartex"),5);
+
+	glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, glowmaskTexture);
+    glUniform1i(glGetUniformLocation(prog, "u_GlowMask"),6);
 }
 
 void draw_quad() {
@@ -709,6 +741,9 @@ void updateDisplayText(char * disp) {
         case(DISPLAY_LIGHTS):
             sprintf(disp, "Displaying Lights");
             break;
+		case DISPLAY_GLOWMASK:
+			sprintf (disp, "Displaying Glow Mask");
+			break;
     }
 }
 
@@ -730,6 +765,17 @@ void updateTitle() {
     //check if a second has passed
     if (currenttime - timebase > 1000) 
     {
+		if (bloomEnabled)
+			strcat (disp, " Bloom ON");
+		else
+			strcat (disp, " Bloom OFF");
+
+		if (toonEnabled)
+			strcat (disp, " Toon Shaded");
+
+		if (DOFEnabled)
+			strcat (disp, " DOF On");
+
         sprintf(title, "CIS565 OpenGL Frame | %s FPS: %4.2f", disp, frame*1000.0/(currenttime-timebase));
         //sprintf(title, "CIS565 OpenGL Frame | %4.2f FPS", frame*1000.0/(currenttime-timebase));
         glutSetWindowTitle(title);
@@ -745,6 +791,9 @@ void display(void)
     bindFBO(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     draw_mesh();
+	glActiveTexture (GL_TEXTURE9);
+	glBindTexture (GL_TEXTURE_2D, glowmaskTexture);
+	glGenerateMipmap (GL_TEXTURE_2D);
 
     // Stage 2 -- RENDER TO P-BUFFER
     setTextures();
@@ -752,7 +801,7 @@ void display(void)
     glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_ONE, GL_ONE);
+	glBlendFunc(GL_ONE, GL_ONE);
     glClear(GL_COLOR_BUFFER_BIT);
     if(display_type == DISPLAY_LIGHTS || display_type == DISPLAY_TOTAL)
     {
@@ -769,15 +818,37 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 
-        draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
+		glm::vec3 yellow = glm::vec3 (1,1,0);
+		glm::vec3 orange = glm::vec3 (0.89,0.44,0.1);
+		glm::vec3 red = glm::vec3 (1,0,0);
+		glm::vec3 blue = glm::vec3 (0,0,1);
 
+		glUniform1i (glGetUniformLocation (point_prog, "u_toonOn"), toonEnabled);
+		glUniform3fv (glGetUniformLocation(point_prog, "u_LightCol"), 1, &(yellow[0]));
+		draw_light(vec3(5.4, -0.5, 3.0), 1.0, sc, vp, NEARP);
+		draw_light(vec3(0.2, -0.5, 3.0), 1.0, sc, vp, NEARP);
+		glUniform3fv (glGetUniformLocation(point_prog, "u_LightCol"), 1, &(orange[0]));
+        draw_light(vec3(5.4, -2.5, 3.0), 1.0, sc, vp, NEARP);
+		draw_light(vec3(0.2, -2.5, 3.0), 1.0, sc, vp, NEARP);
+		glUniform3fv (glGetUniformLocation(point_prog, "u_LightCol"), 1, &(yellow[0]));
+		draw_light(vec3(5.4, -4.5, 3.0), 1.0, sc, vp, NEARP);
+		draw_light(vec3(0.2, -4.5, 3.0), 1.0, sc, vp, NEARP);
+		
+		glUniform3fv (glGetUniformLocation(point_prog, "u_LightCol"), 1, &(red[0]));
+		draw_light(vec3(2.5, -1.2, 0.5), 2.5, sc, vp, NEARP);
+		
+		glUniform3fv (glGetUniformLocation(point_prog, "u_LightCol"), 1, &(blue[0]));
+		draw_light(vec3(2.5, -5.0, 4.2), 2.5, sc, vp, NEARP);
+		
         glDisable(GL_SCISSOR_TEST);
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
         dir_light = cam.get_view() * dir_light; 
         dir_light = normalize(dir_light);
         dir_light.w = 0.3;
         float strength = 0.09;
+
         setup_quad(ambient_prog);
+		glUniform1i (glGetUniformLocation (ambient_prog, "u_toonOn"), toonEnabled);
         glUniform4fv(glGetUniformLocation(ambient_prog, "u_Light"), 1, &(dir_light[0]));
         glUniform1f(glGetUniformLocation(ambient_prog, "u_LightIl"), strength);
         draw_quad();
@@ -801,7 +872,19 @@ void display(void)
     glBindTexture(GL_TEXTURE_2D, postTexture);
     glUniform1i(glGetUniformLocation(post_prog, "u_Posttex"),0);
     
-    glActiveTexture(GL_TEXTURE4);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, glowmaskTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_GlowMask"),1);
+
+	glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_normalTex"),2);
+
+	glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, positionTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_positionTex"),3);
+
+	glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, random_normal_tex);
     glUniform1i(glGetUniformLocation(post_prog, "u_RandomNormaltex"),4);
     
@@ -809,9 +892,24 @@ void display(void)
     glBindTexture(GL_TEXTURE_2D, random_scalar_tex);
     glUniform1i(glGetUniformLocation(post_prog, "u_RandomScalartex"),5);
 
+	glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glUniform1i(glGetUniformLocation(post_prog, "u_depthTex"),6);
+
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(post_prog, "u_ScreenWidth"), width);
-    draw_quad();
+	glUniform1f(glGetUniformLocation(post_prog, "u_InvScrHeight"), inv_height);
+    glUniform1f(glGetUniformLocation(post_prog, "u_InvScrWidth"), inv_width);
+	glUniform1f(glGetUniformLocation(post_prog, "u_mouseTexX"), mouse_dof_x*inv_width);
+	glUniform1f(glGetUniformLocation(post_prog, "u_mouseTexY"), abs(height-mouse_dof_y)*inv_height);
+	glUniform1f(glGetUniformLocation(post_prog, "u_lenQuant"), 0.0025);
+	glUniform1f(glGetUniformLocation(post_prog, "u_Far"), FARP);
+    glUniform1f(glGetUniformLocation(post_prog, "u_Near"), NEARP);
+	glUniform1i(glGetUniformLocation(post_prog, "u_BloomOn"), bloomEnabled);
+    glUniform1i(glGetUniformLocation(post_prog, "u_toonOn"), toonEnabled);
+	glUniform1i(glGetUniformLocation(post_prog, "u_DOFOn"), DOFEnabled);
+	glUniform1i(glGetUniformLocation(post_prog, "u_DOFDebug"), DOFDebug);
+	draw_quad();
 
     glEnable(GL_DEPTH_TEST);
     updateTitle();
@@ -835,9 +933,6 @@ void reshape(int w, int h)
 }
 
 
-int mouse_buttons = 0;
-int mouse_old_x = 0;
-int mouse_old_y = 0;
 void mouse(int button, int state, int x, int y)
 {
     if (state == GLUT_DOWN) {
@@ -848,6 +943,12 @@ void mouse(int button, int state, int x, int y)
 
     mouse_old_x = x;
     mouse_old_y = y;
+
+	if (button == GLUT_RIGHT_BUTTON)
+	{
+		mouse_dof_x = mouse_old_x;
+		mouse_dof_y = mouse_old_y;
+	}
 }
 
 void motion(int x, int y)
@@ -908,6 +1009,9 @@ void keyboard(unsigned char key, int x, int y) {
         case('5'):
             display_type = DISPLAY_LIGHTS;
             break;
+        case('6'):
+            display_type = DISPLAY_GLOWMASK;
+            break;
         case('0'):
             display_type = DISPLAY_TOTAL;
             break;
@@ -916,7 +1020,23 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case('r'):
             initShader();
+			break;
+		case 'b':
+		case 'B':
+			bloomEnabled = !bloomEnabled;
             break;
+		case 't':
+		case 'T':
+			toonEnabled = !toonEnabled;
+			break;
+		case 'f':
+		case 'F':
+			DOFEnabled = !DOFEnabled;
+            break;
+		case 'G':
+		case 'g':
+			DOFDebug = !DOFDebug;
+			break;
     }
 
     if (abs(tx) > 0 ||  abs(tz) > 0 || abs(ty) > 0) {
@@ -958,8 +1078,8 @@ int main (int argc, char* argv[])
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-    width = 1280;
-    height = 720;
+    width = 1280;	inv_width = 1.0/(width-1);
+    height = 720;	inv_height = 1.0/(height-1);
     glutInitWindowSize(width,height);
     glutCreateWindow("CIS565 OpenGL Frame");
     glewInit();

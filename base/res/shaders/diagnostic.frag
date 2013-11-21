@@ -10,6 +10,7 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
+#define DISPLAY_GLOWMASK 6
 
 
 /////////////////////////////////////
@@ -23,6 +24,7 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
+uniform sampler2D u_GlowMask;
 
 uniform float u_Far;
 uniform float u_Near;
@@ -55,6 +57,11 @@ uniform float falloff = 0.1f;
 //This restores linear depth
 float linearizeDepth(float exp_depth, float near, float far) {
     return	(2 * near) / (far + near -  exp_depth * (far - near)); 
+}
+
+vec3 sampleGlowMask (vec2 texcoords)
+{
+	return	texture (u_GlowMask, texcoords).xyz;
 }
 
 //Helper function to automatically sample and unpack normals
@@ -102,6 +109,7 @@ void main() {
     vec3 position = samplePos(fs_Texcoord);
     vec3 color = sampleCol(fs_Texcoord);
     vec3 light = u_Light.xyz;
+	vec3 glowMask = sampleGlowMask (fs_Texcoord).xyz;
     float lightRadius = u_Light.w;
 
     switch (u_DisplayType) {
@@ -117,6 +125,8 @@ void main() {
         case(DISPLAY_COLOR):
             out_Color = vec4(color, 1.0);
             break;
+		case(DISPLAY_GLOWMASK):
+			out_Color = vec4 (glowMask, 1.0);
         case(DISPLAY_LIGHTS):
         case(DISPLAY_TOTAL):
             break;
