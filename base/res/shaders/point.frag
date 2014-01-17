@@ -130,51 +130,74 @@ void main() {
     float lightRadius = u_Light.w;
     vec3 toLight = light - position;
 	float distToLight = length(toLight);
-	
+	float attenCoefficient = 1.0 / (20.0 * distToLight * distToLight);
+
+
 	out_Color = vec4(0,0,0,1.0);
 	
     if( u_DisplayType == DISPLAY_LIGHTS )
     {
-        out_Color = (1.0f / (2.0f * distToLight)) * vec4(1,1,1,1);
-		out_Spec = vec4(0,0,0,1);
+		if (distToLight < lightRadius)
+		{
+			out_Color = attenCoefficient * vec4(1, 1, 1, 1);
+			//out_Color = (1.0 / (5.0 * lightRadius)) * vec4(1, 1, 1, 1);
+			out_Spec = vec4(0, 0, 0, 1);
+		}
+		
     }
 	else if (u_DisplayType == DISPLAY_TOON)
 	{
 		float intensity = max(0.0, dot(normalize(toLight),normal));
 		vec3 toonColor = getToonColor(intensity, color);
-		out_Color = vec4(toonColor, 1.0f);
+		out_Color = vec4(toonColor, 1.0);
 		out_Spec = vec4(0,0,0,1);
 	}
     else 
     {
-		if (distToLight <= u_LightIl)
+		if (distToLight < lightRadius)
 		{
-			out_Color = vec4(1,1,1,1);
-		}
-		else
-		{
+			//out_Color = attenCoefficient * vec4(1);
+			float atten = (1.0 / (2.0 * distToLight));
+
 			// compute diffuse color
-			float diffuse = max(0.0, dot(normalize(light-position),normal));
-			out_Color = vec4(diffuse*color,1.0f);
-			
-			// compute specular color
-			vec3 reflectDirection = vec3(0,0,0);
-			
-			// no specular reflection since light source is on the wrong side
-			if (dot(normal, toLight) < 0.0)
+
+			if (distToLight < 0.05)
 			{
-				out_Spec = vec4(0,0,0,1);
+				out_Spec = vec4(0, 0, 0, 1);
+				out_Color = vec4(1);
 			}
 			else
 			{
-				reflectDirection = reflect(toLight, normal);
-				vec3 viewDirection = normalize(position - vec3(0.0));
-				vec3 specularHighlight = clamp(u_specColor * pow(max(0.0, dot(reflectDirection, viewDirection)), u_specPower), 0, 1);
-				out_Spec = vec4(u_ks*specularHighlight, 1.0);
+				float diffuse = min(max(0.0, dot(normalize(toLight), normal)), 1.0);
+				diffuse = clamp(dot(normal, normalize(toLight)), 0.0, 1.0);
+
+
+				out_Color = vec4(diffuse*color, 1.0f);
+
+				// compute specular color
+				vec3 reflectDirection = vec3(0, 0, 0);
+
+				// no specular reflection since light source is on the wrong side
+				if (dot(normal, toLight) < 0.0)
+				{
+					out_Spec = vec4(0, 0, 0, 1);
+				}
+				else
+				{
+					reflectDirection = reflect(toLight, normal);
+					vec3 viewDirection = normalize(position - vec3(0.0));
+					vec3 specularHighlight = clamp(u_specColor * pow(max(0.0, dot(reflectDirection, viewDirection)), u_specPower), 0, 1);
+					out_Spec = vec4(u_ks*specularHighlight, 1.0);
+				}
 			}
 		}
+		else
+		{
+			out_Spec = vec4(0, 0, 0, 1);
+			out_Color = vec4(0, 0, 0, 1);
+		}		
     }
-	
+
 	out_BloomMap = vec4(0,0,0,0); // no contribution
 	
     return;

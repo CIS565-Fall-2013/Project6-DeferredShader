@@ -206,6 +206,28 @@ void initQuad() {
     glBindVertexArray(0);
 }
 
+vector<vec3> allLights;
+void initLights()
+{
+	float minI = 0.3;
+	float maxI = 6.3;
+	float minJ = 0.3;
+	float maxJ = 6.3;
+	float minK = 0.3;
+	float maxK = 5.3;
+	float step = 1;
+
+	for (float i = minI; i < maxI; i = i + step) // left right
+	{
+		for (float j = minJ; j < maxJ; j = j + step) // in out
+		{
+			for (float k = minK; k <= maxK; k = k + step) // up down
+			{
+				allLights.push_back(vec3(i, -j, k));
+			}
+		}
+	}
+}
 
 GLuint depthTexture = 0;
 GLuint normalTexture = 0;
@@ -915,15 +937,20 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 #if MULTI_LIGHTS == 1
-		for (float x = -4 ; x <= 4 ; x = x + 1.5)
+		//for (float x = -4 ; x <= 4 ; x = x + 1.2)
+		//{
+		//	for (float y = -1 ; y <= 1 ; y = y + 1.2)
+		//	{
+		//		for (float z = -5 ; z <= 0 ; z = z + 1.2)
+		//		{
+		//			draw_light(vec3(2.5 + x, -1.5 + y, 5.0 + z), 0.50, sc, vp, NEARP);
+		//		}
+		//	}
+		//}
+
+		for (int i = 0; i < allLights.size(); ++i)
 		{
-			for (float y = -1 ; y <= 1 ; y = y + 1.5)
-			{
-				for (float z = -5 ; z <= 2 ; z = z + 1.5)
-				{
-					draw_light(vec3(2.5 + x, -2.5 + y, 5.0 + z), 0.50, sc, vp, NEARP);
-				}
-			}
+			draw_light(allLights[i], 0.5, sc, vp, NEARP);
 		}
 #else
 		draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
@@ -1192,6 +1219,7 @@ int main (int argc, char* argv[])
     init();
     initMesh();
     initQuad();
+	initLights();
 
 
     glutDisplayFunc(display);

@@ -164,17 +164,7 @@ void main() {
 	
 	
 	// No specular contribution for ambient
-	out_Spec = vec4(0,0,0,0); 
-	
-	// testing if I can package shininess in the alpha ch. of u_Colortex
-	//vec4 test = texture(u_Colortex, fs_Texcoord);
-	//vec3 test2 = vec3(test.a, test.a, test.a);
-	//if (test.a >= 1)
-	//	out_Color = vec4(0,0,0,1);
-	//else
-	//	out_Color = vec4(test2, 1.0);
-	
-	
+	out_Spec = vec4(0,0,0,0); 	
     return;
 }
 
