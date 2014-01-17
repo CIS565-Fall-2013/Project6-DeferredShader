@@ -161,7 +161,7 @@ void main() {
 
 			// compute diffuse color
 
-			if (distToLight < 0.05)
+			if (distToLight < 0.002)
 			{
 				out_Spec = vec4(0, 0, 0, 1);
 				out_Color = vec4(1);
@@ -172,7 +172,7 @@ void main() {
 				diffuse = clamp(dot(normal, normalize(toLight)), 0.0, 1.0);
 
 
-				out_Color = vec4(diffuse*color, 1.0f);
+				out_Color = vec4(0.8*diffuse*color, 1.0f);
 
 				// compute specular color
 				vec3 reflectDirection = vec3(0, 0, 0);

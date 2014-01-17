@@ -207,7 +207,7 @@ void initQuad() {
 }
 
 
-vector<vec3> allLights;
+vector<Light> lights;
 // initialize all point light sources
 void initLights()
 {
@@ -218,33 +218,44 @@ void initLights()
 	float minK = 0.3;
 	float maxK = 5.3;
 	float step = 1;
+	float lightStr = 0.5;
 
 	for (float i = minI; i <= maxI; i += step)
 	{
 		for (float j = minJ; j <= maxJ; j += step)
 		{
-			allLights.push_back(vec3(i, -j, minK)); // bottom plane
-			allLights.push_back(vec3(i, -j, maxK)); // top plane
+			Light L1(vec3(i, -j, minK), lightStr); // bottom plane
+			Light L2(vec3(i, -j, maxK), lightStr); // top plane
+			lights.push_back(L1);
+			lights.push_back(L2);
 		}
 	}
 
-	for (float i = minI; i < maxI; i += step)
+	for (float i = minI; i <= maxI; i += step)
 	{
-		for (float k = minK; k < maxK; k += step)
+		for (float k = minK+1; k <= maxK-1; k += step) // skip area that are already covered by the top / bottom plane of lights
 		{
-			allLights.push_back(vec3(i, -maxJ, k)); // back plane
+			Light L1(vec3(i, -maxJ, k), lightStr); // back plane
+			lights.push_back(L1);
 		}
 	}
 
-	for (float j = minJ; j <= maxJ; j += step)
+	for (float j = minJ; j <= maxJ-1; j += step)
 	{
-		for (float k = minK; k < maxK; k += step)
+		for (float k = minK+1; k <= maxK-1; k += step)
 		{
-			allLights.push_back(vec3(minI, -j, k));
-			allLights.push_back(vec3(maxI, -j, k));
+			Light L1(vec3(minI, -j, k), lightStr); // left plane
+			Light L2(vec3(maxI, -j, k), lightStr); // right plane
+			lights.push_back(L1);
+			lights.push_back(L2);
 		}
 	}
 
+	vec3 centerLight1Pos = vec3((minI + maxI) * 0.5, (minJ + maxJ) * -0.5, (minK + maxK) * 0.5);
+	float centerLight1Str = 2.5f;
+
+	Light centerLight(centerLight1Pos, centerLight1Str);
+	lights.push_back(centerLight);
 }
 
 GLuint depthTexture = 0;
@@ -955,11 +966,12 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 #if MULTI_LIGHTS == 1
-
-		for (int i = 0; i < allLights.size(); ++i)
+			
+		for (int i = 0; i < lights.size(); ++i)
 		{
-			draw_light(allLights[i], 0.5, sc, vp, NEARP);
+			draw_light(lights[i].getPosition(), lights[i].getStrength(), sc, vp, NEARP);
 		}
+
 
 #else
 		draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);

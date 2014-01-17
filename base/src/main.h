@@ -7,6 +7,7 @@
 #include <vector>
 #include <cstring>
 
+#include "light.h"
 #include "tiny_obj_loader.h"
 
 #define MULTI_LIGHTS 1

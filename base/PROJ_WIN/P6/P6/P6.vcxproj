@@ -74,16 +74,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\light.cpp" />
     <ClCompile Include="..\..\..\src\main.cpp" />
     <ClCompile Include="..\..\..\src\tiny_obj_loader\tiny_obj_loader.cc" />
     <ClCompile Include="..\..\..\src\Utility.cpp" />
-    <ClCompile Include="light.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\light.h" />
     <ClInclude Include="..\..\..\src\main.h" />
     <ClInclude Include="..\..\..\src\tiny_obj_loader\tiny_obj_loader.h" />
     <ClInclude Include="..\..\..\src\Utility.h" />
-    <ClInclude Include="light.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\res\shaders\ambient.frag" />
