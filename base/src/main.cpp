@@ -206,27 +206,45 @@ void initQuad() {
     glBindVertexArray(0);
 }
 
+
 vector<vec3> allLights;
+// initialize all point light sources
 void initLights()
 {
 	float minI = 0.3;
-	float maxI = 6.3;
+	float maxI = 5.3;
 	float minJ = 0.3;
-	float maxJ = 6.3;
+	float maxJ = 5.3;
 	float minK = 0.3;
 	float maxK = 5.3;
 	float step = 1;
 
-	for (float i = minI; i < maxI; i = i + step) // left right
+	for (float i = minI; i <= maxI; i += step)
 	{
-		for (float j = minJ; j < maxJ; j = j + step) // in out
+		for (float j = minJ; j <= maxJ; j += step)
 		{
-			for (float k = minK; k <= maxK; k = k + step) // up down
-			{
-				allLights.push_back(vec3(i, -j, k));
-			}
+			allLights.push_back(vec3(i, -j, minK)); // bottom plane
+			allLights.push_back(vec3(i, -j, maxK)); // top plane
 		}
 	}
+
+	for (float i = minI; i < maxI; i += step)
+	{
+		for (float k = minK; k < maxK; k += step)
+		{
+			allLights.push_back(vec3(i, -maxJ, k)); // back plane
+		}
+	}
+
+	for (float j = minJ; j <= maxJ; j += step)
+	{
+		for (float k = minK; k < maxK; k += step)
+		{
+			allLights.push_back(vec3(minI, -j, k));
+			allLights.push_back(vec3(maxI, -j, k));
+		}
+	}
+
 }
 
 GLuint depthTexture = 0;
@@ -937,21 +955,12 @@ void display(void)
                        0.0, 0.0, 1.0, 0.0,
                        0.5, 0.5, 0.0, 1.0);
 #if MULTI_LIGHTS == 1
-		//for (float x = -4 ; x <= 4 ; x = x + 1.2)
-		//{
-		//	for (float y = -1 ; y <= 1 ; y = y + 1.2)
-		//	{
-		//		for (float z = -5 ; z <= 0 ; z = z + 1.2)
-		//		{
-		//			draw_light(vec3(2.5 + x, -1.5 + y, 5.0 + z), 0.50, sc, vp, NEARP);
-		//		}
-		//	}
-		//}
 
 		for (int i = 0; i < allLights.size(); ++i)
 		{
 			draw_light(allLights[i], 0.5, sc, vp, NEARP);
 		}
+
 #else
 		draw_light(vec3(2.5, -2.5, 5.0), 0.50, sc, vp, NEARP);
 #endif
