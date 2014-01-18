@@ -24,5 +24,9 @@ float Light::sampleStrength(float time)
 		return m_strength;
 
 	float coeff = sin(1.0 * time / (m_rate) + m_sampleOffset);
+
+	if (coeff < 0)
+		coeff = 0;
+
 	return coeff * m_strength;
 }

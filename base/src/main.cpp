@@ -959,6 +959,7 @@ void updateTitle() {
         glutSetWindowTitle(title);
         timebase = currenttime;		
         frame = 0;
+		bloomBound = 18;
     }
 }
 
@@ -1044,6 +1045,7 @@ void display(void)
 	glUniform1i(glGetUniformLocation(bloompass1_prog, "u_ScreenHeight"), height);
     glUniform1i(glGetUniformLocation(bloompass1_prog, "u_ScreenWidth"), width);
 	glUniform1i(glGetUniformLocation(bloompass1_prog, "u_DisplayType"), display_type);
+	glUniform1i(glGetUniformLocation(bloompass1_prog, "u_Bound"), bloomBound);
 	draw_quad();
 
 #endif
@@ -1091,6 +1093,7 @@ void display(void)
 	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_2D, bloomMapPass1Texture);
 	glUniform1i(glGetUniformLocation(post_prog, "u_BloomMapPass1Tex"),6);
+	glUniform1i(glGetUniformLocation(post_prog, "u_Bound"), bloomBound);
 #else
 	glUniform1i(glGetUniformLocation(post_prog, "isTwoPassBloom"), 0);
 #endif
@@ -1100,7 +1103,7 @@ void display(void)
 	glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     updateTitle();
-
+	updateBloomBound(30,6);
     glutPostRedisplay();
     glutSwapBuffers();
 }
@@ -1225,6 +1228,20 @@ void keyboard(unsigned char key, int x, int y) {
     if (abs(tx) > 0 ||  abs(tz) > 0 || abs(ty) > 0) {
         cam.adjust(0,0,0,tx,ty,tz);
     }
+}
+
+void updateBloomBound(int max, int min)
+{
+	if (bloomBound > max)
+		incBloomBound = false;
+
+	if (bloomBound < min)
+		incBloomBound = true;
+
+	if (incBloomBound)
+		bloomBound++;
+	else
+		bloomBound--;
 }
 
 void printCamPosition()

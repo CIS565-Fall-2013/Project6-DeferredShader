@@ -112,8 +112,11 @@ void display(void);
 void keyboard(unsigned char, int, int);
 void reshape(int, int);
 void printCamPosition();
+void updateBloomBound(int max, int min);
 int main (int argc, char* argv[]);
 
 bool pauseLightAnim = false;
+bool incBloomBound = true;
+int bloomBound = 18;
 
 #endif

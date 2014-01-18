@@ -26,6 +26,7 @@ uniform int u_ScreenWidth;
 uniform int u_ScreenHeight;
 
 uniform int u_DisplayType;
+uniform int u_Bound = 18;
 
 in vec2 fs_Texcoord;
 
@@ -47,7 +48,7 @@ vec3 applyHorzGaussianFilter(vec2 texcoords)
 	float s = 2.0 * sigma * sigma;
 	vec3 result = vec3(0,0,0);
 	
-	int bound = 18;
+	int bound = u_Bound;
 	
 	for (int x = -bound ; x <= bound ; ++x)
 	{

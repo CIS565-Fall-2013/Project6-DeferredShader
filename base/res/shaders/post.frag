@@ -41,7 +41,7 @@ uniform float zerothresh = 1.0;
 uniform float falloff = 0.1;
 
 uniform bool isTwoPassBloom;
-
+uniform int u_Bound = 18;
 
 /////////////////////////////////////
 //	UTILITY FUNCTIONS
@@ -235,7 +235,7 @@ vec3 applyVertGaussianFilter(vec2 texcoords)
 	float s = 2.0 * sigma * sigma;
 	vec3 result = vec3(0,0,0);
 	
-	int bound = 18;
+	int bound = u_Bound;
 	
 	for (int y = -bound ; y <= bound ; ++y)
 	{
