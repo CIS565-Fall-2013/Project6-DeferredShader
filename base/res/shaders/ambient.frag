@@ -148,7 +148,7 @@ void main() {
 		out_Color = vec4(toonColor, 1.0f);
 	}
 	
-	if (u_DisplayType == DISPLAY_BLOOM)
+	if (u_DisplayType == DISPLAY_BLOOM) // Look here: Alpha value is being used to mark if an object will be bloomed or not
 	{
 		vec4 origColor = texture(u_Colortex, fs_Texcoord);
 		float shiny = origColor.a;

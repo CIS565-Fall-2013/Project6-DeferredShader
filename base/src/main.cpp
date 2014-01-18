@@ -218,24 +218,42 @@ void initLights()
 	float minK = 0.3;
 	float maxK = 5.3;
 	float step = 1;
-	float lightStr = 0.5;
+	float lightStr = 0.8;
 
-	for (float i = minI; i <= maxI; i += step)
+	float botBaseRate = 300;
+	float topBaseRate = 300;
+	float leftBaseRate = 300;
+	float rightBaseRate = 300;
+	float backBaseRate = -300;
+
+	float botOffset = 1;
+	float topOffset = 1;
+	float rightOffset = 1;
+	float leftOffset = 1;
+	float backOffset = 1;
+
+	for (float j = minJ; j <= maxJ; j += step)
 	{
-		for (float j = minJ; j <= maxJ; j += step)
+		for (float i = minI; i <= maxI; i += step)
 		{
-			Light L1(vec3(i, -j, minK), lightStr); // bottom plane
-			Light L2(vec3(i, -j, maxK), lightStr); // top plane
+		
+			Light L1(vec3(i, -j, minK), lightStr, botBaseRate, botOffset); // bottom plane
+			Light L2(vec3(i, -j, maxK), lightStr, topBaseRate, topOffset); // top plane
 			lights.push_back(L1);
 			lights.push_back(L2);
+
+			
 		}
+		
+		botOffset += 0.5;
+		topOffset += 0.5;
 	}
 
 	for (float i = minI; i <= maxI; i += step)
 	{
 		for (float k = minK+1; k <= maxK-1; k += step) // skip area that are already covered by the top / bottom plane of lights
 		{
-			Light L1(vec3(i, -maxJ, k), lightStr); // back plane
+			Light L1(vec3(i, -maxJ, k), lightStr, backBaseRate); // back plane
 			lights.push_back(L1);
 		}
 	}
@@ -244,17 +262,24 @@ void initLights()
 	{
 		for (float k = minK+1; k <= maxK-1; k += step)
 		{
-			Light L1(vec3(minI, -j, k), lightStr); // left plane
-			Light L2(vec3(maxI, -j, k), lightStr); // right plane
+			Light L1(vec3(minI, -j, k), lightStr, leftBaseRate, leftOffset); // left plane
+			Light L2(vec3(maxI, -j, k), lightStr, rightBaseRate, rightOffset); // right plane
 			lights.push_back(L1);
 			lights.push_back(L2);
 		}
+
+		rightOffset += 0.5;
+		leftOffset += 0.5;
 	}
 
 	vec3 centerLight1Pos = vec3((minI + maxI) * 0.5, (minJ + maxJ) * -0.5, (minK + maxK) * 0.5);
+	
+	
 	float centerLight1Str = 2.5f;
+	float centerLightRate = 500;
+	float centerLightOffset = 1;
 
-	Light centerLight(centerLight1Pos, centerLight1Str);
+	Light centerLight(centerLight1Pos, centerLight1Str, centerLightRate);
 	lights.push_back(centerLight);
 }
 
@@ -326,6 +351,9 @@ void initShader() {
 	glBindFragDataLocation(diagnostic_prog, 1, "out_Spec");			//In initFBO, the portion where I am binding the output textures for these
 	glBindFragDataLocation(diagnostic_prog, 2, "out_BloomMap");		//shaders that need to write to the same textures, they need to have the same index
 																	//for the output variable.
+																	//out_BloomMap will hold the information of whether or not each pixel will be applied the bloom effect.
+																	//this map is later taken in as input by bloomPass and post as u_BloomMapTex. To change which object
+																	//should be applied the bloom effect, adjust alpha channel of the object material in the .mtl files that came w/ the obj file.
     Utility::attachAndLinkProgram(diagnostic_prog, shaders);
 
 	/////////////////////////////
@@ -689,7 +717,7 @@ void setTextures() {
 
 
 
-Camera cam(vec3(2.5, 5, 2),
+Camera cam(vec3(2.8, 6.7, 2.8),
         normalize(vec3(0,-1,0)),
         normalize(vec3(0,0,1)));
 
@@ -969,7 +997,15 @@ void display(void)
 			
 		for (int i = 0; i < lights.size(); ++i)
 		{
-			draw_light(lights[i].getPosition(), lights[i].getStrength(), sc, vp, NEARP);
+			float str = 0;
+			if (pauseLightAnim)
+				str = lights[i].sampleStrength(currenttime);
+			else
+				str = lights[i].getStrength();
+
+			
+			//draw_light(lights[i].getPosition(), lights[i].getStrength(), sc, vp, NEARP);
+			draw_light(lights[i].getPosition(), str, sc, vp, NEARP);
 		}
 
 
@@ -1178,11 +1214,22 @@ void keyboard(unsigned char key, int x, int y) {
         case('r'):
             initShader();
             break;
+		case('l') :
+			pauseLightAnim ^= true;
+			break;
+		case('c') :
+			printCamPosition();
+			break;
     }
 
     if (abs(tx) > 0 ||  abs(tz) > 0 || abs(ty) > 0) {
         cam.adjust(0,0,0,tx,ty,tz);
     }
+}
+
+void printCamPosition()
+{
+	cout << "Camera Position : " << cam.pos.x << "," << cam.pos.y << "," << cam.z << endl;
 }
 
 void init() {

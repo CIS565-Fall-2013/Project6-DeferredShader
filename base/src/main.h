@@ -111,7 +111,9 @@ device_mesh_t uploadMesh(const mesh_t & mesh);
 void display(void);
 void keyboard(unsigned char, int, int);
 void reshape(int, int);
-
+void printCamPosition();
 int main (int argc, char* argv[]);
+
+bool pauseLightAnim = false;
 
 #endif
