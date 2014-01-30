@@ -27,6 +27,9 @@
     <ClCompile Include="..\..\..\src\tiny_obj_loader\tiny_obj_loader.cc">
       <Filter>tinyobjloader</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\tiny_obj_loader\tiny_obj_loader.h">
@@ -36,6 +39,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\Utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -65,6 +71,12 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\..\..\res\shaders\shade.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\res\shaders\bloomPass1.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\res\shaders\bloomPass1.frag">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

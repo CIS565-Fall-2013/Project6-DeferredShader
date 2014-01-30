@@ -10,7 +10,10 @@
 #define	DISPLAY_COLOR 3
 #define	DISPLAY_TOTAL 4
 #define	DISPLAY_LIGHTS 5
-
+#define	DISPLAY_TOON 6
+#define	DISPLAY_BLOOM 7
+#define	DISPLAY_AA 8
+#define	DISPLAY_SPECULAR 9
 
 /////////////////////////////////////
 // Uniforms, Attributes, and Outputs
@@ -37,7 +40,9 @@ uniform float u_LightIl;
 
 in vec2 fs_Texcoord;
 
-out vec4 out_Color;
+out vec4 out_Color; // diffuse only
+out vec4 out_Spec;
+out vec4 out_BloomMap;
 ///////////////////////////////////////
 
 
@@ -48,7 +53,7 @@ uniform float falloff = 0.1f;
 
 
 /////////////////////////////////////
-//				UTILITY FUNCTIONS
+//	UTILITY FUNCTIONS
 /////////////////////////////////////
 
 //Depth used in the Z buffer is not linearly related to distance from camera
@@ -121,7 +126,9 @@ void main() {
         case(DISPLAY_TOTAL):
             break;
     }	
-
+	
+	out_Spec = vec4(0,0,0,0.0);
+	out_BloomMap = vec4(0,0,0,0);
     return;
 }
 

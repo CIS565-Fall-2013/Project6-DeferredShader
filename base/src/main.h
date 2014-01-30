@@ -7,7 +7,15 @@
 #include <vector>
 #include <cstring>
 
+#include "light.h"
 #include "tiny_obj_loader.h"
+
+#define MULTI_LIGHTS 1
+#define IS_TWO_PASS_BLOOM 1
+
+// obj paths
+// mesh=../../../res/crytek-sponza/sponza.obj
+// mesh=../../../res/cornell/cornell_box.obj
 
 class Camera {
 public:
@@ -36,7 +44,7 @@ typedef struct {
 	std::vector<glm::vec2> texcoords;
 	std::vector<unsigned short> indices;
     std::string texname;
-    glm::vec3 color;
+    glm::vec4 color; // alpha position will store the shininess of the material (used for bloom)
 } mesh_t;
 
 typedef struct {
@@ -46,7 +54,7 @@ typedef struct {
 	unsigned int vbo_vertices;
 	unsigned int vbo_normals;
 	unsigned int vbo_texcoords;
-    glm::vec3 color;
+    glm::vec4 color;
     std::string texname;
 } device_mesh_t;
 
@@ -83,7 +91,12 @@ enum Display {
     DISPLAY_POSITION = 2,
     DISPLAY_COLOR = 3,
     DISPLAY_TOTAL = 4,
-    DISPLAY_LIGHTS = 5
+    DISPLAY_LIGHTS = 5,
+	DISPLAY_TOON = 6,
+	DISPLAY_BLOOM = 7,
+	DISPLAY_AA = 8,
+	DISPLAY_SPECULAR = 9,
+	DISPLAY_SEP_BLOOM = 10
 };
 
 char* loadFile(char *fname, GLint &fSize);
@@ -91,14 +104,19 @@ void printShaderInfoLog(GLint shader);
 void printLinkInfoLog(GLint prog);
 void initShade();
 void initPass();
-
+void initLights();
 void initMesh();
 device_mesh_t uploadMesh(const mesh_t & mesh);
 
 void display(void);
 void keyboard(unsigned char, int, int);
 void reshape(int, int);
-
+void printCamPosition();
+void updateBloomBound(int max, int min);
 int main (int argc, char* argv[]);
+
+bool pauseLightAnim = false;
+bool incBloomBound = true;
+int bloomBound = 18;
 
 #endif
