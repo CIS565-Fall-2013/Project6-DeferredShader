@@ -904,15 +904,15 @@ void display(void)
 
 		int count = 0;
 		//float ly = -2.0;
-		for(float ly = - 1.0 ; ly >= -6.0; ly -= 2.0)
-		for(float i = 0.1; i < 6.0; i+= 0.8)
+		/*for(float ly = - 1.0 ; ly >= -6.0; ly -= 0.5)
+		for(float i = 0.0; i < 6.0; i+= 0.6)
 		{
 			if(count %2 == 0)
 				draw_light(vec3(i, ly, l1z), 1.0, sc, vp, NEARP);
 			else
 				draw_light(vec3(i, ly, l2z), 1.0, sc, vp, NEARP);
 			count++;
-		}
+		}*/
         
 		draw_light(vec3(2.5, -2.5, 5.0), 5.0, sc, vp, NEARP);		
 
