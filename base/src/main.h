@@ -100,6 +100,6 @@ void display(void);
 void keyboard(unsigned char, int, int);
 void reshape(int, int);
 
-int main (int argc, char* argv[]);
+int App();
 
 #endif

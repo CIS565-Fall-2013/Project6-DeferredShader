@@ -4,6 +4,7 @@
 
 #include "SOIL.h"
 #include <GL/glut.h>
+#include "GLFW/glfw3.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_projection.hpp>
 #include <glm/gtc/matrix_operation.hpp>
@@ -17,6 +18,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <algorithm>
 
 using namespace std;
 using namespace glm;
@@ -94,7 +96,7 @@ int num_boxes = 3;
 const int DUMP_SIZE = 1024;
 
 vector<device_mesh_t> draw_meshes;
-void initMesh() {
+void initMesh(vector<device_mesh_t>& draw_meshes) {
     for(vector<tinyobj::shape_t>::iterator it = shapes.begin();
             it != shapes.end(); ++it)
     {
@@ -229,15 +231,15 @@ GLuint diagnostic_prog;
 GLuint post_prog;
 void initShader() {
 #ifdef WIN32
-	const char * pass_vert = "../../../res/shaders/pass.vert";
-	const char * shade_vert = "../../../res/shaders/shade.vert";
-	const char * post_vert = "../../../res/shaders/post.vert";
+	const char * pass_vert = "../res/shaders/pass.vert";
+	const char * shade_vert = "../res/shaders/shade.vert";
+	const char * post_vert = "../res/shaders/post.vert";
 
-	const char * pass_frag = "../../../res/shaders/pass.frag";
-	const char * diagnostic_frag = "../../../res/shaders/diagnostic.frag";
-	const char * ambient_frag = "../../../res/shaders/ambient.frag";
-	const char * point_frag = "../../../res/shaders/point.frag";
-	const char * post_frag = "../../../res/shaders/post.frag";
+	const char * pass_frag = "../res/shaders/pass.frag";
+	const char * diagnostic_frag = "../res/shaders/diagnostic.frag";
+	const char * ambient_frag = "../res/shaders/ambient.frag";
+	const char * point_frag = "../res/shaders/point.frag";
+	const char * post_frag = "../res/shaders/post.frag";
 #else
 	const char * pass_vert = "../res/shaders/pass.vert";
 	const char * shade_vert = "../res/shaders/shade.vert";
@@ -341,8 +343,8 @@ GLuint random_normal_tex;
 GLuint random_scalar_tex;
 void initNoise() {  
 #ifdef WIN32
-	const char * rand_norm_png = "../../../res/random_normal.png";
-	const char * rand_png = "../../../res/random.png";
+	const char * rand_norm_png = "../res/random_normal.png";
+	const char * rand_png = "../res/random.png";
 #else
 	const char * rand_norm_png = "../res/random_normal.png";
 	const char * rand_png = "../res/random.png";
@@ -594,7 +596,7 @@ mat4x4 get_mesh_world() {
 
 float FARP;
 float NEARP;
-void draw_mesh() {
+void draw_mesh(vector<device_mesh_t>& draw_meshes) {
     FARP = 100.0f;
     NEARP = 0.1f;
 
@@ -790,7 +792,7 @@ void display(void)
     // Stage 1 -- RENDER TO G-BUFFER
     bindFBO(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    draw_mesh();
+    draw_mesh(draw_meshes);
 	glActiveTexture (GL_TEXTURE9);
 	glBindTexture (GL_TEXTURE_2D, glowmaskTexture);
 	glGenerateMipmap (GL_TEXTURE_2D);
@@ -912,10 +914,7 @@ void display(void)
 	draw_quad();
 
     glEnable(GL_DEPTH_TEST);
-    updateTitle();
-
-    glutPostRedisplay();
-    glutSwapBuffers();
+//    updateTitle();
 }
 
 
@@ -1049,12 +1048,16 @@ void init() {
     glClearColor(0.0f, 0.0f, 0.0f,1.0f);
 }
 
-int main (int argc, char* argv[])
+//int main (int argc, char* argv[])
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+    int argc = 2;
+    char* argv[] = { "", "mesh=..\res\crytek-sponza\sponza.obj" };
+
     bool loadedScene = false;
-    for(int i=1; i<argc; i++){
+//    for(int i=1; i<argc; i++){
         string header; string data;
-        istringstream liness(argv[i]);
+        istringstream liness(lpCmdLine);
         getline(liness, header, '='); getline(liness, data, '=');
         if(strcmp(header.c_str(), "mesh")==0){
             int found = data.find_last_of("/\\");
@@ -1068,7 +1071,7 @@ int main (int argc, char* argv[])
             }
             loadedScene = true;
         }
-    }
+//    }
 
     if(!loadedScene){
         cout << "Usage: mesh=[obj file]" << endl; 
@@ -1076,13 +1079,60 @@ int main (int argc, char* argv[])
         return 0;
     }
 
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-    width = 1280;	inv_width = 1.0/(width-1);
-    height = 720;	inv_height = 1.0/(height-1);
-    glutInitWindowSize(width,height);
-    glutCreateWindow("CIS565 OpenGL Frame");
-    glewInit();
+    return App();
+
+    //glutInit(&argc, argv);
+    //glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
+    //width = 1280;	inv_width = 1.0/(width-1);
+    //height = 720;	inv_height = 1.0/(height-1);
+    //glutInitWindowSize(width,height);
+    //glutCreateWindow("CIS565 OpenGL Frame");
+    //glewInit();
+    //GLenum err = glewInit();
+    //if (GLEW_OK != err)
+    //{
+    //    /* Problem: glewInit failed, something is seriously wrong. */
+    //    cout << "glewInit failed, aborting." << endl;
+    //    exit (1);
+    //}
+    //cout << "Status: Using GLEW " << glewGetString(GLEW_VERSION) << endl;
+    //cout << "OpenGL version " << glGetString(GL_VERSION) << " supported" << endl;
+
+    //initNoise();
+    //initShader();
+    //initFBO(width,height);
+    //init();
+    //initMesh(draw_meshes);
+    //initQuad();
+
+
+    //glutDisplayFunc(display);
+    //glutReshapeFunc(reshape);	
+    //glutKeyboardFunc(keyboard);
+    //glutMouseFunc(mouse);
+    //glutMotionFunc(motion);
+
+    //glutMainLoop();
+    //return 0;
+}
+
+int App()
+{
+    width = 1280;	inv_width = 1.0 / (width - 1);
+    height = 720;	inv_height = 1.0 / (height - 1);
+
+    if (!glfwInit())
+        return -1;
+
+    /* Create a windowed mode window and its OpenGL context */
+    GLFWwindow* window = glfwCreateWindow(width, height, "CIS565 OpenGL Frame", NULL, NULL);
+    if (!window)
+    {
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+
     GLenum err = glewInit();
     if (GLEW_OK != err)
     {
@@ -1095,18 +1145,34 @@ int main (int argc, char* argv[])
 
     initNoise();
     initShader();
-    initFBO(width,height);
+    initFBO(width, height);
     init();
-    initMesh();
+    initMesh(draw_meshes);
     initQuad();
 
+    /* Loop until the user closes the window */
+    while (!glfwWindowShouldClose(window))
+    {
+        /* Render here */
+        display();
 
-    glutDisplayFunc(display);
-    glutReshapeFunc(reshape);	
-    glutKeyboardFunc(keyboard);
-    glutMouseFunc(mouse);
-    glutMotionFunc(motion);
+        /* Swap front and back buffers */
+        glfwSwapBuffers(window);
 
-    glutMainLoop();
+        /* Poll for and process events */
+        glfwPollEvents();
+    }
+
+    glfwTerminate();
     return 0;
+
+
+    //glutDisplayFunc(display);
+    //glutReshapeFunc(reshape);
+    //glutKeyboardFunc(keyboard);
+    //glutMouseFunc(mouse);
+    //glutMotionFunc(motion);
+
+    //glutMainLoop();
+    //return 0;
 }
