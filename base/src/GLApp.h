@@ -89,11 +89,11 @@ class GLApp
     bool m_DOFEnabled;
     bool m_DOFDebug;
     bool m_scissorEnabled;
+    bool m_mouseCaptured;
 
-    int32_t mouse_buttons;
-    int32_t mouse_old_x;
+    double m_lastX;
+    double m_lastY;
     int32_t mouse_dof_x;
-    int32_t mouse_old_y;
     int32_t mouse_dof_y;
 
     float m_farPlane;
@@ -120,6 +120,7 @@ class GLApp
     uint32_t m_postProg;
 
     GLFWwindow* m_glfwWindow;
+    static GLApp* m_singleton;
 
     // FBOs
     std::vector<uint32_t> m_FBO;
@@ -130,7 +131,6 @@ class GLApp
     std::string m_windowTitle;
 
     void initNoise();
-    void initShader();
     void initFBO();
     void initMesh(std::vector<tinyobj::shape_t>& shapes);
     void initQuad();
@@ -143,14 +143,59 @@ class GLApp
     void drawLight(glm::vec3 pos, float strength, glm::mat4 sc, glm::mat4 vp);
 
     void display();
-    void keyboard(unsigned char, int, int);
     void reshape(int, int);
-    void mouse(int button, int state, int x, int y);
-    void motion(int x, int y);
 
-public:
+    static void OnKeyPress(GLFWwindow* windowHandle, int32_t pressedKey, int32_t pressedKeyScancode, int32_t action, int32_t modifiers);
+    static void OnMouseClick(GLFWwindow* windowHandle, int32_t pressedButton, int32_t action, int32_t modifiers);
+    static void OnMouseMove(GLFWwindow* windowHandle, double xPos, double yPos);
+
     GLApp(uint32_t width, uint32_t height, std::string windowTitle);
+public:
     ~GLApp();
     int32_t init(std::vector<tinyobj::shape_t>& shapes);
     int32_t Run();
+    static GLApp* Create(uint32_t width, uint32_t height, std::string windowTitle)
+    { 
+        if (m_singleton)
+            delete m_singleton;
+        
+        m_singleton = new GLApp(width, height, windowTitle);
+        return m_singleton;
+    }
+    static GLApp* Get() { return m_singleton; }
+
+    double GetLastX() { return m_lastX; }
+    double GetLastY() { return m_lastY; }
+    int32_t GetHeight() { return m_height; }
+    int32_t GetWidth() { return m_width; }
+
+    bool IsScissorEnabled() { return m_scissorEnabled; }
+    bool IsBloomEnabled() { return m_bloomEnabled; }
+    bool IsDOFEnabled() { return m_DOFEnabled; }
+    bool IsToonEnabled() { return m_toonEnabled; }
+    bool IsDOFDebug() { return m_DOFDebug; }
+    bool IsMouseCaptured() { return m_mouseCaptured; }
+
+    void SetScissorEnabled(bool isScissorEnabled) { m_scissorEnabled = isScissorEnabled; }
+    void SetBloomEnabled(bool isBloomEnabled) { m_bloomEnabled = isBloomEnabled; }
+    void SetDOFEnabled(bool isDOFEnabled) { m_DOFEnabled = isDOFEnabled; }
+    void SetToonEnabled(bool isToonEnabled) { m_toonEnabled = isToonEnabled; }
+    void SetDOFDebug(bool isDOFDebug) { m_DOFDebug = isDOFDebug; }
+    void SetMouseCaptured(bool isMouseCaptured) { m_mouseCaptured = isMouseCaptured; }
+
+    void ToggleScissor() { m_scissorEnabled = !m_scissorEnabled; }
+    void ToggleBloom() { m_bloomEnabled = !m_bloomEnabled; }
+    void ToggleDOF() { m_DOFEnabled = !m_DOFEnabled; }
+    void ToggleToon() { m_toonEnabled = !m_toonEnabled; }
+    void ToggleDOFDebug() { m_DOFDebug = !m_DOFDebug; }
+    void ToggleMouseCaptured() { m_mouseCaptured = !m_mouseCaptured; }
+
+    void SetDisplayType(Display newDisplayType) { m_displayType = newDisplayType; }
+    void SetLastX(double lastX) { m_lastX = lastX; }
+    void SetLastY(double lastY) { m_lastY = lastY; }
+
+    void InitShader();
+
+    void AdjustCamera(float xAdjustment, float yAdjustment, float zAdjustment);
+    void RotateCamera(float xAngle, float yAngle);
 };

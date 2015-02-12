@@ -14,6 +14,23 @@
 using namespace std;
 using namespace glm;
 
+//#define EPSILON 1e-6;
+
+Camera::Camera(glm::vec3 start_pos, glm::vec3 start_dir, glm::vec3 up) 
+    : pos(start_pos), 
+    up(up),
+    start_dir(start_dir), 
+    start_left(glm::cross(start_dir, up)),
+    rx(0), 
+    ry(0) 
+{
+    m_view = glm::translate(glm::mat4(), start_pos);
+    m_view = glm::rotate(m_view, rx, glm::vec3(1.0f, 0.0f, 0.0f));
+    m_view = glm::rotate(m_view, ry, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    m_transform = m_view;
+}
+
 void Camera::adjust(float dx, // look left right
         float dy, //look up down
         float dz,
@@ -22,46 +39,34 @@ void Camera::adjust(float dx, // look left right
         float tz)//go forward) //strafe up down
 {
 
-    if (abs(dx) > 0)
+    if (abs(dx) > FLT_EPSILON)
     {
-        rx += dx;
+        rx -= dx;
         rx = fmod(rx,360.0f);
     }
 
-    if (abs(dy) > 0)
+    if (abs(dy) > FLT_EPSILON)
     {
-        ry += dy;
-        ry = clamp(ry,-70.0f, 70.0f);
+        ry -= dy;
+        glm::clamp(ry, -70.0f, 70.0f);
     }
 
-    if (abs(tx) > 0)
-    {
-        vec3 dir = glm::gtx::rotate_vector::rotate(start_dir,rx + 90,up);
-        vec2 dir2(dir.x,dir.y);
-        vec2 mag = dir2 * tx;
-        pos += mag;	
-    }
+    vec4 translation(tx, ty, tz, 0.0f);
+    translation = m_transform * translation;
+    pos += vec3(translation.x, translation.y, translation.z);
+}
 
-    if (abs(ty) > 0)
-    {
-        z += ty;
-    }
-
-    if (abs(tz) > 0)
-    {
-        vec3 dir = glm::gtx::rotate_vector::rotate(start_dir,rx,up);
-        vec2 dir2(dir.x,dir.y);
-        vec2 mag = dir2 * tz;
-        pos += mag;
-    }
+void Camera::CalculateView()
+{
+    m_transform = glm::translate(glm::mat4(), pos);
+    m_transform = glm::rotate(m_transform, rx, glm::vec3(0.0f, 1.0f, 0.0f));
+    m_transform = glm::rotate(m_transform, ry, glm::vec3(1.0f, 0.0f, 0.0f));
+    m_view = glm::inverse(m_transform);
 }
 
 mat4 Camera::get_view() 
 {
-    vec3 inclin = glm::gtx::rotate_vector::rotate(start_dir,ry,start_left);
-    vec3 spun = glm::gtx::rotate_vector::rotate(inclin,rx,up);
-    vec3 cent(pos, z);
-    return glm::lookAt(cent, cent + spun, up);
+    return m_view;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -93,7 +98,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return EXIT_SUCCESS;
     }
 
-    GLApp* app = new GLApp(1280, 720, "CIS 565 OpenGL Frame");
+    GLApp* app = GLApp::Create(1280, 720, "CIS 565 OpenGL Frame");
     if (!app || !app->init(shapes))
         return EXIT_FAILURE;
 
