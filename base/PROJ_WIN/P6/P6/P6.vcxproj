@@ -74,6 +74,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\EventHandlers.cpp" />
     <ClCompile Include="..\..\..\src\GLApp.cpp" />
     <ClCompile Include="..\..\..\src\main.cpp" />
     <ClCompile Include="..\..\..\src\tiny_obj_loader\tiny_obj_loader.cc" />
@@ -81,6 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\Camera.h" />
+    <ClInclude Include="..\..\..\src\EventHandlers.h" />
     <ClInclude Include="..\..\..\src\GLApp.h" />
     <ClInclude Include="..\..\..\src\tiny_obj_loader\tiny_obj_loader.h" />
     <ClInclude Include="..\..\..\src\Utility.h" />

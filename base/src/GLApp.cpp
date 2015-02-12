@@ -1,12 +1,12 @@
 #include "GLApp.h"
 #include "Camera.h"
 #include "Utility.h"
+#include "EventHandlers.h"
 
 #include <GL/glew.h>
 #include "GLFW/glfw3.h"
 #include "SOIL/SOIL.h"
 #include "tiny_obj_loader.h"
-
 #include <glm/gtc/matrix_projection.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -103,11 +103,10 @@ GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle)
     m_windowTitle(windowTitle)
 {
     vec3 tilt(1.0f, 0.0f, 0.0f);
-    mat4 tilt_mat = mat4();//glm::rotate(mat4(), 90.0f, tilt);
+    mat4 tilt_mat = mat4();
     mat4 scale_mat = glm::scale(mat4(), vec3(0.01));
     m_world = tilt_mat * scale_mat;
 
-    //m_cam = new Camera(vec3(2.5, 5, 2), glm::normalize(vec3(0, -1, 0)), glm::normalize(vec3(0, 0, 1)));
     m_cam = new Camera(vec3(0, 2, 0), glm::normalize(vec3(0, 0, -1)), glm::normalize(vec3(0, 1, 0)));
 
     m_invHeight = 1.0f / (m_height - 1);
@@ -526,7 +525,7 @@ void GLApp::drawMeshes()
     glUniformMatrix4fv(glGetUniformLocation(m_passProg, "u_Persp"), 1, GL_FALSE, &persp[0][0]);
     glUniformMatrix4fv(glGetUniformLocation(m_passProg, "u_InvTrans"), 1, GL_FALSE, &inverse_transposed[0][0]);
 
-    for (int i = 0; i < m_meshes.size(); i++)
+    for (uint32_t i = 0; i < m_meshes.size(); i++)
     {
         glUniform3fv(glGetUniformLocation(m_passProg, "u_Color"), 1, &(m_meshes[i].color[0]));
         glBindVertexArray(m_meshes[i].vertex_array);
@@ -648,8 +647,8 @@ void GLApp::display()
         vec4 dir_light(0.1, 1.0, 1.0, 0.0);
         dir_light = m_cam->get_view() * dir_light;
         dir_light = glm::normalize(dir_light);
-        dir_light.w = 0.3;
-        float strength = 0.09;
+        dir_light.w = 0.3f;
+        float strength = 0.09f;
 
         setupQuad(m_ambientProg);
         glUniform1i(glGetUniformLocation(m_ambientProg, "u_toonOn"), m_toonEnabled);
@@ -705,7 +704,7 @@ void GLApp::display()
     glUniform1f(glGetUniformLocation(m_postProg, "u_InvScrWidth"), m_invWidth);
     glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexX"), mouse_dof_x*m_invWidth);
     glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexY"), abs(static_cast<int32_t>(m_height) - mouse_dof_y)*m_invHeight);
-    glUniform1f(glGetUniformLocation(m_postProg, "u_lenQuant"), 0.0025);
+    glUniform1f(glGetUniformLocation(m_postProg, "u_lenQuant"), 0.0025f);
     glUniform1f(glGetUniformLocation(m_postProg, "u_Far"), m_farPlane);
     glUniform1f(glGetUniformLocation(m_postProg, "u_Near"), m_nearPlane);
     glUniform1i(glGetUniformLocation(m_postProg, "u_BloomOn"), m_bloomEnabled);
@@ -717,8 +716,6 @@ void GLApp::display()
     glEnable(GL_DEPTH_TEST);
     //    updateTitle();
 }
-
-
 
 void GLApp::reshape(int w, int h)
 {
@@ -742,144 +739,6 @@ void GLApp::reshape(int w, int h)
         glDeleteFramebuffers(1, &fbo);
 
     initFBO();
-}
-
-
-void GLApp::OnMouseClick(GLFWwindow* windowHandle, int32_t pressedButton, int32_t action, int32_t modifiers)
-{
-    if ((pressedButton == GLFW_MOUSE_BUTTON_LEFT) && (action == GLFW_PRESS))
-    {
-        GLApp* thisApp = GLApp::Get();
-        if (thisApp == nullptr)
-            return;
-
-        thisApp->ToggleMouseCaptured();
-        glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    }
-}
-
-void GLApp::OnMouseMove(GLFWwindow* windowHandle, double xPos, double yPos)
-{
-    GLApp* thisApp = GLApp::Get();
-    if (thisApp == nullptr)
-        return;
-
-    if (thisApp->IsMouseCaptured())
-    {
-        double dx, dy;
-        dx = (xPos - thisApp->GetLastX()) / thisApp->GetWidth();
-        dy = (yPos - thisApp->GetLastY()) / thisApp->GetHeight();
-
-        thisApp->RotateCamera(dx*14.0, dy*14.0);
-
-        thisApp->SetLastX(xPos);
-        thisApp->SetLastY(yPos);
-    }
-    //if (mouse_buttons & 1<<GLUT_RIGHT_BUTTON) {
-    //    cam.adjust(0,0,dx,0,0,0);;
-    //}
-    //else {
-    //    cam.adjust(-dx*0.2f,-dy*0.2f,0,0,0,0);
-    //}
-
-    //mouse_old_x = x;
-    //mouse_old_y = y;
-}
-
-void GLApp::OnKeyPress(GLFWwindow* someWindow, int32_t pressedKey, int32_t pressedKeyScancode, int32_t action, int32_t modifiers)
-{
-    float tx = 0;
-    float ty = 0;
-    float tz = 0;
-
-    if ((action != GLFW_PRESS) && (action != GLFW_REPEAT))
-        return;
-
-    GLApp* thisApp = GLApp::Get();
-    if (thisApp == nullptr)
-        return;
-
-    switch (pressedKey)
-    {
-    case GLFW_KEY_ESCAPE:
-        if (thisApp->IsMouseCaptured())
-        {
-            glfwSetInputMode(someWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            thisApp->ToggleMouseCaptured();
-        }
-        else
-            glfwSetWindowShouldClose(someWindow, GL_TRUE);
-        break;
-    case GLFW_KEY_W:
-        tz = 0.1;
-        break;
-    case GLFW_KEY_S:
-        tz = -0.1;
-        break;
-    case GLFW_KEY_D:
-        tx = -0.1;
-        break;
-    case GLFW_KEY_A:
-        tx = 0.1;
-        break;
-    case GLFW_KEY_Q:
-        ty = 0.1;
-        break;
-    case GLFW_KEY_Z:
-        ty = -0.1;
-        break;
-    case GLFW_KEY_1:
-    case GLFW_KEY_KP_1:
-        thisApp->SetDisplayType(DISPLAY_DEPTH);
-        break;
-    case GLFW_KEY_2:
-    case GLFW_KEY_KP_2:
-        thisApp->SetDisplayType(DISPLAY_NORMAL);
-        break;
-    case GLFW_KEY_3:
-    case GLFW_KEY_KP_3:
-        thisApp->SetDisplayType(DISPLAY_COLOR);
-        break;
-    case GLFW_KEY_4:
-    case GLFW_KEY_KP_4:
-        thisApp->SetDisplayType(DISPLAY_POSITION);
-        break;
-    case GLFW_KEY_5:
-    case GLFW_KEY_KP_5:
-        thisApp->SetDisplayType(DISPLAY_LIGHTS);
-        break;
-    case GLFW_KEY_6:
-    case GLFW_KEY_KP_6:
-        thisApp->SetDisplayType(DISPLAY_GLOWMASK);
-        break;
-    case GLFW_KEY_0:
-    case GLFW_KEY_KP_0:
-        thisApp->SetDisplayType(DISPLAY_TOTAL);
-        break;
-    case GLFW_KEY_X:
-        thisApp->ToggleScissor();
-        break;
-    case GLFW_KEY_R:
-        thisApp->InitShader();
-        break;
-    case GLFW_KEY_B:
-        thisApp->ToggleBloom();
-        break;
-    case GLFW_KEY_T:
-        thisApp->ToggleToon();
-        break;
-    case GLFW_KEY_F:
-        thisApp->ToggleDOF();
-        break;
-    case GLFW_KEY_G:
-        thisApp->ToggleDOFDebug();
-        break;
-    }
-
-    if (abs(tx) > 0 || abs(tz) > 0 || abs(ty) > 0) 
-    {
-        thisApp->AdjustCamera(tx, ty, tz);
-    }
 }
 
 void GLApp::AdjustCamera(float xAdjustment, float yAdjustment, float zAdjustment)
@@ -909,9 +768,9 @@ int32_t GLApp::init(std::vector<tinyobj::shape_t>& shapes)
     glfwMakeContextCurrent(m_glfwWindow);
 
     glfwSetInputMode(m_glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetKeyCallback(m_glfwWindow, OnKeyPress);
-    glfwSetMouseButtonCallback(m_glfwWindow, OnMouseClick);
-    glfwSetCursorPosCallback(m_glfwWindow, OnMouseMove);
+    glfwSetKeyCallback(m_glfwWindow, EventHandler::OnKeyPress);
+    glfwSetMouseButtonCallback(m_glfwWindow, EventHandler::OnMouseClick);
+    glfwSetCursorPosCallback(m_glfwWindow, EventHandler::OnMouseMove);
 
     GLenum err = glewInit();
     if (GLEW_OK != err)

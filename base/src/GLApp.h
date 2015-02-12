@@ -73,7 +73,7 @@ enum Display
 };
 
 class Camera;
-class GLFWwindow;
+struct GLFWwindow;
 class GLApp
 {
     uint32_t m_startTime;
@@ -144,10 +144,6 @@ class GLApp
 
     void display();
     void reshape(int, int);
-
-    static void OnKeyPress(GLFWwindow* windowHandle, int32_t pressedKey, int32_t pressedKeyScancode, int32_t action, int32_t modifiers);
-    static void OnMouseClick(GLFWwindow* windowHandle, int32_t pressedButton, int32_t action, int32_t modifiers);
-    static void OnMouseMove(GLFWwindow* windowHandle, double xPos, double yPos);
 
     GLApp(uint32_t width, uint32_t height, std::string windowTitle);
 public:

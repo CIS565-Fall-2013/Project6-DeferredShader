@@ -2,10 +2,8 @@
 #include "GLApp.h"
 #include "Camera.h"
 #include "tiny_obj_loader.h"
-//#include <GL/glut.h>
 
-#include <glm/gtx/rotate_vector.hpp>
-#include <glm/gtx/transform2.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
 #include <string>
@@ -13,8 +11,6 @@
 
 using namespace std;
 using namespace glm;
-
-//#define EPSILON 1e-6;
 
 Camera::Camera(glm::vec3 start_pos, glm::vec3 start_dir, glm::vec3 up) 
     : pos(start_pos), 
