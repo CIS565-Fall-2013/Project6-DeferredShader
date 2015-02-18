@@ -34,7 +34,6 @@ void Camera::adjust(float dx, // look left right
         float ty,
         float tz)//go forward) //strafe up down
 {
-
     if (abs(dx) > FLT_EPSILON)
     {
         rx -= dx;
@@ -44,7 +43,7 @@ void Camera::adjust(float dx, // look left right
     if (abs(dy) > FLT_EPSILON)
     {
         ry -= dy;
-        glm::clamp(ry, -70.0f, 70.0f);
+        ry = glm::clamp(ry, -70.0f, 70.0f);
     }
 
     vec4 translation(tx, ty, tz, 0.0f);

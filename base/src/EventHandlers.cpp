@@ -42,7 +42,7 @@ namespace EventHandler
         float ty = 0;
         float tz = 0;
 
-        if ((action != GLFW_PRESS) && (action != GLFW_REPEAT))
+        if (action == GLFW_RELEASE)
             return;
 
         GLApp* thisApp = GLApp::Get();

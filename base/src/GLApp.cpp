@@ -38,29 +38,25 @@ namespace
 
         //Upload vertex data
         glBindBuffer(GL_ARRAY_BUFFER, out.vbo_vertices);
-        glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size()*sizeof(vec3),
-            &mesh.vertices[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size()*sizeof(vec3), &mesh.vertices[0], GL_STATIC_DRAW);
         glVertexAttribPointer(mesh_attributes::POSITION, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glEnableVertexAttribArray(mesh_attributes::POSITION);
 
         //Upload normal data
         glBindBuffer(GL_ARRAY_BUFFER, out.vbo_normals);
-        glBufferData(GL_ARRAY_BUFFER, mesh.normals.size()*sizeof(vec3),
-            &mesh.normals[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, mesh.normals.size()*sizeof(vec3), &mesh.normals[0], GL_STATIC_DRAW);
         glVertexAttribPointer(mesh_attributes::NORMAL, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glEnableVertexAttribArray(mesh_attributes::NORMAL);
 
         //Upload texture coord data
         glBindBuffer(GL_ARRAY_BUFFER, out.vbo_texcoords);
-        glBufferData(GL_ARRAY_BUFFER, mesh.texcoords.size()*sizeof(vec2),
-            &mesh.texcoords[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, mesh.texcoords.size()*sizeof(vec2), &mesh.texcoords[0], GL_STATIC_DRAW);
         glVertexAttribPointer(mesh_attributes::TEXCOORD, 2, GL_FLOAT, GL_FALSE, 0, 0);
         glEnableVertexAttribArray(mesh_attributes::TEXCOORD);
 
         //indices
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, out.vbo_indices);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size()*sizeof(GLushort),
-            &mesh.indices[0], GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size()*sizeof(GLushort), &mesh.indices[0], GL_STATIC_DRAW);
         out.num_indices = mesh.indices.size();
         //Unplug Vertex Array
         glBindVertexArray(0);
@@ -80,7 +76,7 @@ GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle)
     m_bloomEnabled(true),
     m_toonEnabled(false),
     m_DOFEnabled(false),
-    m_DOFDebug(true),
+    m_DOFDebug(false),
     m_scissorEnabled(true),
     m_mouseCaptured(true),
     mouse_dof_x(0),
@@ -123,86 +119,64 @@ GLApp::~GLApp()
 
 void GLApp::initMesh(std::vector<tinyobj::shape_t>& shapes)
 {
-    for (std::vector<tinyobj::shape_t>::iterator it = shapes.begin();
-        it != shapes.end(); ++it)
+    for (auto it = shapes.begin(); it != shapes.end(); ++it)
     {
         tinyobj::shape_t shape = *it;
-        int totalsize = shape.mesh.indices.size() / 3;
-        int f = 0;
-        while (f < totalsize)
+        uint32_t nVertices = shape.mesh.indices.size();
+
+        mesh_t mesh;
+        for (uint32_t i = 0; i < nVertices; i+=3)
         {
-            mesh_t mesh;
-            int process = std::min(10000, totalsize - f);
-            int point = 0;
-            for (int i = f; i<process + f; i++)
+            uint32_t idx0 = shape.mesh.indices[i];
+            uint32_t idx1 = shape.mesh.indices[i + 1];
+            uint32_t idx2 = shape.mesh.indices[i + 2];
+
+            vec3 p0 = vec3(shape.mesh.positions[3 * idx0], shape.mesh.positions[3 * idx0 + 1], shape.mesh.positions[3 * idx0 + 2]);
+            vec3 p1 = vec3(shape.mesh.positions[3 * idx1], shape.mesh.positions[3 * idx1 + 1], shape.mesh.positions[3 * idx1 + 2]);
+            vec3 p2 = vec3(shape.mesh.positions[3 * idx2], shape.mesh.positions[3 * idx2 + 1], shape.mesh.positions[3 * idx2 + 2]);
+            mesh.vertices.push_back(p0);
+            mesh.vertices.push_back(p1);
+            mesh.vertices.push_back(p2);
+
+            if (shape.mesh.normals.size() > 0)
             {
-                int idx0 = shape.mesh.indices[3 * i];
-                int idx1 = shape.mesh.indices[3 * i + 1];
-                int idx2 = shape.mesh.indices[3 * i + 2];
-                vec3 p0 = vec3(shape.mesh.positions[3 * idx0],
-                    shape.mesh.positions[3 * idx0 + 1],
-                    shape.mesh.positions[3 * idx0 + 2]);
-                vec3 p1 = vec3(shape.mesh.positions[3 * idx1],
-                    shape.mesh.positions[3 * idx1 + 1],
-                    shape.mesh.positions[3 * idx1 + 2]);
-                vec3 p2 = vec3(shape.mesh.positions[3 * idx2],
-                    shape.mesh.positions[3 * idx2 + 1],
-                    shape.mesh.positions[3 * idx2 + 2]);
-
-                mesh.vertices.push_back(p0);
-                mesh.vertices.push_back(p1);
-                mesh.vertices.push_back(p2);
-
-                if (shape.mesh.normals.size() > 0)
-                {
-                    mesh.normals.push_back(vec3(shape.mesh.normals[3 * idx0],
-                        shape.mesh.normals[3 * idx0 + 1],
-                        shape.mesh.normals[3 * idx0 + 2]));
-                    mesh.normals.push_back(vec3(shape.mesh.normals[3 * idx1],
-                        shape.mesh.normals[3 * idx1 + 1],
-                        shape.mesh.normals[3 * idx1 + 2]));
-                    mesh.normals.push_back(vec3(shape.mesh.normals[3 * idx2],
-                        shape.mesh.normals[3 * idx2 + 1],
-                        shape.mesh.normals[3 * idx2 + 2]));
-                }
-                else
-                {
-                    vec3 norm = glm::normalize(glm::cross(glm::normalize(p1 - p0), glm::normalize(p2 - p0)));
-                    mesh.normals.push_back(norm);
-                    mesh.normals.push_back(norm);
-                    mesh.normals.push_back(norm);
-                }
-
-                if (shape.mesh.texcoords.size() > 0)
-                {
-                    mesh.texcoords.push_back(vec2(shape.mesh.positions[2 * idx0],
-                        shape.mesh.positions[2 * idx0 + 1]));
-                    mesh.texcoords.push_back(vec2(shape.mesh.positions[2 * idx1],
-                        shape.mesh.positions[2 * idx1 + 1]));
-                    mesh.texcoords.push_back(vec2(shape.mesh.positions[2 * idx2],
-                        shape.mesh.positions[2 * idx2 + 1]));
-                }
-                else
-                {
-                    vec2 tex(0.0);
-                    mesh.texcoords.push_back(tex);
-                    mesh.texcoords.push_back(tex);
-                    mesh.texcoords.push_back(tex);
-                }
-                mesh.indices.push_back(point++);
-                mesh.indices.push_back(point++);
-                mesh.indices.push_back(point++);
+                mesh.normals.push_back(vec3(shape.mesh.normals[3 * idx0], shape.mesh.normals[3 * idx0 + 1], shape.mesh.normals[3 * idx0 + 2]));
+                mesh.normals.push_back(vec3(shape.mesh.normals[3 * idx1], shape.mesh.normals[3 * idx1 + 1], shape.mesh.normals[3 * idx1 + 2]));
+                mesh.normals.push_back(vec3(shape.mesh.normals[3 * idx2], shape.mesh.normals[3 * idx2 + 1], shape.mesh.normals[3 * idx2 + 2]));
+            }
+            else
+            {
+                vec3 norm = glm::normalize(glm::cross(glm::normalize(p1 - p0), glm::normalize(p2 - p0)));
+                mesh.normals.push_back(norm);
+                mesh.normals.push_back(norm);
+                mesh.normals.push_back(norm);
             }
 
-            mesh.color = vec3(shape.material.diffuse[0],
-                shape.material.diffuse[1],
-                shape.material.diffuse[2]);
-            mesh.texname = shape.material.name;//diffuse_texname;
-            device_mesh_t out;
-            uploadMesh(mesh, out);
-            m_meshes.push_back(out);
-            f = f + process;
+            if (shape.mesh.texcoords.size() > 0)
+            {
+                mesh.texcoords.push_back(vec2(shape.mesh.positions[2 * idx0], shape.mesh.positions[2 * idx0 + 1]));
+                mesh.texcoords.push_back(vec2(shape.mesh.positions[2 * idx1], shape.mesh.positions[2 * idx1 + 1]));
+                mesh.texcoords.push_back(vec2(shape.mesh.positions[2 * idx2], shape.mesh.positions[2 * idx2 + 1]));
+            }
+            else
+            {
+                vec2 tex(0.0);
+                mesh.texcoords.push_back(tex);
+                mesh.texcoords.push_back(tex);
+                mesh.texcoords.push_back(tex);
+            }
+
+            mesh.indices.push_back(i);
+            mesh.indices.push_back(i + 1);
+            mesh.indices.push_back(i + 2);
         }
+
+        mesh.color = vec3(shape.material.diffuse[0], shape.material.diffuse[1], shape.material.diffuse[2]);
+        mesh.texname = shape.material.name;//diffuse_texname;
+
+        device_mesh_t out;
+        uploadMesh(mesh, out);
+        m_meshes.push_back(out);
     }
 }
 
@@ -802,7 +776,7 @@ int32_t GLApp::Run()
         /* Swap front and back buffers */
         glfwSwapBuffers(m_glfwWindow);
 
-        /* Poll for and process events */
+        /* Wait for and process events */
         glfwPollEvents();
     }
 
