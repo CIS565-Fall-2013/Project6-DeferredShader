@@ -1,65 +1,7 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "GLRenderer.h"
 #include "tiny_obj_loader.h"
-
-#include <vector>
-#include <cstdint>
-
-struct mesh_t
-{
-    std::vector<glm::vec3> vertices;
-    std::vector<glm::vec3> normals;
-    std::vector<glm::vec2> texcoords;
-    std::vector<unsigned short> indices;
-    std::string texname;
-    glm::vec3 color;
-};
-
-struct device_mesh_t
-{
-    unsigned int vertex_array;
-    unsigned int vbo_indices;
-    unsigned int num_indices;
-    unsigned int vbo_vertices;
-    unsigned int vbo_normals;
-    unsigned int vbo_texcoords;
-    glm::vec3 color;
-    std::string texname;
-};
-
-struct device_mesh2_t
-{
-    unsigned int vertex_array;
-    unsigned int vbo_indices;
-    unsigned int num_indices;
-    //Don't need these to get it working, but needed for deallocation
-    unsigned int vbo_data;
-};
-
-struct vertex2_t
-{
-    glm::vec3 pt;
-    glm::vec2 texcoord;
-};
-
-namespace mesh_attributes
-{
-    enum
-    {
-        POSITION,
-        NORMAL,
-        TEXCOORD
-    };
-}
-namespace quad_attributes
-{
-    enum
-    {
-        POSITION,
-        TEXCOORD
-    };
-}
 
 enum Display
 {
@@ -102,44 +44,24 @@ class GLApp
     glm::mat4 m_world;
     Camera* m_cam;
 
-    // Textures
-    uint32_t m_randomNormalTexture;
-    uint32_t m_randomScalarTexture;
-    uint32_t m_depthTexture;
-    uint32_t m_normalTexture;
-    uint32_t m_positionTexture;
-    uint32_t m_colorTexture;
-    uint32_t m_postTexture;
-    uint32_t m_glowmaskTexture;
-
-    // Techniques
-    uint32_t m_passProg;
-    uint32_t m_pointProg;
-    uint32_t m_ambientProg;
-    uint32_t m_diagnosticProg;
-    uint32_t m_postProg;
+    GLRenderer* m_renderer;
 
     GLFWwindow* m_glfwWindow;
     static GLApp* m_singleton;
 
-    // FBOs
-    std::vector<uint32_t> m_FBO;
-
-    device_mesh2_t m_Quad;
-    std::vector<device_mesh_t> m_meshes;
+    std::vector<DrawableGeometry> m_drawableModels;
 
     std::string m_windowTitle;
 
-    void initNoise();
-    void initFBO();
-    void initMesh(std::vector<tinyobj::shape_t>& shapes);
-    void initQuad();
+    // Loops through each model in the scene and creates Vertex/Index buffers for each.
+    // Also uploads data to GPU.
+    void ProcessScene(std::vector<tinyobj::shape_t>& scene);
+
     void bindFBO(uint32_t buf);
     void setTextures();
 
     void setupQuad(uint32_t prog);
     void drawMeshes();
-    void drawQuad();
     void drawLight(glm::vec3 pos, float strength, glm::mat4 sc, glm::mat4 vp);
 
     void display();
@@ -148,7 +70,7 @@ class GLApp
     GLApp(uint32_t width, uint32_t height, std::string windowTitle);
 public:
     ~GLApp();
-    int32_t init(std::vector<tinyobj::shape_t>& shapes);
+    int32_t Initialize(std::vector<tinyobj::shape_t>& shapes);
     int32_t Run();
     static GLApp* Create(uint32_t width, uint32_t height, std::string windowTitle)
     { 
@@ -190,8 +112,10 @@ public:
     void SetLastX(double lastX) { m_lastX = lastX; }
     void SetLastY(double lastY) { m_lastY = lastY; }
 
-    void InitShader();
-
     void AdjustCamera(float xAdjustment, float yAdjustment, float zAdjustment);
     void RotateCamera(float xAngle, float yAngle);
+
+    void ReloadShaders();
 };
+
+#define RENDERER m_renderer

@@ -110,7 +110,7 @@ namespace EventHandler
             thisApp->ToggleScissor();
             break;
         case GLFW_KEY_R:
-            thisApp->InitShader();
+            thisApp->ReloadShaders();
             break;
         case GLFW_KEY_B:
             thisApp->ToggleBloom();

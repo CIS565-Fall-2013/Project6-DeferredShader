@@ -72,13 +72,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     getline(liness, header, '='); 
     getline(liness, data, '=');
 
-    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::shape_t> scene;
     if(strcmp(header.c_str(), "mesh") == 0)
     {
         int found = data.find_last_of("/\\");
         string path = data.substr(0,found+1);
         cerr << "Loading: " << data << endl;
-        string err = tinyobj::LoadObj(shapes, data.c_str(), path.c_str());
+        string err = tinyobj::LoadObj(scene, data.c_str(), path.c_str());
         if(!err.empty())
         {
             cerr << err << endl;
@@ -94,7 +94,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     GLApp* app = GLApp::Create(1280, 720, "CIS 565 OpenGL Frame");
-    if (!app || !app->init(shapes))
+    if (!app || !app->Initialize(scene))
         return EXIT_FAILURE;
 
     return app->Run();
