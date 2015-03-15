@@ -1,9 +1,10 @@
 #include "Utility.h"
 
 #include <cmath>
-#include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
+#include <Windows.h>
 
 using namespace std;
 
@@ -12,26 +13,34 @@ namespace Utility {
 	char* loadFile(const char *fname, GLint &fSize)
 	{
 		ifstream::pos_type size;
-		char * memblock;
-		std::string text;
+		char* memblock;
 
-		// file read based on example in cplusplus.com tutorial
-		ifstream file (fname, ios::in|ios::binary|ios::ate);
+        std::ostringstream debugOutput;
+
+        ifstream file (fname, ios::in|ios::binary|ios::ate);
 		if (file.is_open())
 		{
 			size = file.tellg();
 			fSize = (GLuint) size;
 			memblock = new char [size];
-			file.seekg (0, ios::beg);
+            if (!memblock)
+            {
+                LogOutput("Not enough memory to load file!\n");
+                exit(EXIT_FAILURE);
+            }
+            
+            file.seekg (0, ios::beg);
 			file.read (memblock, size);
 			file.close();
-			cout << "file " << fname << " loaded" << endl;
-			text.assign(memblock);
+
+			debugOutput << "File " << fname << " loaded." << endl;
+            LogOutput(debugOutput.str().c_str());
 		}
 		else
 		{
-			cout << "Unable to open file " << fname << endl;
-			exit(1);
+            debugOutput << "Unable to open file " << fname << endl;
+            LogOutput(debugOutput.str().c_str());
+			exit(EXIT_FAILURE);
 		}
 		return memblock;
 	}
@@ -48,15 +57,16 @@ namespace Utility {
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLen);
 
 		// should additionally check for OpenGL errors here
-
+        std::ostringstream debugOutput;
 		if (infoLogLen > 0)
 		{
 			infoLog = new GLchar[infoLogLen];
 			// error check for fail to allocate memory omitted
 			glGetShaderInfoLog(shader,infoLogLen, &charsWritten, infoLog);
-			cout << "InfoLog:" << endl << infoLog << endl;
-			delete [] infoLog;
-		}
+            debugOutput << "InfoLog:" << endl << infoLog << endl;
+            delete[] infoLog;
+            LogOutput(debugOutput.str().c_str());
+        }
 
 		// should additionally check for OpenGL errors here
 	}
@@ -70,18 +80,20 @@ namespace Utility {
 		glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &infoLogLen);
 
 		// should additionally check for OpenGL errors here
-
+        std::ostringstream debugOutput;
 		if (infoLogLen > 0)
 		{
 			infoLog = new GLchar[infoLogLen];
 			// error check for fail to allocate memory omitted
 			glGetProgramInfoLog(prog,infoLogLen, &charsWritten, infoLog);
-			cout << "InfoLog:" << endl << infoLog << endl;
-			delete [] infoLog;
+            debugOutput << "InfoLog:" << endl << infoLog << endl;
+			delete[] infoLog;
+            LogOutput(debugOutput.str().c_str());
 		}
 	}
 
-	shaders_t loadShaders(const char * vert_path, const char * frag_path) {
+	shaders_t loadShaders(const char * vert_path, const char * frag_path) 
+    {
 		GLuint f, v;
 
 		char *vs,*fs;
@@ -107,7 +119,7 @@ namespace Utility {
 		glGetShaderiv(v, GL_COMPILE_STATUS, &compiled);
 		if (!compiled)
 		{
-			cout << "Vertex shader not compiled." << endl;
+            LogOutput("Vertex shader not compiled.\n");
 			printShaderInfoLog(v);
 		} 
 
@@ -115,8 +127,8 @@ namespace Utility {
 		glGetShaderiv(f, GL_COMPILE_STATUS, &compiled);
 		if (!compiled)
 		{
-			cout << "Fragment shader not compiled." << endl;
-			printShaderInfoLog(f);
+            LogOutput("Fragment shader not compiled.\n"); 
+            printShaderInfoLog(f);
 		} 
 		shaders_t out; out.vertex = v; out.fragment = f;
 
@@ -126,7 +138,8 @@ namespace Utility {
 		return out;
 	}
 
-	void attachAndLinkProgram( GLuint program, shaders_t shaders) {
+	void attachAndLinkProgram( GLuint program, shaders_t shaders) 
+    {
 		glAttachShader(program, shaders.vertex);
 		glAttachShader(program, shaders.fragment);
 
@@ -135,8 +148,36 @@ namespace Utility {
 		glGetProgramiv(program,GL_LINK_STATUS, &linked);
 		if (!linked) 
 		{
-			cout << "Program did not link." << endl;
+			LogOutput("Program did not link.\n");
 			printLinkInfoLog(program);
 		}
 	}
+
+    void LogHelper(const char* message, const char* filename = nullptr)
+    {
+        if (filename)
+        {
+            std::ofstream fileOutStream;
+            fileOutStream.open(filename, ios::app);
+            if (fileOutStream.is_open())
+            {
+                fileOutStream << message;
+                fileOutStream.close();
+            }
+        }
+        else
+        {
+            OutputDebugStringA(message);
+        }
+    }
+
+    void LogFile(const char* message)
+    {
+        LogHelper(message, ".\\logfile.txt");
+    }
+
+    void LogOutput(const char* message)
+    {
+        LogHelper(message);
+    }
 }

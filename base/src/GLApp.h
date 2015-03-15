@@ -2,6 +2,7 @@
 
 #include "GLRenderer.h"
 #include "tiny_obj_loader.h"
+#include <memory>
 
 enum Display
 {
@@ -11,7 +12,7 @@ enum Display
     DISPLAY_COLOR = 3,
     DISPLAY_TOTAL = 4,
     DISPLAY_LIGHTS = 5,
-    DISPLAY_GLOWMASK = 6
+    DISPLAY_GLOWMASK = 6,
 };
 
 class Camera;
@@ -38,9 +39,6 @@ class GLApp
     int32_t mouse_dof_x;
     int32_t mouse_dof_y;
 
-    float m_farPlane;
-    float m_nearPlane;
-
     glm::mat4 m_world;
     Camera* m_cam;
 
@@ -49,7 +47,7 @@ class GLApp
     GLFWwindow* m_glfwWindow;
     static GLApp* m_singleton;
 
-    std::vector<DrawableGeometry> m_drawableModels;
+    std::vector<std::unique_ptr<DrawableGeometry>> m_drawableModels;
 
     std::string m_windowTitle;
 
