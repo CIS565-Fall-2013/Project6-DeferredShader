@@ -647,7 +647,7 @@ void GLRenderer::Render()
     EndActiveFramebuffer();
 
     // Lighting Pass
-    SetFramebufferActive(RenderEnums::POSTPROCESS_FRAMEBUFFER);
+    SetFramebufferActive(RenderEnums::LIGHTING_FRAMEBUFFER);
     ClearFramebuffer(RenderEnums::CLEAR_ALL);
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);

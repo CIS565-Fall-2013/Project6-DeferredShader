@@ -59,7 +59,7 @@ namespace RenderEnums
     enum SceneBuffers
     {
         GBUFFER_FRAMEBUFFER,
-        POSTPROCESS_FRAMEBUFFER,
+        LIGHTING_FRAMEBUFFER,
         SHADOW_FRAMEBUFFER
     };
 
