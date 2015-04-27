@@ -3,6 +3,7 @@
 #include "gl/glew.h"
 #include "SOIL/SOIL.h"
 #include "Camera.h"
+#include "ShaderConstantManager.h"
 #include <cmath>
 
 namespace Colours
@@ -35,10 +36,15 @@ GLRenderer::GLRenderer(uint32_t width, uint32_t height)
 {
     m_invWidth = 1.0f / m_width;
     m_invHeight = 1.0f / m_height;
+
+    m_shaderConstantManager = new ShaderConstantManager();
+    assert(m_shaderConstantManager != nullptr);
 }
 
 GLRenderer::~GLRenderer()
 {
+    delete m_shaderConstantManager;
+    m_shaderConstantManager = nullptr;
 }
 
 DrawableGeometry::~DrawableGeometry()
@@ -107,6 +113,12 @@ void GLRenderer::InitShaders()
     glBindAttribLocation(m_postProg, quad_attributes::POSITION, "Position");
     glBindAttribLocation(m_postProg, quad_attributes::TEXCOORD, "Texcoord");
     Utility::attachAndLinkProgram(m_postProg, shaders);
+
+    m_shaderConstantManager->SetupConstantAssociationsForProgram(m_passProg);
+    m_shaderConstantManager->SetupConstantAssociationsForProgram(m_diagnosticProg);
+    m_shaderConstantManager->SetupConstantAssociationsForProgram(m_ambientProg);
+    m_shaderConstantManager->SetupConstantAssociationsForProgram(m_pointProg);
+    m_shaderConstantManager->SetupConstantAssociationsForProgram(m_postProg);
 }
 
 void GLRenderer::InitNoise()

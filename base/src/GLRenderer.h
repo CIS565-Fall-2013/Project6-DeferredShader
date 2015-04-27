@@ -81,6 +81,7 @@ namespace RenderEnums
 }
 
 class Camera;
+class ShaderConstantManager;
 class GLRenderer
 {
     uint32_t m_height;
@@ -111,6 +112,8 @@ class GLRenderer
 
     DrawableGeometry m_QuadGeometry;
     DrawableGeometry m_SphereGeometry;
+
+    ShaderConstantManager* m_shaderConstantManager;
 
     const Camera* m_pRenderCam;
 
