@@ -109,6 +109,7 @@ class GLRenderer
     uint32_t m_ambientProg;
     uint32_t m_diagnosticProg;
     uint32_t m_postProg;
+    uint32_t m_currentProgram;
 
     DrawableGeometry m_QuadGeometry;
     DrawableGeometry m_SphereGeometry;
@@ -148,6 +149,7 @@ class GLRenderer
     void ApplyShaderConstantsForFullScreenPass(uint32_t glProgram);
 
     void drawLight(glm::vec3 pos, float strength); //TODORC
+    void SetShaderProgram(uint32_t currentlyUsedProgram);
 
 public:
     GLRenderer(uint32_t width, uint32_t height);
