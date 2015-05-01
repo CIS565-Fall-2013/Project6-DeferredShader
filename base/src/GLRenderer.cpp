@@ -84,12 +84,12 @@ void GLRenderer::ApplyShaderConstantsForFullScreenPass(uint32_t glProgram)
     SetShaderProgram(glProgram);
 
     glm::mat4 persp = m_pRenderCam->GetPerspective();
-    glUniform1i(glGetUniformLocation(glProgram, "u_ScreenHeight"), m_height);
-    glUniform1i(glGetUniformLocation(glProgram, "u_ScreenWidth"), m_width);
-    glUniform1f(glGetUniformLocation(glProgram, "u_Far"), m_farPlane);
-    glUniform1f(glGetUniformLocation(glProgram, "u_Near"), m_nearPlane);
-    glUniform1i(glGetUniformLocation(glProgram, "u_DisplayType"), 1);
-    glUniformMatrix4fv(glGetUniformLocation(glProgram, "u_Persp"), 1, GL_FALSE, &persp[0][0]);
+    m_shaderConstantManager->SetShaderConstant("u_ScreenHeight", m_height);
+    m_shaderConstantManager->SetShaderConstant("u_ScreenWidth", m_width);
+    m_shaderConstantManager->SetShaderConstant("u_Far", m_farPlane);
+    m_shaderConstantManager->SetShaderConstant("u_Near", m_nearPlane);
+    m_shaderConstantManager->SetShaderConstant("u_DisplayType", 1);
+    m_shaderConstantManager->SetShaderConstant("u_Persp", persp);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_depthTexture);
@@ -166,6 +166,8 @@ void GLRenderer::DrawAlphaMaskedList()
 
 void GLRenderer::DrawGeometry(const DrawableGeometry* geom)
 {
+    m_shaderConstantManager->ApplyShaderConstantsForProgram(m_currentProgram);
+
     glBindVertexArray(geom->vertex_array);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buffer);
     glDrawElements(GL_TRIANGLES, geom->num_indices, GL_UNSIGNED_SHORT, 0);
@@ -180,8 +182,8 @@ void GLRenderer::drawLight(glm::vec3 pos, float strength)
         return;
     }
     light.w = radius;
-    glUniform4fv(glGetUniformLocation(m_pointProg, "u_Light"), 1, &(light[0]));
-    glUniform1f(glGetUniformLocation(m_pointProg, "u_LightIl"), strength);
+    m_shaderConstantManager->SetShaderConstant("u_Light", light);
+    m_shaderConstantManager->SetShaderConstant("u_LightIl", strength);
 
     //glm::vec4 left = vp * glm::vec4(pos + radius*m_pRenderCam->start_left, 1.0);
     //glm::vec4 up = vp * glm::vec4(pos + radius*m_pRenderCam->up, 1.0);
@@ -210,22 +212,22 @@ void GLRenderer::drawLight(glm::vec3 pos, float strength)
 void GLRenderer::DrawLightList()
 {
     ApplyShaderConstantsForFullScreenPass(m_pointProg);
-    glUniform1i(glGetUniformLocation(m_pointProg, "u_toonOn"), 0);
-    glUniform3fv(glGetUniformLocation(m_pointProg, "u_LightCol"), 1, &(Colours::yellow[0]));
+    m_shaderConstantManager->SetShaderConstant("u_toonOn", 0);
+    m_shaderConstantManager->SetShaderConstant("u_LightCol", Colours::yellow);
     glDepthMask(GL_FALSE);
     drawLight(glm::vec3(5.4, -0.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -0.5, 3.0), 1.0);
-    glUniform3fv(glGetUniformLocation(m_pointProg, "u_LightCol"), 1, &(Colours::orange[0]));
+    m_shaderConstantManager->SetShaderConstant("u_LightCol", Colours::orange);
     drawLight(glm::vec3(5.4, -2.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -2.5, 3.0), 1.0);
-    glUniform3fv(glGetUniformLocation(m_pointProg, "u_LightCol"), 1, &(Colours::yellow[0]));
+    m_shaderConstantManager->SetShaderConstant("u_LightCol", Colours::yellow);
     drawLight(glm::vec3(5.4, -4.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -4.5, 3.0), 1.0);
 
-    glUniform3fv(glGetUniformLocation(m_pointProg, "u_LightCol"), 1, &(Colours::red[0]));
+    m_shaderConstantManager->SetShaderConstant("u_LightCol", Colours::red);
     drawLight(glm::vec3(2.5, -1.2, 0.5), 2.5);
 
-    glUniform3fv(glGetUniformLocation(m_pointProg, "u_LightCol"), 1, &(Colours::blue[0]));
+    m_shaderConstantManager->SetShaderConstant("u_LightCol", Colours::blue);
     drawLight(glm::vec3(2.5, -5.0, 4.2), 2.5);
     glDepthMask(GL_TRUE);
 }
@@ -236,21 +238,17 @@ void GLRenderer::DrawOpaqueList()
     glm::mat4 persp = m_pRenderCam->GetPerspective();
 
     SetShaderProgram(m_passProg);
-    glUniform1f(glGetUniformLocation(m_passProg, "u_Far"), m_farPlane);
-    glUniform1f(glGetUniformLocation(m_passProg, "glowmask"), 0);
-    glUniformMatrix4fv(glGetUniformLocation(m_passProg, "u_View"), 1, GL_FALSE, &view[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(m_passProg, "u_Persp"), 1, GL_FALSE, &persp[0][0]);
-
-    uint32_t modelUnifLoc = glGetUniformLocation(m_passProg, "u_Model");
-    uint32_t inverseTransposeUnifLoc = glGetUniformLocation(m_passProg, "u_InvTrans");
-    uint32_t colourUnifLoc = glGetUniformLocation(m_passProg, "u_Color");
+    m_shaderConstantManager->SetShaderConstant("u_Far", m_farPlane);
+    m_shaderConstantManager->SetShaderConstant("glowmask", 0.0f);
+    m_shaderConstantManager->SetShaderConstant("u_View", view);
+    m_shaderConstantManager->SetShaderConstant("u_Persp", persp);
 
     for (uint32_t i = 0; i < m_opaqueList.size(); ++i)
     {
         glm::mat4 inverse_transposed = glm::transpose(glm::inverse(view*m_opaqueList[i]->modelMat));
-        glUniformMatrix4fv(modelUnifLoc, 1, GL_FALSE, &m_opaqueList[i]->modelMat[0][0]);
-        glUniformMatrix4fv(inverseTransposeUnifLoc, 1, GL_FALSE, &inverse_transposed[0][0]);
-        glUniform3fv(colourUnifLoc, 1, &(m_opaqueList[i]->color[0]));
+        m_shaderConstantManager->SetShaderConstant("u_Model", m_opaqueList[i]->modelMat);
+        m_shaderConstantManager->SetShaderConstant("u_InvTrans", inverse_transposed);
+        m_shaderConstantManager->SetShaderConstant("u_Color", m_opaqueList[i]->color);
 
         DrawGeometry(m_opaqueList[i]);
     }
@@ -615,8 +613,8 @@ void GLRenderer::RenderAmbientLighting()
     float strength = 0.09f;
 
     ApplyShaderConstantsForFullScreenPass(m_ambientProg);
-    glUniform4fv(glGetUniformLocation(m_ambientProg, "u_Light"), 1, &(dir_light[0]));
-    glUniform1f(glGetUniformLocation(m_ambientProg, "u_LightIl"), strength);
+    m_shaderConstantManager->SetShaderConstant("u_Light", dir_light);
+    m_shaderConstantManager->SetShaderConstant("u_LightIl", strength);
 
     glDepthMask(GL_FALSE);
     RenderQuad();
@@ -658,19 +656,19 @@ void GLRenderer::RenderPostProcessEffects()
     glBindTexture(GL_TEXTURE_2D, m_depthTexture);
     glUniform1i(glGetUniformLocation(m_postProg, "u_depthTex"), 6);
 
-    glUniform1i(glGetUniformLocation(m_postProg, "u_ScreenHeight"), m_height);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_ScreenWidth"), m_width);
-    glUniform1f(glGetUniformLocation(m_postProg, "u_InvScrHeight"), m_invHeight);
-    glUniform1f(glGetUniformLocation(m_postProg, "u_InvScrWidth"), m_invWidth);
+    m_shaderConstantManager->SetShaderConstant("u_ScreenHeight", m_height);
+    m_shaderConstantManager->SetShaderConstant("u_ScreenWidth", m_width);
+    m_shaderConstantManager->SetShaderConstant("u_InvScrHeight", m_invHeight);
+    m_shaderConstantManager->SetShaderConstant("u_InvScrWidth", m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexX"), mouse_dof_x*m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
-    glUniform1f(glGetUniformLocation(m_postProg, "u_lenQuant"), 0.0025f);
-    glUniform1f(glGetUniformLocation(m_postProg, "u_Far"), m_farPlane);
-    glUniform1f(glGetUniformLocation(m_postProg, "u_Near"), m_nearPlane);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_BloomOn"), 0/*m_bloomEnabled*/);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_toonOn"), 0/*m_toonEnabled*/);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_DOFOn"), 0/*m_DOFEnabled*/);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_DOFDebug"), 0/*m_DOFDebug*/);
+    m_shaderConstantManager->SetShaderConstant("u_lenQuant", 0.0025f);
+    m_shaderConstantManager->SetShaderConstant("u_Far", m_farPlane);
+    m_shaderConstantManager->SetShaderConstant("u_Near", m_nearPlane);
+    m_shaderConstantManager->SetShaderConstant("u_BloomOn", 0/*m_bloomEnabled*/);
+    m_shaderConstantManager->SetShaderConstant("u_toonOn", 0/*m_toonEnabled*/);
+    m_shaderConstantManager->SetShaderConstant("u_DOFOn", 0/*m_DOFEnabled*/);
+    m_shaderConstantManager->SetShaderConstant("u_DOFDebug", 0/*m_DOFDebug*/);
     glDepthMask(GL_FALSE);
     RenderQuad();
     glDepthMask(GL_TRUE);
