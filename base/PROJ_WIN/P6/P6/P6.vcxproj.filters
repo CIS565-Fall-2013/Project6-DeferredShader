@@ -53,13 +53,13 @@
     <ClInclude Include="..\..\..\src\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\EventHandlers.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\GLRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\ShaderConstantManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\EventHandlers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
