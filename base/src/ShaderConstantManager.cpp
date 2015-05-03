@@ -107,11 +107,9 @@ void ShaderConstantManager::SetupConstantDataStore()
         case FLOAT:
             constant->data = new float;
             break;
+        case BOOL:
         case INT:
             constant->data = new int32_t;
-            break;
-        case BOOL:
-            constant->data = new bool;
             break;
         case VEC3:
             constant->data = new glm::vec3;
@@ -183,25 +181,6 @@ void ShaderConstantManager::SetupConstantAssociationsForProgram(uint32_t program
     }
 }
 
-template<typename T>
-void ShaderConstantManager::SetShaderConstant(const std::string& constantName, const T& value)
-{
-    SetShaderConstant(constantName, reinterpret_cast<const void*>(&value));
-}
-
-template<> 
-void ShaderConstantManager::SetShaderConstant(const std::string& constantName, const uint32_t& value)
-{
-    SetShaderConstant(constantName, static_cast<const int32_t>(value));
-}
-
-template void ShaderConstantManager::SetShaderConstant<glm::mat4>(const std::string& constantName, const glm::mat4& value);
-template void ShaderConstantManager::SetShaderConstant<glm::vec4>(const std::string& constantName, const glm::vec4& value);
-template void ShaderConstantManager::SetShaderConstant<glm::vec3>(const std::string& constantName, const glm::vec3& value);
-template void ShaderConstantManager::SetShaderConstant<float>(const std::string& constantName, const float& value);
-template void ShaderConstantManager::SetShaderConstant<int32_t>(const std::string& constantName, const int32_t& value);
-template void ShaderConstantManager::SetShaderConstant<bool>(const std::string& constantName, const bool& value);
-
 void ShaderConstantManager::SetShaderConstant(const std::string& constantName, const void* value_in)
 {
     try
@@ -253,20 +232,10 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
                 constant->dirty = true;
             }
         }
-        else if (constant->type == INT)
+        else if ((constant->type == INT) || (constant->type == BOOL))
         {
-            int& constantData = *(reinterpret_cast<int*>(constant->data));
-            const int& value = *(reinterpret_cast<const int*>(value_in));
-            if (constantData != value)
-            {
-                constantData = value;
-                constant->dirty = true;
-            }
-        }
-        else if (constant->type == BOOL)
-        {
-            bool& constantData = *(reinterpret_cast<bool*>(constant->data));
-            const bool& value = *(reinterpret_cast<const bool*>(value_in));
+            int32_t& constantData = *(reinterpret_cast<int32_t*>(constant->data));
+            const int32_t& value = *(reinterpret_cast<const int32_t*>(value_in));
             if (constantData != value)
             {
                 constantData = value;
