@@ -4,6 +4,11 @@
 #include <glm/glm.hpp>
 #include <cstdint>
 
+static bool AreFloatsEqual(const float a, const float b)
+{
+    return ((a >= (b - 1e-6)) && (a <= (b + 1e-6)));
+}
+
 ShaderConstantManager::ShaderConstantManager()
     : m_lastUsedProgram(-1)
 {
@@ -183,11 +188,18 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
 {
     SetShaderConstant(constantName, reinterpret_cast<const void*>(&value));
 }
+
+template<> 
+void ShaderConstantManager::SetShaderConstant(const std::string& constantName, const uint32_t& value)
+{
+    SetShaderConstant(constantName, static_cast<const int32_t>(value));
+}
+
 template void ShaderConstantManager::SetShaderConstant<glm::mat4>(const std::string& constantName, const glm::mat4& value);
 template void ShaderConstantManager::SetShaderConstant<glm::vec4>(const std::string& constantName, const glm::vec4& value);
 template void ShaderConstantManager::SetShaderConstant<glm::vec3>(const std::string& constantName, const glm::vec3& value);
 template void ShaderConstantManager::SetShaderConstant<float>(const std::string& constantName, const float& value);
-template void ShaderConstantManager::SetShaderConstant<int>(const std::string& constantName, const int& value);
+template void ShaderConstantManager::SetShaderConstant<int32_t>(const std::string& constantName, const int32_t& value);
 template void ShaderConstantManager::SetShaderConstant<bool>(const std::string& constantName, const bool& value);
 
 void ShaderConstantManager::SetShaderConstant(const std::string& constantName, const void* value_in)
@@ -235,7 +247,7 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
         {
             float& constantData = *(reinterpret_cast<float*>(constant->data));
             const float& value = *(reinterpret_cast<const float*>(value_in));
-            if (constantData != value)
+            if (!AreFloatsEqual(constantData, value))
             {
                 constantData = value;
                 constant->dirty = true;
