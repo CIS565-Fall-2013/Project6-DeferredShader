@@ -50,9 +50,9 @@ GLRenderer::~GLRenderer()
 
 DrawableGeometry::~DrawableGeometry()
 {
+    glDeleteVertexArrays(1, &vertex_array);
     glDeleteBuffers(1, &vertex_buffer);
     glDeleteBuffers(1, &index_buffer);
-    glDeleteVertexArrays(1, &vertex_array);
     
     num_indices = 0;
     color = glm::vec3(0);
@@ -585,7 +585,6 @@ void GLRenderer::Render()
     ClearFramebuffer(RenderEnums::CLEAR_ALL);
     DrawOpaqueList();
     DrawAlphaMaskedList();
-    EndActiveFramebuffer();
 
     // Lighting Pass
     SetFramebufferActive(RenderEnums::LIGHTING_FRAMEBUFFER);
