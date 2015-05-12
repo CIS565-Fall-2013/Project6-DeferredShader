@@ -2,7 +2,8 @@
 
 #include <glm/glm.hpp>
 #include <vector>
-#include <cstdint>
+
+#include "Common.h"
 
 struct Vertex
 {
@@ -54,34 +55,8 @@ namespace quad_attributes
     };
 }
 
-namespace RenderEnums
-{
-    enum SceneBuffers
-    {
-        GBUFFER_FRAMEBUFFER,
-        LIGHTING_FRAMEBUFFER,
-        SHADOW_FRAMEBUFFER
-    };
-
-    enum DrawListType
-    {
-        OPAQUE_LIST,
-        ALPHA_MASKED_LIST,
-        TRANSPARENT_LIST,
-        LIGHT_LIST
-    };
-
-    enum ClearType
-    {
-        CLEAR_COLOUR = 1 << 0,
-        CLEAR_DEPTH = 1 << 1, 
-        CLEAR_STENCIL = 1 << 2,
-        CLEAR_ALL = CLEAR_COLOUR | CLEAR_DEPTH | CLEAR_STENCIL
-    };
-}
-
 class Camera;
-class ShaderConstantManager;
+class GLProgram;
 class GLRenderer
 {
     uint32_t m_height;
@@ -104,17 +79,15 @@ class GLRenderer
     uint32_t m_glowmaskTexture;
 
     // Techniques
-    uint32_t m_passProg;
-    uint32_t m_pointProg;
-    uint32_t m_ambientProg;
-    uint32_t m_diagnosticProg;
-    uint32_t m_postProg;
-    uint32_t m_currentProgram;
+    GLProgram* m_passProg;
+    GLProgram* m_pointProg;
+    GLProgram* m_ambientProg;
+    GLProgram* m_diagnosticProg;
+    GLProgram* m_postProg;
+    GLProgram* m_currentProgram;
 
     DrawableGeometry m_QuadGeometry;
     DrawableGeometry m_SphereGeometry;
-
-    ShaderConstantManager* m_shaderConstantManager;
 
     const Camera* m_pRenderCam;
 
@@ -146,10 +119,10 @@ class GLRenderer
     void RenderAmbientLighting();
     void RenderPostProcessEffects();
 
-    void ApplyShaderConstantsForFullScreenPass(uint32_t glProgram);
+    void ApplyShaderConstantsForFullScreenPass();
 
     void drawLight(glm::vec3 pos, float strength); //TODORC
-    void SetShaderProgram(uint32_t currentlyUsedProgram);
+    void SetShaderProgram(GLProgram* currentlyUsedProgram);
 
 public:
     GLRenderer(uint32_t width, uint32_t height);

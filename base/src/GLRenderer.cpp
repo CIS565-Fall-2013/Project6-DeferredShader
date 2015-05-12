@@ -1,10 +1,10 @@
 #include "GLRenderer.h"
+#include "GLProgram.h"
 #include "Utility.h"
 #include "gl/glew.h"
 #include "SOIL/SOIL.h"
 #include "Camera.h"
 #include "ShaderConstantManager.h"
-#include <cmath>
 
 namespace Colours
 {
@@ -38,14 +38,12 @@ GLRenderer::GLRenderer(uint32_t width, uint32_t height)
     m_invWidth = 1.0f / m_width;
     m_invHeight = 1.0f / m_height;
 
-    m_shaderConstantManager = new ShaderConstantManager();
-    assert(m_shaderConstantManager != nullptr);
+    ShaderConstantManager::Create();
 }
 
 GLRenderer::~GLRenderer()
 {
-    delete m_shaderConstantManager;
-    m_shaderConstantManager = nullptr;
+    ShaderConstantManager::Destroy();
 }
 
 DrawableGeometry::~DrawableGeometry()
@@ -79,45 +77,24 @@ void GLRenderer::AddDrawableGeometryToList(const DrawableGeometry* geometry, Ren
     }
 }
 
-void GLRenderer::ApplyShaderConstantsForFullScreenPass(uint32_t glProgram)
+void GLRenderer::ApplyShaderConstantsForFullScreenPass()
 {
-    SetShaderProgram(glProgram);
-
     glm::mat4 persp = m_pRenderCam->GetPerspective();
-    m_shaderConstantManager->SetShaderConstant("u_ScreenHeight", m_height);
-    m_shaderConstantManager->SetShaderConstant("u_ScreenWidth", m_width);
-    m_shaderConstantManager->SetShaderConstant("u_Far", m_farPlane);
-    m_shaderConstantManager->SetShaderConstant("u_Near", m_nearPlane);
-    m_shaderConstantManager->SetShaderConstant("u_DisplayType", 1);
-    m_shaderConstantManager->SetShaderConstant("u_Persp", persp);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_depthTexture);
-    glUniform1i(glGetUniformLocation(glProgram, "u_Depthtex"), 0);
+    m_currentProgram->SetShaderConstant("u_ScreenHeight", m_height);
+    m_currentProgram->SetShaderConstant("u_ScreenWidth", m_width);
+    m_currentProgram->SetShaderConstant("u_Far", m_farPlane);
+    m_currentProgram->SetShaderConstant("u_Near", m_nearPlane);
+    m_currentProgram->SetShaderConstant("u_DisplayType", 1);
+    m_currentProgram->SetShaderConstant("u_Persp", persp);
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_normalTexture);
-    glUniform1i(glGetUniformLocation(glProgram, "u_Normaltex"), 1);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_positionTexture);
-    glUniform1i(glGetUniformLocation(glProgram, "u_Positiontex"), 2);
-
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, m_colorTexture);
-    glUniform1i(glGetUniformLocation(glProgram, "u_Colortex"), 3);
-
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, m_randomNormalTexture);
-    glUniform1i(glGetUniformLocation(glProgram, "u_RandomNormaltex"), 4);
-
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, m_randomScalarTexture);
-    glUniform1i(glGetUniformLocation(glProgram, "u_RandomScalartex"), 5);
-
-    glActiveTexture(GL_TEXTURE6);
-    glBindTexture(GL_TEXTURE_2D, m_glowmaskTexture);
-    glUniform1i(glGetUniformLocation(glProgram, "u_GlowMask"), 6);
+    m_currentProgram->SetTexture("u_Depthtex", m_depthTexture);
+    m_currentProgram->SetTexture("u_Normaltex", m_normalTexture);
+    m_currentProgram->SetTexture("u_Positiontex", m_positionTexture);
+    m_currentProgram->SetTexture("u_Colortex", m_colorTexture);
+    m_currentProgram->SetTexture("u_RandomNormaltex", m_randomNormalTexture);
+    m_currentProgram->SetTexture("u_RandomScalartex", m_randomScalarTexture);
+    m_currentProgram->SetTexture("u_GlowMask", m_glowmaskTexture);
 }
 
 void GLRenderer::ClearFramebuffer(RenderEnums::ClearType clearFlags)
@@ -166,7 +143,9 @@ void GLRenderer::DrawAlphaMaskedList()
 
 void GLRenderer::DrawGeometry(const DrawableGeometry* geom)
 {
-    m_shaderConstantManager->ApplyShaderConstantsForProgram(m_currentProgram);
+    assert(m_currentProgram != nullptr);
+    m_currentProgram->CommitTextureBindings();
+    m_currentProgram->CommitConstantBufferBindings();
 
     glBindVertexArray(geom->vertex_array);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buffer);
@@ -182,8 +161,8 @@ void GLRenderer::drawLight(glm::vec3 pos, float strength)
         return;
     }
     light.w = radius;
-    m_shaderConstantManager->SetShaderConstant("u_Light", light);
-    m_shaderConstantManager->SetShaderConstant("u_LightIl", strength);
+    m_currentProgram->SetShaderConstant("u_Light", light);
+    m_currentProgram->SetShaderConstant("u_LightIl", strength);
 
     //glm::vec4 left = vp * glm::vec4(pos + radius*m_pRenderCam->start_left, 1.0);
     //glm::vec4 up = vp * glm::vec4(pos + radius*m_pRenderCam->up, 1.0);
@@ -211,23 +190,24 @@ void GLRenderer::drawLight(glm::vec3 pos, float strength)
 
 void GLRenderer::DrawLightList()
 {
-    ApplyShaderConstantsForFullScreenPass(m_pointProg);
-    m_shaderConstantManager->SetShaderConstant("u_toonOn", 0);
-    m_shaderConstantManager->SetShaderConstant("u_LightCol", Colours::yellow);
+    SetShaderProgram(m_pointProg);
+    ApplyShaderConstantsForFullScreenPass();
+    m_pointProg->SetShaderConstant("u_toonOn", 0);
+    m_pointProg->SetShaderConstant("u_LightCol", Colours::yellow);
     glDepthMask(GL_FALSE);
     drawLight(glm::vec3(5.4, -0.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -0.5, 3.0), 1.0);
-    m_shaderConstantManager->SetShaderConstant("u_LightCol", Colours::orange);
+    m_pointProg->SetShaderConstant("u_LightCol", Colours::orange);
     drawLight(glm::vec3(5.4, -2.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -2.5, 3.0), 1.0);
-    m_shaderConstantManager->SetShaderConstant("u_LightCol", Colours::yellow);
+    m_pointProg->SetShaderConstant("u_LightCol", Colours::yellow);
     drawLight(glm::vec3(5.4, -4.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -4.5, 3.0), 1.0);
 
-    m_shaderConstantManager->SetShaderConstant("u_LightCol", Colours::red);
+    m_pointProg->SetShaderConstant("u_LightCol", Colours::red);
     drawLight(glm::vec3(2.5, -1.2, 0.5), 2.5);
 
-    m_shaderConstantManager->SetShaderConstant("u_LightCol", Colours::blue);
+    m_pointProg->SetShaderConstant("u_LightCol", Colours::blue);
     drawLight(glm::vec3(2.5, -5.0, 4.2), 2.5);
     glDepthMask(GL_TRUE);
 }
@@ -238,17 +218,17 @@ void GLRenderer::DrawOpaqueList()
     glm::mat4 persp = m_pRenderCam->GetPerspective();
 
     SetShaderProgram(m_passProg);
-    m_shaderConstantManager->SetShaderConstant("u_Far", m_farPlane);
-    m_shaderConstantManager->SetShaderConstant("glowmask", 0.0f);
-    m_shaderConstantManager->SetShaderConstant("u_View", view);
-    m_shaderConstantManager->SetShaderConstant("u_Persp", persp);
+    m_passProg->SetShaderConstant("u_Far", m_farPlane);
+    m_passProg->SetShaderConstant("glowmask", 0.0f);
+    m_passProg->SetShaderConstant("u_View", view);
+    m_passProg->SetShaderConstant("u_Persp", persp);
 
     for (uint32_t i = 0; i < m_opaqueList.size(); ++i)
     {
         glm::mat4 inverse_transposed = glm::transpose(glm::inverse(view*m_opaqueList[i]->modelMat));
-        m_shaderConstantManager->SetShaderConstant("u_Model", m_opaqueList[i]->modelMat);
-        m_shaderConstantManager->SetShaderConstant("u_InvTrans", inverse_transposed);
-        m_shaderConstantManager->SetShaderConstant("u_Color", m_opaqueList[i]->color);
+        m_passProg->SetShaderConstant("u_Model", m_opaqueList[i]->modelMat);
+        m_passProg->SetShaderConstant("u_InvTrans", inverse_transposed);
+        m_passProg->SetShaderConstant("u_Color", m_opaqueList[i]->color);
 
         DrawGeometry(m_opaqueList[i]);
     }
@@ -327,10 +307,18 @@ void GLRenderer::InitFramebuffers()
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_NONE);
-    GLint normal_loc = glGetFragDataLocation(m_passProg, "out_Normal");
-    GLint position_loc = glGetFragDataLocation(m_passProg, "out_Position");
-    GLint color_loc = glGetFragDataLocation(m_passProg, "out_Color");
-    GLint glowmask_loc = glGetFragDataLocation(m_passProg, "out_GlowMask");
+    GLint normal_loc;
+    if (!m_passProg->GetOutputBindLocation("out_Normal", reinterpret_cast<uint32_t&>(normal_loc)))
+        assert(true);
+    GLint position_loc;
+    if (!m_passProg->GetOutputBindLocation("out_Position", reinterpret_cast<uint32_t&>(position_loc)))
+        assert(true);
+    GLint color_loc;
+    if (!m_passProg->GetOutputBindLocation("out_Color", reinterpret_cast<uint32_t&>(color_loc)))
+        assert(true);
+    GLint glowmask_loc;
+    if (!m_passProg->GetOutputBindLocation("out_GlowMask", reinterpret_cast<uint32_t&>(glowmask_loc)))
+        assert(true);
 
     GLenum draws[4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
@@ -376,7 +364,8 @@ void GLRenderer::InitFramebuffers()
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_BACK);
-    color_loc = glGetFragDataLocation(m_ambientProg, "out_Color");
+    if (!m_ambientProg->GetOutputBindLocation("out_Color", reinterpret_cast<uint32_t&>(color_loc)))
+        assert(true);
     GLenum draw[1];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
     glDrawBuffers(1, draw);
@@ -472,44 +461,41 @@ void GLRenderer::InitShaders()
     const char * point_frag = "../res/shaders/point.frag";
     const char * post_frag = "../res/shaders/post.frag";
 
-    Utility::shaders_t shaders;
+    std::vector<std::pair<std::string, RenderEnums::RenderProgramStage>> shaderSourceAndStagePair;
+    std::map<std::string, uint32_t> meshAttributeBindIndices, quadAttributeBindIndices, outputBindIndices;
 
-    shaders = Utility::loadShaders(pass_vert, pass_frag);
-    m_passProg = glCreateProgram();
-    glBindAttribLocation(m_passProg, mesh_attributes::POSITION, "Position");
-    glBindAttribLocation(m_passProg, mesh_attributes::NORMAL, "Normal");
-    glBindAttribLocation(m_passProg, mesh_attributes::TEXCOORD, "Texcoord");
-    Utility::attachAndLinkProgram(m_passProg, shaders);
+    meshAttributeBindIndices["Position"] = mesh_attributes::POSITION;
+    meshAttributeBindIndices["Normal"] = mesh_attributes::NORMAL;
+    meshAttributeBindIndices["Texcoord"] = mesh_attributes::TEXCOORD;
 
-    shaders = Utility::loadShaders(shade_vert, diagnostic_frag);
-    m_diagnosticProg = glCreateProgram();
-    glBindAttribLocation(m_diagnosticProg, quad_attributes::POSITION, "Position");
-    glBindAttribLocation(m_diagnosticProg, quad_attributes::TEXCOORD, "Texcoord");
-    Utility::attachAndLinkProgram(m_diagnosticProg, shaders);
+    quadAttributeBindIndices["Position"] = mesh_attributes::POSITION;
+    quadAttributeBindIndices["Texcoord"] = mesh_attributes::TEXCOORD;
 
-    shaders = Utility::loadShaders(shade_vert, ambient_frag);
-    m_ambientProg = glCreateProgram();
-    glBindAttribLocation(m_ambientProg, quad_attributes::POSITION, "Position");
-    glBindAttribLocation(m_ambientProg, quad_attributes::TEXCOORD, "Texcoord");
-    Utility::attachAndLinkProgram(m_ambientProg, shaders);
+    outputBindIndices["out_Color"] = 0;
+    outputBindIndices["out_Normal"] = 1;
+    outputBindIndices["out_Position"] = 2;
+    outputBindIndices["out_GlowMask"] = 3;
 
-    shaders = Utility::loadShaders(shade_vert, point_frag);
-    m_pointProg = glCreateProgram();
-    glBindAttribLocation(m_pointProg, quad_attributes::POSITION, "Position");
-    glBindAttribLocation(m_pointProg, quad_attributes::TEXCOORD, "Texcoord");
-    Utility::attachAndLinkProgram(m_pointProg, shaders);
+    shaderSourceAndStagePair.clear();
+    shaderSourceAndStagePair.push_back(std::make_pair(pass_vert, RenderEnums::VERT));
+    shaderSourceAndStagePair.push_back(std::make_pair(pass_frag, RenderEnums::FRAG));
+    m_passProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, meshAttributeBindIndices, outputBindIndices);
 
-    shaders = Utility::loadShaders(post_vert, post_frag);
-    m_postProg = glCreateProgram();
-    glBindAttribLocation(m_postProg, quad_attributes::POSITION, "Position");
-    glBindAttribLocation(m_postProg, quad_attributes::TEXCOORD, "Texcoord");
-    Utility::attachAndLinkProgram(m_postProg, shaders);
+    shaderSourceAndStagePair.clear();
+    shaderSourceAndStagePair.push_back(std::make_pair(shade_vert, RenderEnums::VERT));
+    shaderSourceAndStagePair.push_back(std::make_pair(diagnostic_frag, RenderEnums::FRAG));
+    m_diagnosticProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, meshAttributeBindIndices, outputBindIndices);
 
-    m_shaderConstantManager->SetupConstantAssociationsForProgram(m_passProg);
-    m_shaderConstantManager->SetupConstantAssociationsForProgram(m_diagnosticProg);
-    m_shaderConstantManager->SetupConstantAssociationsForProgram(m_ambientProg);
-    m_shaderConstantManager->SetupConstantAssociationsForProgram(m_pointProg);
-    m_shaderConstantManager->SetupConstantAssociationsForProgram(m_postProg);
+    shaderSourceAndStagePair[1] = std::make_pair(ambient_frag, RenderEnums::FRAG);
+    m_ambientProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, meshAttributeBindIndices, outputBindIndices);
+
+    shaderSourceAndStagePair[1] = std::make_pair(point_frag, RenderEnums::FRAG);
+    m_pointProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, meshAttributeBindIndices, outputBindIndices);
+
+    shaderSourceAndStagePair.clear();
+    shaderSourceAndStagePair.push_back(std::make_pair(post_vert, RenderEnums::VERT));
+    shaderSourceAndStagePair.push_back(std::make_pair(post_frag, RenderEnums::FRAG));
+    m_postProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, meshAttributeBindIndices, outputBindIndices);
 }
 
 void GLRenderer::InitSphere()
@@ -518,7 +504,7 @@ void GLRenderer::InitSphere()
 
     const uint32_t divisor = 10;
     const float inverseDivisor = 1.0f / divisor;
-    const float pi = 3.1415926;
+    const float pi = 3.1415926f;
     float thetaAdvance = 2 * pi * inverseDivisor;
     float phiAdvance = pi * inverseDivisor;
 
@@ -611,9 +597,10 @@ void GLRenderer::RenderAmbientLighting()
     dir_light.w = 0.3f;
     float strength = 0.09f;
 
-    ApplyShaderConstantsForFullScreenPass(m_ambientProg);
-    m_shaderConstantManager->SetShaderConstant("u_Light", dir_light);
-    m_shaderConstantManager->SetShaderConstant("u_LightIl", strength);
+    SetShaderProgram(m_ambientProg);
+    ApplyShaderConstantsForFullScreenPass();
+    m_ambientProg->SetShaderConstant("u_Light", dir_light);
+    m_ambientProg->SetShaderConstant("u_LightIl", strength);
 
     glDepthMask(GL_FALSE);
     RenderQuad();
@@ -627,47 +614,28 @@ void GLRenderer::RenderPostProcessEffects()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_postTexture);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_Posttex"), 0);
+    m_postProg->SetTexture("u_Posttex", m_postTexture);
+    m_postProg->SetTexture("u_GlowMask", m_glowmaskTexture);
+    m_postProg->SetTexture("u_normalTex", m_normalTexture);
+    m_postProg->SetTexture("u_positionTex", m_positionTexture);
+    m_postProg->SetTexture("u_RandomNormaltex", m_randomNormalTexture);
+    m_postProg->SetTexture("u_RandomScalartex", m_randomScalarTexture);
+    m_postProg->SetTexture("u_depthTex", m_depthTexture);
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_glowmaskTexture);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_GlowMask"), 1);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_normalTexture);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_normalTex"), 2);
-
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, m_positionTexture);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_positionTex"), 3);
-
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, m_randomNormalTexture);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_RandomNormaltex"), 4);
-
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, m_randomScalarTexture);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_RandomScalartex"), 5);
-
-    glActiveTexture(GL_TEXTURE6);
-    glBindTexture(GL_TEXTURE_2D, m_depthTexture);
-    glUniform1i(glGetUniformLocation(m_postProg, "u_depthTex"), 6);
-
-    m_shaderConstantManager->SetShaderConstant("u_ScreenHeight", m_height);
-    m_shaderConstantManager->SetShaderConstant("u_ScreenWidth", m_width);
-    m_shaderConstantManager->SetShaderConstant("u_InvScrHeight", m_invHeight);
-    m_shaderConstantManager->SetShaderConstant("u_InvScrWidth", m_invWidth);
+    m_postProg->SetShaderConstant("u_ScreenHeight", m_height);
+    m_postProg->SetShaderConstant("u_ScreenWidth", m_width);
+    m_postProg->SetShaderConstant("u_InvScrHeight", m_invHeight);
+    m_postProg->SetShaderConstant("u_InvScrWidth", m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexX"), mouse_dof_x*m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
-    m_shaderConstantManager->SetShaderConstant("u_lenQuant", 0.0025f);
-    m_shaderConstantManager->SetShaderConstant("u_Far", m_farPlane);
-    m_shaderConstantManager->SetShaderConstant("u_Near", m_nearPlane);
-    m_shaderConstantManager->SetShaderConstant("u_BloomOn", 0/*m_bloomEnabled*/);
-    m_shaderConstantManager->SetShaderConstant("u_toonOn", 0/*m_toonEnabled*/);
-    m_shaderConstantManager->SetShaderConstant("u_DOFOn", 0/*m_DOFEnabled*/);
-    m_shaderConstantManager->SetShaderConstant("u_DOFDebug", 0/*m_DOFDebug*/);
+    m_postProg->SetShaderConstant("u_lenQuant", 0.0025f);
+    m_postProg->SetShaderConstant("u_Far", m_farPlane);
+    m_postProg->SetShaderConstant("u_Near", m_nearPlane);
+    m_postProg->SetShaderConstant("u_BloomOn", 0/*m_bloomEnabled*/);
+    m_postProg->SetShaderConstant("u_toonOn", 0/*m_toonEnabled*/);
+    m_postProg->SetShaderConstant("u_DOFOn", 0/*m_DOFEnabled*/);
+    m_postProg->SetShaderConstant("u_DOFDebug", 0/*m_DOFDebug*/);
+
     glDepthMask(GL_FALSE);
     RenderQuad();
     glDepthMask(GL_TRUE);
@@ -685,8 +653,8 @@ void GLRenderer::SetFramebufferActive(uint32_t fbID)
     glBindFramebuffer(GL_FRAMEBUFFER, m_FBO[fbID]);
 }
 
-void GLRenderer::SetShaderProgram(uint32_t currentlyUsedProgram)
+void GLRenderer::SetShaderProgram(GLProgram* currentlyUsedProgram)
 { 
     m_currentProgram = currentlyUsedProgram; 
-    glUseProgram(m_currentProgram);
+    m_currentProgram->SetActive();
 }
