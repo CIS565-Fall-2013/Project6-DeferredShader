@@ -48,6 +48,8 @@ void GLProgram::Create(RenderEnums::ProgramType programType, const std::vector<s
         glBindAttribLocation(m_id, itr.second, itr.first.c_str());
     for (auto itr : m_outputBindIndicesMap)
         glBindFragDataLocation(m_id, itr.second, itr.first.c_str());
+    GLenum gl_error = glGetError();
+    assert(gl_error == GL_NO_ERROR);
 
     Utility::attachAndLinkProgram(m_id, shaders);
 
@@ -72,14 +74,13 @@ void GLProgram::SetupTextureBindings()
     // This will be replaced with code to scan shaders on the fly and create a list of textures.
     std::string constants[] =
     {
-        "u_Depthtex", "u_Normaltex", "u_Positiontex", "u_depthtex", "u_normaltex", "u_positiontex", "u_Colortex", "u_RandomNormaltex", "u_RandomScalartex", "u_GlowMask", "u_Posttex"
+        "u_Depthtex", "u_Normaltex", "u_Positiontex", "u_depthTex", "u_normalTex", "u_positionTex", "u_Colortex", "u_RandomNormaltex", "u_RandomScalartex", "u_GlowMask", "u_Posttex"
     };
 
     uint32_t arrayLength = 11;
     for (std::string& i : constants)
     {
         int32_t constantBindLocation = glGetUniformLocation(m_id, i.c_str());
-        int32_t depthTexLo = glGetUniformLocation(m_id, "u_Depthtex");
         if (constantBindLocation > -1)
         {
             m_textureBindIndicesMap[i] = std::make_pair(constantBindLocation, 0);
@@ -147,6 +148,7 @@ void GLProgram::CommitTextureBindings() const
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, itr.second.second);
             glUniform1i(itr.second.first, i);
+            ++i;
         }
     }
 }

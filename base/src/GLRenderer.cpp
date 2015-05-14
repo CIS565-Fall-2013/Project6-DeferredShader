@@ -309,16 +309,16 @@ void GLRenderer::InitFramebuffers()
     glReadBuffer(GL_NONE);
     GLint normal_loc;
     if (!m_passProg->GetOutputBindLocation("out_Normal", reinterpret_cast<uint32_t&>(normal_loc)))
-        assert(true);
+        assert(false);
     GLint position_loc;
     if (!m_passProg->GetOutputBindLocation("out_Position", reinterpret_cast<uint32_t&>(position_loc)))
-        assert(true);
+        assert(false);
     GLint color_loc;
     if (!m_passProg->GetOutputBindLocation("out_Color", reinterpret_cast<uint32_t&>(color_loc)))
-        assert(true);
+        assert(false);
     GLint glowmask_loc;
     if (!m_passProg->GetOutputBindLocation("out_GlowMask", reinterpret_cast<uint32_t&>(glowmask_loc)))
-        assert(true);
+        assert(false);
 
     GLenum draws[4];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
@@ -365,7 +365,7 @@ void GLRenderer::InitFramebuffers()
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_BACK);
     if (!m_ambientProg->GetOutputBindLocation("out_Color", reinterpret_cast<uint32_t&>(color_loc)))
-        assert(true);
+        assert(false);
     GLenum draw[1];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
     glDrawBuffers(1, draw);
