@@ -2,12 +2,13 @@
 #include "Utility.h"
 #include "gl/glew.h"
 #include <glm/glm.hpp>
-#include <cstdint>
 
 static bool AreFloatsEqual(const float a, const float b)
 {
     return ((a >= (b - 1e-6)) && (a <= (b + 1e-6)));
 }
+
+ShaderConstantManager* ShaderConstantManager::singleton = nullptr;
 
 ShaderConstantManager::ShaderConstantManager()
     : m_lastUsedProgram(-1)
@@ -32,8 +33,24 @@ ShaderConstantManager::~ShaderConstantManager()
     }
 }
 
+void ShaderConstantManager::Create()
+{
+    assert(singleton == nullptr);
+    singleton = new ShaderConstantManager();
+    assert(singleton != nullptr);
+}
+
+void ShaderConstantManager::Destroy()
+{
+    assert(singleton != nullptr);
+    delete singleton;
+    singleton = nullptr;
+}
+
 void ShaderConstantManager::SetupConstantDataStore()
 {
+    // Constant data store = data store for every constant we use, ever.
+    // Independent of the active constants in a given program.
     // This will be replaced with code to scan shaders on the fly and create a list of uniforms/uniform buffers.
     std::string constants[] =
     {
@@ -177,7 +194,7 @@ void ShaderConstantManager::SetupConstantAssociationsForProgram(uint32_t program
     }
     else
     {
-        delete constantList;
+        delete constantList;    // DO NOT delete constantList if it has a size, since it will get assigned to the shaderConstantsMap. It'll get deleted/destroyed when ShaderConstantManager gets destroyed.
     }
 }
 
