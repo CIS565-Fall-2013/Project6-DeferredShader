@@ -468,8 +468,8 @@ void GLRenderer::InitShaders()
     meshAttributeBindIndices["Normal"] = mesh_attributes::NORMAL;
     meshAttributeBindIndices["Texcoord"] = mesh_attributes::TEXCOORD;
 
-    quadAttributeBindIndices["Position"] = mesh_attributes::POSITION;
-    quadAttributeBindIndices["Texcoord"] = mesh_attributes::TEXCOORD;
+    quadAttributeBindIndices["Position"] = quad_attributes::POSITION;
+    quadAttributeBindIndices["Texcoord"] = quad_attributes::TEXCOORD;
 
     outputBindIndices["out_Color"] = 0;
     outputBindIndices["out_Normal"] = 1;
@@ -484,18 +484,18 @@ void GLRenderer::InitShaders()
     shaderSourceAndStagePair.clear();
     shaderSourceAndStagePair.push_back(std::make_pair(shade_vert, RenderEnums::VERT));
     shaderSourceAndStagePair.push_back(std::make_pair(diagnostic_frag, RenderEnums::FRAG));
-    m_diagnosticProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, meshAttributeBindIndices, outputBindIndices);
+    m_diagnosticProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
 
     shaderSourceAndStagePair[1] = std::make_pair(ambient_frag, RenderEnums::FRAG);
-    m_ambientProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, meshAttributeBindIndices, outputBindIndices);
+    m_ambientProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
 
     shaderSourceAndStagePair[1] = std::make_pair(point_frag, RenderEnums::FRAG);
-    m_pointProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, meshAttributeBindIndices, outputBindIndices);
+    m_pointProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
 
     shaderSourceAndStagePair.clear();
     shaderSourceAndStagePair.push_back(std::make_pair(post_vert, RenderEnums::VERT));
     shaderSourceAndStagePair.push_back(std::make_pair(post_frag, RenderEnums::FRAG));
-    m_postProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, meshAttributeBindIndices, outputBindIndices);
+    m_postProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
 }
 
 void GLRenderer::InitSphere()
