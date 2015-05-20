@@ -97,7 +97,7 @@ void GLProgram::SetTexture(const std::string& textureName, uint32_t textureObjec
     }
     catch (std::out_of_range&)
     {
-        Utility::LogOutput("Trying to bind an invalid texture!\n");
+        // Trying to bind an invalid texture. Sliently ignore.
     }
 }
 
