@@ -6,15 +6,14 @@
 
 #include "Common.h"
 
-struct ShaderConstant;
+struct ShaderConstantSignature;
+class ConstantBuffer;
 class ShaderConstantManager
 {
-    std::map<std::string, ShaderConstant*> m_shaderConstantNameToDataMap;
-    std::map<uint32_t, std::vector<std::string>*> m_programShaderConstantsMap;
-    mutable int32_t m_lastUsedProgram;
+    std::map<std::string, ConstantBuffer*> m_shaderConstantNameToConstantBufferMap;
+    std::map<std::string, ConstantBuffer*> m_constantBufferNameToDataMap;
     static ShaderConstantManager* singleton;
-
-    void SetupConstantDataStore();
+    static uint32_t resolver;
 
 public:
     enum SupportedTypes
@@ -29,19 +28,34 @@ public:
     
     ShaderConstantManager();
     ~ShaderConstantManager();
-    void SetupConstantAssociationsForProgram(uint32_t programId);
-    void SetShaderConstant(const std::string& constantName, const void* value_in);
-    void ApplyShaderConstantsForProgram(uint32_t program) const;
-    uint32_t GetConstantBufferObject(const std::string& constantBufferName) const { return 0; }
+    void SetupConstantBuffer(std::string& constantBufferName, std::vector<const ShaderConstantSignature>& constantBufferSignature);
+    void SetShaderConstant(const std::string& constantName, const std::string& constantBufferName, const void* value_in);
+    void ApplyShaderConstantChanges(const std::string& constantBufferName) const;
+    uint32_t GetConstantBufferObject(const std::string& constantBufferName) const;
     
     static void Create();
     static void Destroy();
     static ShaderConstantManager* GetSingleton() { return singleton; }
 };
 
-struct ShaderConstant
+struct ShaderConstantSignature
 {
-    void* data;
-    bool dirty;
+    std::string name;
     ShaderConstantManager::SupportedTypes type;
+    uint32_t offset;
+};
+
+class ConstantBuffer
+{
+    std::map<std::string, ShaderConstantSignature> m_signature;
+    void* m_data;
+    bool m_dirty;
+    uint32_t m_size;
+    uint32_t m_id;
+
+public:
+    ConstantBuffer();
+    ~ConstantBuffer();
+
+    friend class ShaderConstantManager;
 };

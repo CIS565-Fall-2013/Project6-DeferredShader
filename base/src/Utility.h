@@ -3,6 +3,7 @@
 
 #include <GL/glew.h>
 #include <cstdlib>
+#include <string>
 
 namespace Utility 
 {
@@ -12,7 +13,7 @@ namespace Utility
 		GLuint fragment;
 	} shaders_t;
 
-    shaders_t loadShaders(const char * vert_path, const char * frag_path);
+    shaders_t createShaders(const std::string& vs_source, const std::string& fs_source);
 
     void attachAndLinkProgram( GLuint program, shaders_t shaders);
 

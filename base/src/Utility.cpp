@@ -5,11 +5,12 @@
 #include <sstream>
 #include <string>
 #include <Windows.h>
+#include <cassert>
 
 using namespace std;
 
-namespace Utility {
-
+namespace Utility 
+{
 	char* loadFile(const char *fname, GLint &fSize)
 	{
 		ifstream::pos_type size;
@@ -26,7 +27,7 @@ namespace Utility {
             if (!memblock)
             {
                 LogOutput("Not enough memory to load file!\n");
-                exit(EXIT_FAILURE);
+                assert(false);
             }
             
             file.seekg (0, ios::beg);
@@ -40,7 +41,7 @@ namespace Utility {
 		{
             debugOutput << "Unable to open file " << fname << endl;
             LogOutput(debugOutput.str().c_str());
-			exit(EXIT_FAILURE);
+			assert(false);
 		}
 		return memblock;
 	}
@@ -92,26 +93,21 @@ namespace Utility {
 		}
 	}
 
-	shaders_t loadShaders(const char * vert_path, const char * frag_path) 
+    shaders_t createShaders(const std::string& vs_source, const std::string& fs_source)
     {
 		GLuint f, v;
-
-		char *vs,*fs;
 
 		v = glCreateShader(GL_VERTEX_SHADER);
 		f = glCreateShader(GL_FRAGMENT_SHADER);	
 
 		// load shaders & get length of each
-		GLint vlen;
-		GLint flen;
-		vs = loadFile(vert_path,vlen);
-		fs = loadFile(frag_path,flen);
+		GLint vlen = vs_source.length();
+        GLint flen = fs_source.length();
+        const char* vs = vs_source.c_str();
+        const char* fs = fs_source.c_str();
 
-		const char * vv = vs;
-		const char * ff = fs;
-
-		glShaderSource(v, 1, &vv,&vlen);
-		glShaderSource(f, 1, &ff,&flen);
+		glShaderSource(v, 1, &vs, &vlen);
+		glShaderSource(f, 1, &fs, &flen);
 
 		GLint compiled;
 
@@ -121,6 +117,7 @@ namespace Utility {
 		{
             LogOutput("Vertex shader not compiled.\n");
 			printShaderInfoLog(v);
+            assert(false);
 		} 
 
 		glCompileShader(f);
@@ -129,6 +126,7 @@ namespace Utility {
 		{
             LogOutput("Fragment shader not compiled.\n"); 
             printShaderInfoLog(f);
+            assert(false);
 		} 
 		shaders_t out; out.vertex = v; out.fragment = f;
 
@@ -148,8 +146,9 @@ namespace Utility {
 		glGetProgramiv(program,GL_LINK_STATUS, &linked);
 		if (!linked) 
 		{
-			LogOutput("Program did not link.\n");
+            LogOutput("Program did not link.\n");
 			printLinkInfoLog(program);
+            assert(false);
 		}
 	}
 
