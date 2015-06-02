@@ -55,7 +55,43 @@ void ShaderConstantManager::Destroy()
     singleton = nullptr;
 }
 
-void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName, std::vector<const ShaderConstantSignature>& constantBufferSignature)
+ShaderConstantManager::SupportedTypes ShaderConstantManager::GetTypeFromString(const std::string& typeString)
+{
+    if (typeString.compare("float") == 0)
+        return FLOAT;
+    else if (typeString.compare("int") == 0)
+        return INT;
+    else if (typeString.compare("bool") == 0)
+        return BOOL;
+    else if (typeString.find("mat4") != std::string::npos)
+        return MAT4;
+    else if (typeString.compare("vec3") == 0)
+        return VEC3;
+    else if (typeString.compare("vec4") == 0)
+        return VEC4;
+    else
+        assert(false);
+}
+
+uint32_t ShaderConstantManager::GetSizeForType(ShaderConstantManager::SupportedTypes type)
+{
+    switch (type)
+    {
+    case MAT4:
+        return 64;
+    case VEC3:
+    case VEC4:
+        return 16;
+    case BOOL:
+    case INT:
+    case FLOAT:
+        return 4;
+    default:
+        assert(false);
+    }
+}
+
+void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName, std::vector<ShaderConstantSignature>& constantBufferSignature)
 {
     try
     {
@@ -68,7 +104,7 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
             try
             {
                 const ShaderConstantSignature& thisSignature = existingBuffer->m_signature.at(constantBufferSignature[i].name);
-                if ((constantBufferSignature[i].type == thisSignature.type) && (constantBufferSignature[i].offset == thisSignature.offset))
+                if ((constantBufferSignature[i].type == thisSignature.type) && (constantBufferSignature[i].size == thisSignature.size) && (constantBufferSignature[i].offset == thisSignature.offset))
                     continue;
                 else
                     break;
@@ -98,24 +134,7 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
             newConstantBuffer->m_signature[iterator.name] = iterator;
             bufferSize += iterator.offset;
         }
-        switch (constantBufferSignature.back().type)
-        {
-            case MAT4:
-                bufferSize += 64;
-                break;
-            case VEC3:
-            case VEC4:
-                bufferSize += 16;
-                break;
-            case BOOL:
-            case INT:
-            case FLOAT:
-                bufferSize += 4;
-                break;
-            default:
-                assert(false);
-                break;
-        }
+        bufferSize += constantBufferSignature.back().size;
 
         newConstantBuffer->m_data = new char[bufferSize];
         memset(newConstantBuffer->m_data, 0, bufferSize);
@@ -173,16 +192,6 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
                 break;
             }
             case BOOL:
-            {
-                bool& constantData = reinterpret_cast<bool&>(data);
-                const bool& value = reinterpret_cast<const bool&>(value_in);
-                if (constantData != value)
-                {
-                    constantData = value;
-                    constantBuffer->m_dirty = true;
-                }
-                break;
-            }
             case INT:
             {
                 int32_t& constantData = reinterpret_cast<int32_t&>(data);
@@ -216,23 +225,40 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
     }
 }
 
-void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& constantBufferName) const
+void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& constantBufferName /* = std::string() */) const
 {
-    try
+    if (constantBufferName.length() == 0)
     {
-        ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(constantBufferName);
-        if (constantBuffer->m_dirty)
+        for (auto& itr : m_constantBufferNameToDataMap)
         {
-            glBindBuffer(GL_UNIFORM_BUFFER, constantBuffer->m_id);
-            glBufferData(GL_UNIFORM_BUFFER, constantBuffer->m_size, constantBuffer->m_data, GL_STATIC_DRAW);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+            if (itr.second->m_dirty)
+            {
+                glBindBuffer(GL_UNIFORM_BUFFER, itr.second->m_id);
+                glBufferData(GL_UNIFORM_BUFFER, itr.second->m_size, itr.second->m_data, GL_STATIC_DRAW);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-            constantBuffer->m_dirty = false;
+                itr.second->m_dirty = false;
+            }
         }
     }
-    catch (std::out_of_range&)
+    else
     {
-        assert(false);  // No such constant buffer.
+        try
+        {
+            ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(constantBufferName);
+            if (constantBuffer->m_dirty)
+            {
+                glBindBuffer(GL_UNIFORM_BUFFER, constantBuffer->m_id);
+                glBufferData(GL_UNIFORM_BUFFER, constantBuffer->m_size, constantBuffer->m_data, GL_STATIC_DRAW);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+                constantBuffer->m_dirty = false;
+            }
+        }
+        catch (std::out_of_range&)
+        {
+            assert(false);  // No such constant buffer.
+        }
     }
 }
 

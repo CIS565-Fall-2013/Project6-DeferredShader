@@ -28,20 +28,23 @@ public:
     
     ShaderConstantManager();
     ~ShaderConstantManager();
-    void SetupConstantBuffer(std::string& constantBufferName, std::vector<const ShaderConstantSignature>& constantBufferSignature);
+    void SetupConstantBuffer(std::string& constantBufferName, std::vector<ShaderConstantSignature>& constantBufferSignature);
     void SetShaderConstant(const std::string& constantName, const std::string& constantBufferName, const void* value_in);
-    void ApplyShaderConstantChanges(const std::string& constantBufferName) const;
+    void ApplyShaderConstantChanges(const std::string& constantBufferName = std::string()) const;
     uint32_t GetConstantBufferObject(const std::string& constantBufferName) const;
     
     static void Create();
     static void Destroy();
     static ShaderConstantManager* GetSingleton() { return singleton; }
+    static SupportedTypes GetTypeFromString(const std::string& typeString);
+    static uint32_t GetSizeForType(ShaderConstantManager::SupportedTypes type);
 };
 
 struct ShaderConstantSignature
 {
     std::string name;
     ShaderConstantManager::SupportedTypes type;
+    uint32_t size;
     uint32_t offset;
 };
 
