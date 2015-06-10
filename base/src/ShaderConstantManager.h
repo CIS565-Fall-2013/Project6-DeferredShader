@@ -28,7 +28,7 @@ public:
     
     ShaderConstantManager();
     ~ShaderConstantManager();
-    void SetupConstantBuffer(std::string& constantBufferName, std::vector<ShaderConstantSignature>& constantBufferSignature);
+    void SetupConstantBuffer(std::string& constantBufferName, int32_t constantBufferSize, std::vector<ShaderConstantSignature>& constantBufferSignature);
     void SetShaderConstant(const std::string& constantName, const std::string& constantBufferName, const void* value_in);
     void ApplyShaderConstantChanges(const std::string& constantBufferName = std::string()) const;
     uint32_t GetConstantBufferObject(const std::string& constantBufferName) const;

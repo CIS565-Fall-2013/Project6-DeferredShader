@@ -54,13 +54,16 @@ void GLProgram::Create(RenderEnums::ProgramType programType, const std::vector<s
     delete[] shaderSourceRaw;
     shaderSourceRaw = nullptr;
 
-    std::string workingDirectory = vert_shader.substr(0, vert_shader.find_last_of('\\'));
-    if (!workingDirectory.length())
+    std::string workingDirectory;
+    if (vert_shader.find_last_of('\\') != std::string::npos)
+        workingDirectory = vert_shader.substr(0, vert_shader.find_last_of('\\'));
+    else
         workingDirectory = vert_shader.substr(0, vert_shader.find_last_of('/'));
     PreprocessShaderSource(vertShaderSource, workingDirectory);
 
-    workingDirectory = frag_shader.substr(0, frag_shader.find_last_of('\\'));
-    if (!workingDirectory.length())
+    if (frag_shader.find_last_of('\\') != std::string::npos)
+        workingDirectory = frag_shader.substr(0, frag_shader.find_last_of('\\'));
+    else
         workingDirectory = frag_shader.substr(0, frag_shader.find_last_of('/'));
     PreprocessShaderSource(fragShaderSource, workingDirectory);
 
@@ -151,6 +154,7 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
         if (tokenList[i + 1].find("sampler") != std::string::npos)
         {
             activeTextures.push_back(tokenList[i + 2]);
+            activeTextures.back().pop_back();  // Get rid of trailing ;
         }
         else
         {
@@ -167,56 +171,56 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
             uint32_t stdOffset = 0;
             while (tokenList[itr].compare("};") != 0)
             {
+                thisSignature.type = ShaderConstantManager::GetTypeFromString(tokenList[itr++]);
+                thisSignature.name = tokenList[itr++];
+                thisSignature.name.pop_back();  // Get rid of trailing ;
+
                 if (stdLayout)
                 {
-                    thisSignature.type = ShaderConstantManager::GetTypeFromString(tokenList[itr++]);
-                    thisSignature.name = tokenList[itr++];
-                    thisSignature.name.pop_back();  // Get rid of trailing ;
-
                     // Calculate offset and size using std140 layout rules.
                     thisSignature.offset = stdOffset;
-                    thisSignature.size = ShaderConstantManager::GetSizeForType(thisSignature.type);
-                    stdOffset += thisSignature.size;
+                    thisSignature.size = 1; // Currently array uniforms are not supported. uint32_t constantBufferSize;
+                    stdOffset += ShaderConstantManager::GetSizeForType(thisSignature.type);
                     constBufferSignature.push_back(thisSignature);
                 }
-                else
-                {
-                    // Push all the uniforms into an array, and query the offsets and sizes of active ones. 
+                else    // Push all the uniforms into an array.
                     activeUniforms.push_back(thisSignature.name);
-                }
             }
 
             if (!stdLayout)
             {
                 // Query sizes and offsets.
                 uint32_t numUniforms = activeUniforms.size();
-
                 if (numUniforms)
                 {
-                    const char* uniformsList = activeUniforms.data()->c_str();
-                    uint32_t* uniformIndicesList = new uint32_t[numUniforms];
-                    int32_t* uniformSizesList = new int32_t[numUniforms];
-                    int32_t* uniformOffsetsList = new int32_t[numUniforms];
-                    int32_t* uniformTypesList = new int32_t[numUniforms];
+                    const char** uniformsList = new const char* [numUniforms];
+                    for (uint32_t j = 0; j < numUniforms; ++j)
+                        uniformsList[j] = activeUniforms[j].c_str();
 
-                    glGetUniformIndices(m_id, numUniforms, &uniformsList, uniformIndicesList);
+                    GLuint* uniformIndicesList = new GLuint[numUniforms];
+                    GLint* uniformSizesList = new GLint[numUniforms];
+                    GLint* uniformOffsetsList = new GLint[numUniforms];
+                    GLint* uniformTypesList = new GLint[numUniforms];
+
+                    glGetUniformIndices(m_id, numUniforms, uniformsList, uniformIndicesList);
                     glGetActiveUniformsiv(m_id, numUniforms, uniformIndicesList, GL_UNIFORM_SIZE, uniformSizesList);
                     glGetActiveUniformsiv(m_id, numUniforms, uniformIndicesList, GL_UNIFORM_OFFSET, uniformOffsetsList);
                     glGetActiveUniformsiv(m_id, numUniforms, uniformIndicesList, GL_UNIFORM_TYPE, uniformTypesList);
 
-                    for (uint32_t i = 0; i < numUniforms; ++i)
+                    for (uint32_t j = 0; j < numUniforms; ++j)
                     {
-                        if (uniformIndicesList[i] != GL_INVALID_INDEX)
+                        if (uniformIndicesList[j] != GL_INVALID_INDEX)
                         {
-                            thisSignature.name = activeUniforms[i];
-                            thisSignature.size = uniformSizesList[i];
-                            thisSignature.offset = uniformOffsetsList[i];
-                            thisSignature.type = GLTypeToSupportedType(uniformTypesList[i]);
+                            thisSignature.name = activeUniforms[j];
+                            thisSignature.size = uniformSizesList[j];
+                            thisSignature.offset = uniformOffsetsList[j];
+                            thisSignature.type = GLTypeToSupportedType(uniformTypesList[j]);
 
                             constBufferSignature.push_back(thisSignature);
                         }
                     }
 
+                    delete[] uniformsList;
                     delete[] uniformIndicesList;
                     delete[] uniformSizesList;
                     delete[] uniformOffsetsList;
@@ -224,9 +228,12 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
                 }
             }
             
-            std::string constantBufferNameAsInSource(constBufferName);  // When setting up the constant buffer, if a buffer by the same name exists, an aliased version is created by the ShaderConstantManager.
-                // This constant buffer is referred to by the aliased name C++-side, but when querying the block index, we still need to use the name as it appears in the shader.
-            ShaderConstantManager::GetSingleton()->SetupConstantBuffer(constBufferName, constBufferSignature);
+            GLuint constBufferIndex = glGetUniformBlockIndex(m_id, constBufferName.c_str());
+            assert(constBufferIndex != GL_INVALID_INDEX);
+            GLint constBufferSize = 0;
+            glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &constBufferSize);
+            ShaderConstantManager::GetSingleton()->SetupConstantBuffer(constBufferName, constBufferSize, constBufferSignature);
+
             for (auto& iterator : activeUniforms)
             {
                 try
@@ -241,10 +248,14 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
                 }
             }
 
-            m_constantBufferBindIndicesMap[constBufferName] = glGetUniformBlockIndex(m_id, constantBufferNameAsInSource.c_str());
-
-            activeUniforms.clear();
+            GLint constBufferBindPoint = -1;
+            glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_BINDING, &constBufferBindPoint);
+            assert(constBufferBindPoint > -1);
+            m_constantBufferBindIndicesMap[constBufferName] = constBufferBindPoint;
         }
+
+        activeUniforms.clear();
+        constBufferSignature.clear();
     }
 
     SetupTextureBindings(activeTextures);
@@ -266,8 +277,8 @@ void GLProgram::SetupTextureBindings(const std::vector<std::string>& textureName
             {
                 m_textureBindIndicesMap[i] = std::make_pair(constantBindLocation, 0);
             }
-            else
-                assert(false); // SetupTextureBindings was passed a texture name that isn't active in the program? Update the shader so that this wouldn't happen anymore.
+//            else
+//                assert(false); // SetupTextureBindings was passed a texture name that isn't active in the program? Update the shader so that this wouldn't happen anymore.
         }
     }
 }
@@ -281,7 +292,7 @@ void GLProgram::SetTexture(const std::string& textureName, uint32_t textureObjec
     }
     catch (std::out_of_range&)
     {
-        assert(false); // Trying to bind an invalid texture.
+//        assert(false); // Trying to bind an invalid texture.
     }
 }
 

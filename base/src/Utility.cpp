@@ -23,7 +23,8 @@ namespace Utility
 		{
 			size = file.tellg();
 			fSize = (GLuint) size;
-			memblock = new char [size];
+            unsigned int bufferSize = size;
+			memblock = new char [bufferSize + 1];
             if (!memblock)
             {
                 LogOutput("Not enough memory to load file!\n");
@@ -33,6 +34,7 @@ namespace Utility
             file.seekg (0, ios::beg);
 			file.read (memblock, size);
 			file.close();
+            memblock[bufferSize] = '\0';
 
 			debugOutput << "File " << fname << " loaded." << endl;
             LogOutput(debugOutput.str().c_str());
@@ -129,9 +131,6 @@ namespace Utility
             assert(false);
 		} 
 		shaders_t out; out.vertex = v; out.fragment = f;
-
-		delete [] vs; // dont forget to free allocated memory
-		delete [] fs; // we allocated this in the loadFile function...
 
 		return out;
 	}

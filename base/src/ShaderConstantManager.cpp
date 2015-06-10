@@ -91,7 +91,7 @@ uint32_t ShaderConstantManager::GetSizeForType(ShaderConstantManager::SupportedT
     }
 }
 
-void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName, std::vector<ShaderConstantSignature>& constantBufferSignature)
+void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName, int32_t constantBufferSize, std::vector<ShaderConstantSignature>& constantBufferSignature)
 {
     try
     {
@@ -128,16 +128,13 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
     {
         ConstantBuffer* newConstantBuffer = new ConstantBuffer();
         assert(newConstantBuffer != nullptr);
-        uint32_t bufferSize = 0;
-        for (const auto& iterator : constantBufferSignature)
-        {
-            newConstantBuffer->m_signature[iterator.name] = iterator;
-            bufferSize += iterator.offset;
-        }
-        bufferSize += constantBufferSignature.back().size;
+        assert(constantBufferSize > 0);
 
-        newConstantBuffer->m_data = new char[bufferSize];
-        memset(newConstantBuffer->m_data, 0, bufferSize);
+        for (const auto& thisSignature : constantBufferSignature)
+            newConstantBuffer->m_signature[thisSignature.name] = thisSignature;
+        newConstantBuffer->m_data = new char[constantBufferSize];
+        newConstantBuffer->m_size = constantBufferSize;
+        memset(newConstantBuffer->m_data, 0, constantBufferSize);
         glGenBuffers(1, &newConstantBuffer->m_id);
         m_constantBufferNameToDataMap[constantBufferName] = newConstantBuffer;
     }
@@ -153,12 +150,13 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
         const ShaderConstantSignature& constantSignature = constantBuffer->m_signature.at(constantName);
         char* data = reinterpret_cast<char*>(constantBuffer->m_data);
         data += constantSignature.offset;
+        const char* value_in_bytePtr = reinterpret_cast<const char*>(value_in);
         switch (constantSignature.type)
         {
             case MAT4:
             {
-                glm::mat4& constantData = reinterpret_cast<glm::mat4&>(data);
-                const glm::mat4& value = reinterpret_cast<const glm::mat4&>(value_in);
+                glm::mat4& constantData = reinterpret_cast<glm::mat4&>(*data);
+                const glm::mat4& value = reinterpret_cast<const glm::mat4&>(*value_in_bytePtr);
                 if (glm::any(glm::notEqual(constantData[0], value[0])) ||
                     glm::any(glm::notEqual(constantData[1], value[1])) ||
                     glm::any(glm::notEqual(constantData[2], value[2])) ||
@@ -171,8 +169,8 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
             }
             case VEC3:
             {
-                glm::vec3& constantData = reinterpret_cast<glm::vec3&>(data);
-                const glm::vec3& value = reinterpret_cast<const glm::vec3&>(value_in);
+                glm::vec3& constantData = reinterpret_cast<glm::vec3&>(*data);
+                const glm::vec3& value = reinterpret_cast<const glm::vec3&>(*value_in_bytePtr);
                 if (glm::any(glm::notEqual(constantData, value)))
                 {
                     constantData = value;
@@ -182,8 +180,8 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
             }
             case VEC4:
             {
-                glm::vec4& constantData = reinterpret_cast<glm::vec4&>(data);
-                const glm::vec4& value = reinterpret_cast<const glm::vec4&>(value_in);
+                glm::vec4& constantData = reinterpret_cast<glm::vec4&>(*data);
+                const glm::vec4& value = reinterpret_cast<const glm::vec4&>(*value_in_bytePtr);
                 if (glm::any(glm::notEqual(constantData, value)))
                 {
                     constantData = value;
@@ -194,8 +192,8 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
             case BOOL:
             case INT:
             {
-                int32_t& constantData = reinterpret_cast<int32_t&>(data);
-                const int32_t& value = reinterpret_cast<const int32_t&>(value_in);
+                int32_t& constantData = reinterpret_cast<int32_t&>(*data);
+                const int32_t& value = reinterpret_cast<const int32_t&>(*value_in_bytePtr);
                 if (constantData != value)
                 {
                     constantData = value;
@@ -205,8 +203,8 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
             }
             case FLOAT:
             {
-                float& constantData = reinterpret_cast<float&>(data);
-                const float& value = reinterpret_cast<const float&>(value_in);
+                float& constantData = reinterpret_cast<float&>(*data);
+                const float& value = reinterpret_cast<const float&>(*value_in_bytePtr);
                 if (!AreFloatsEqual(constantData, value))
                 {
                     constantData = value;
@@ -249,9 +247,8 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
             if (constantBuffer->m_dirty)
             {
                 glBindBuffer(GL_UNIFORM_BUFFER, constantBuffer->m_id);
+//                glInvalidateBufferData(constantBuffer->m_id);
                 glBufferData(GL_UNIFORM_BUFFER, constantBuffer->m_size, constantBuffer->m_data, GL_STATIC_DRAW);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
                 constantBuffer->m_dirty = false;
             }
         }

@@ -628,7 +628,6 @@ void GLRenderer::RenderPostProcessEffects()
     m_postProg->SetShaderConstant("u_InvScrWidth", m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexX"), mouse_dof_x*m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
-    m_postProg->SetShaderConstant("u_lenQuant", 0.0025f);
     m_postProg->SetShaderConstant("u_Far", m_farPlane);
     m_postProg->SetShaderConstant("u_Near", m_nearPlane);
     m_postProg->SetShaderConstant("u_BloomOn", 0/*m_bloomEnabled*/);
