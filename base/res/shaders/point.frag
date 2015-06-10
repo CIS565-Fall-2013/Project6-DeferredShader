@@ -49,9 +49,6 @@ uniform PerDraw_Light
     float u_LightIl;
 };
 
-uniform float zerothresh = 1.0f;
-uniform float falloff = 0.1f;
-
 in vec2 fs_Texcoord;
 out vec4 out_Color;
 

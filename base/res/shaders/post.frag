@@ -24,8 +24,8 @@ uniform sampler2D u_depthTex;
 // Shader constants
 uniform PerFrame
 {
+    mat4 u_View;
     mat4 u_Persp;
-    vec3 u_Color;
     float u_Far;
     float u_Near;
     float u_InvScrHeight;
@@ -42,9 +42,6 @@ uniform PerFrame
     bool u_DOFOn;
     bool u_DOFDebug;
 };
-
-uniform float zerothresh = 1.0f;
-uniform float falloff = 0.1f;
 
 in vec2 fs_Texcoord;
 out vec4 out_Color;
