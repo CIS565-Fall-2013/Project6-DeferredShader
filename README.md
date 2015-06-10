@@ -78,3 +78,5 @@ can require as much as 25.
 
 ##Acknowledgements
 This project makes use of [tinyobjloader](http://syoyo.github.io/tinyobjloader/) and [SOIL](http://lonesock.net/soil.html)
+
+(c) Rohith Chandran
