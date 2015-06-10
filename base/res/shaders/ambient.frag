@@ -21,7 +21,7 @@ uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
 // Shader constants
-uniform PerFrame
+layout(binding = 0) uniform PerFrame
 {
     mat4 u_View;
     mat4 u_Persp;
@@ -42,7 +42,7 @@ uniform PerFrame
     bool u_DOFDebug;
 };
 
-uniform PerDraw_Light
+layout(binding = 1) uniform PerDraw_Light
 {
     vec4 u_Light;
     vec3 u_LightCol;

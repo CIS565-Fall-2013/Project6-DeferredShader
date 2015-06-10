@@ -1,6 +1,6 @@
 #version 430
 
-uniform PerFrame
+layout(binding = 0) uniform PerFrame
 {
     mat4 u_View;
     mat4 u_Persp;
@@ -21,7 +21,7 @@ uniform PerFrame
     bool u_DOFDebug;
 };
 
-uniform PerDraw_Object
+layout(binding = 1) uniform PerDraw_Object
 {
     mat4 u_Model;
     mat4 u_InvTrans;

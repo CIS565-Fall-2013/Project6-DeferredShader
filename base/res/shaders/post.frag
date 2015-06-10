@@ -22,7 +22,7 @@ uniform sampler2D u_positionTex;
 uniform sampler2D u_depthTex;
 
 // Shader constants
-uniform PerFrame
+layout(binding = 0) uniform PerFrame
 {
     mat4 u_View;
     mat4 u_Persp;
