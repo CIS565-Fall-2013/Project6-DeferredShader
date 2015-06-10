@@ -1,4 +1,4 @@
-#version 330
+#version 430
 
 ////////////////////////////
 //       ENUMERATIONS
@@ -13,11 +13,7 @@
 #define DISPLAY_GLOWMASK 6
 
 
-/////////////////////////////////////
-// Uniforms, Attributes, and Outputs
-////////////////////////////////////
-uniform mat4 u_Persp;
-
+// Textures
 uniform sampler2D u_Depthtex;
 uniform sampler2D u_Normaltex;
 uniform sampler2D u_Positiontex;
@@ -26,28 +22,37 @@ uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 uniform sampler2D u_GlowMask;
 
-uniform float u_Far;
-uniform float u_Near;
-uniform int u_OcclusionType;
-uniform int u_DisplayType;
+// Shader constants
+layout(binding = 0) uniform PerFrame
+{
+    mat4 u_View;
+    mat4 u_Persp;
+    float u_Far;
+    float u_Near;
+    float u_InvScrHeight;
+    float u_InvScrWidth;
+    float u_mouseTexX;
+    float u_mouseTexY;
+    float glowmask;
+    int u_OcclusionType;
+    int u_DisplayType;
+    int u_ScreenWidth;
+    int u_ScreenHeight;
+    bool u_BloomOn;
+    bool u_toonOn;
+    bool u_DOFOn;
+    bool u_DOFDebug;
+};
 
-uniform int u_ScreenWidth;
-uniform int u_ScreenHeight;
-
-uniform vec4 u_Light;
-uniform float u_LightIl;
+layout(binding = 1) uniform PerDraw_Light
+{
+    vec4 u_Light;
+    vec3 u_LightCol;
+    float u_LightIl;
+};
 
 in vec2 fs_Texcoord;
-
 out vec4 out_Color;
-///////////////////////////////////////
-
-
-
-
-uniform float zerothresh = 1.0f;
-uniform float falloff = 0.1f;
-
 
 /////////////////////////////////////
 //				UTILITY FUNCTIONS
@@ -55,7 +60,8 @@ uniform float falloff = 0.1f;
 
 //Depth used in the Z buffer is not linearly related to distance from camera
 //This restores linear depth
-float linearizeDepth(float exp_depth, float near, float far) {
+float linearizeDepth(float exp_depth, float near, float far) 
+{
     return	(2 * near) / (far + near -  exp_depth * (far - near)); 
 }
 
@@ -65,23 +71,27 @@ vec3 sampleGlowMask (vec2 texcoords)
 }
 
 //Helper function to automatically sample and unpack normals
-vec3 sampleNrm(vec2 texcoords) {
+vec3 sampleNrm(vec2 texcoords) 
+{
     return texture(u_Normaltex,texcoords).xyz;
 }
 
 //Helper function to automicatlly sample and unpack positions
-vec3 samplePos(vec2 texcoords) {
+vec3 samplePos(vec2 texcoords) 
+{
     return texture(u_Positiontex,texcoords).xyz;
 }
 
 //Helper function to automicatlly sample and unpack positions
-vec3 sampleCol(vec2 texcoords) {
+vec3 sampleCol(vec2 texcoords) 
+{
     return texture(u_Colortex,texcoords).xyz;
 }
 
 //Get a random normal vector  given a screen-space texture coordinate
 //Actually accesses a texture of random vectors
-vec3 getRandomNormal(vec2 texcoords) {
+vec3 getRandomNormal(vec2 texcoords) 
+{
     ivec2 sz = textureSize(u_RandomNormaltex,0);
     return texture(u_RandomNormaltex,vec2(texcoords.s* (u_ScreenWidth)/sz.x,
                 (texcoords.t)*(u_ScreenHeight)/sz.y)).rgb;
@@ -90,7 +100,8 @@ vec3 getRandomNormal(vec2 texcoords) {
 
 //Get a random scalar given a screen-space texture coordinate
 //Fetches from a random texture
-float getRandomScalar(vec2 texcoords) {
+float getRandomScalar(vec2 texcoords) 
+{
     ivec2 sz = textureSize(u_RandomScalartex,0);
     return texture(u_RandomScalartex,vec2(texcoords.s*u_ScreenWidth/sz.x,
                 texcoords.t*u_ScreenHeight/sz.y)).r;
@@ -100,10 +111,10 @@ float getRandomScalar(vec2 texcoords) {
 // MAIN
 //////////////////////////////////
 const float occlusion_strength = 1.5f;
-void main() {
-
+void main() 
+{
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
-    float lin_depth = linearizeDepth(exp_depth,u_Near,u_Far);
+    float lin_depth = linearizeDepth(exp_depth, u_Near, u_Far);
 
     vec3 normal = sampleNrm(fs_Texcoord);
     vec3 position = samplePos(fs_Texcoord);
@@ -112,26 +123,25 @@ void main() {
 	vec3 glowMask = sampleGlowMask (fs_Texcoord).xyz;
     float lightRadius = u_Light.w;
 
-    switch (u_DisplayType) {
-        case(DISPLAY_DEPTH):
-            out_Color = vec4(vec3(lin_depth),1.0f);
+    switch (u_DisplayType) 
+    {
+        case DISPLAY_DEPTH:
+            out_Color = vec4(vec3(lin_depth), 1.0f);
             break;
-        case(DISPLAY_NORMAL):
-            out_Color = vec4(abs(normal),1.0f);
+        case DISPLAY_NORMAL:
+            out_Color = vec4(abs(normal), 1.0f);
             break;
-        case(DISPLAY_POSITION):
-            out_Color = vec4(abs(position) / u_Far,1.0f);
+        case DISPLAY_POSITION:
+            out_Color = vec4(abs(position) / u_Far, 1.0f);
             break;
-        case(DISPLAY_COLOR):
+        case DISPLAY_COLOR:
             out_Color = vec4(color, 1.0);
             break;
-		case(DISPLAY_GLOWMASK):
-			out_Color = vec4 (glowMask, 1.0);
-        case(DISPLAY_LIGHTS):
-        case(DISPLAY_TOTAL):
+		case DISPLAY_GLOWMASK:
+			out_Color = vec4(glowMask, 1.0);
+        case DISPLAY_LIGHTS:
+        case DISPLAY_TOTAL:
             break;
     }	
-
-    return;
 }
 

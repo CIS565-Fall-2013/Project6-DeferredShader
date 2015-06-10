@@ -2,6 +2,7 @@
 #include "Utility.h"
 #include "gl/glew.h"
 #include <glm/glm.hpp>
+#include <sstream>
 
 static bool AreFloatsEqual(const float a, const float b)
 {
@@ -9,28 +10,35 @@ static bool AreFloatsEqual(const float a, const float b)
 }
 
 ShaderConstantManager* ShaderConstantManager::singleton = nullptr;
+uint32_t ShaderConstantManager::resolver = 0;
 
 ShaderConstantManager::ShaderConstantManager()
-    : m_lastUsedProgram(-1)
 {
-    SetupConstantDataStore();
 }
 
 ShaderConstantManager::~ShaderConstantManager()
 {
-    for (auto iterator = m_programShaderConstantsMap.begin(); iterator != m_programShaderConstantsMap.end(); ++iterator)
+    for (auto& iterator : m_shaderConstantNameToConstantBufferMap)
     {
         //iterator->second->clear();
-        delete iterator->second;
-        iterator->second = nullptr;
+        iterator.second = nullptr;
     }
 
-    for (auto iterator = m_shaderConstantNameToDataMap.begin(); iterator != m_shaderConstantNameToDataMap.end(); ++iterator)
+    uint32_t* constantBufferIds = new uint32_t[m_constantBufferNameToDataMap.size()];
+    uint32_t i = 0;
+    for (auto& iterator : m_constantBufferNameToDataMap)
     {
         //iterator->second->clear();
-        delete iterator->second;
-        iterator->second = nullptr;
+        if (iterator.second)
+        {
+            constantBufferIds[i] = iterator.second->m_id;
+            ++i;
+        }
+        delete iterator.second;
+        iterator.second = nullptr;
     }
+
+    glDeleteBuffers(i, constantBufferIds);
 }
 
 void ShaderConstantManager::Create()
@@ -47,281 +55,236 @@ void ShaderConstantManager::Destroy()
     singleton = nullptr;
 }
 
-void ShaderConstantManager::SetupConstantDataStore()
+ShaderConstantManager::SupportedTypes ShaderConstantManager::GetTypeFromString(const std::string& typeString)
 {
-    // Constant data store = data store for every constant we use, ever.
-    // Independent of the active constants in a given program.
-    // This will be replaced with code to scan shaders on the fly and create a list of uniforms/uniform buffers.
-    std::string constants[] =
-    {
-        "u_Far",
-        "u_Near",
-        "u_OcclusionType",
-        "u_DisplayType",
-        "u_ScreenWidth",
-        "u_ScreenHeight",
-        "u_Light",
-        "u_LightIl",
-        "u_toonOn",
-        "u_Persp",
-        "u_Color",
-        "glowmask",
-        "u_Model",
-        "u_View",
-        "u_InvTrans",
-        "u_LightCol",
-        "u_InvScrHeight",
-        "u_InvScrWidth",
-        "u_mouseTexX",
-        "u_mouseTexY",
-        "u_lenQuant",
-        "u_BloomOn",
-        "u_DOFOn",
-        "u_DOFDebug"
-    };
-    ShaderConstantManager::SupportedTypes constantType[] =
-    {
-        FLOAT,
-        FLOAT,
-        INT,
-        INT,
-        INT,
-        INT,
-        VEC4,
-        FLOAT,
-        BOOL,
-        MAT4,
-        VEC3,
-        FLOAT,
-        MAT4,
-        MAT4,
-        MAT4,
-        VEC3,
-        FLOAT,
-        FLOAT,
-        FLOAT,
-        FLOAT,
-        FLOAT,
-        BOOL,
-        BOOL,
-        BOOL
-    };
+    if (typeString.compare("float") == 0)
+        return FLOAT;
+    else if (typeString.compare("int") == 0)
+        return INT;
+    else if (typeString.compare("bool") == 0)
+        return BOOL;
+    else if (typeString.find("mat4") != std::string::npos)
+        return MAT4;
+    else if (typeString.compare("vec3") == 0)
+        return VEC3;
+    else if (typeString.compare("vec4") == 0)
+        return VEC4;
+    else
+        assert(false);
+}
 
-    uint32_t arrayLength = 24;
-    for (uint32_t i = 0; i < arrayLength; ++i)
+uint32_t ShaderConstantManager::GetSizeForType(ShaderConstantManager::SupportedTypes type)
+{
+    switch (type)
     {
-        ShaderConstant* constant = new ShaderConstant;
-        assert(constant != nullptr);
-        constant->type = constantType[i];
-        switch (constant->type)
-        {
-        case MAT4:
-            constant->data = new glm::mat4;
-            break;
-        case VEC4:
-            constant->data = new glm::vec4;
-            break;
-        case FLOAT:
-            constant->data = new float;
-            break;
-        case BOOL:
-        case INT:
-            constant->data = new int32_t;
-            break;
-        case VEC3:
-            constant->data = new glm::vec3;
-            break;
-        default:
-            assert(true);
-            break;
-        }
-
-        assert(constant->data != nullptr);
-        m_shaderConstantNameToDataMap[constants[i]] = constant;
+    case MAT4:
+        return 64;
+    case VEC3:
+    case VEC4:
+        return 16;
+    case BOOL:
+    case INT:
+    case FLOAT:
+        return 4;
+    default:
+        assert(false);
     }
 }
 
-void ShaderConstantManager::SetupConstantAssociationsForProgram(uint32_t programId)
+void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName, int32_t constantBufferSize, std::vector<ShaderConstantSignature>& constantBufferSignature)
 {
-    // This will be replaced with code to scan shaders on the fly and create a list of uniforms/uniform buffers.
-    std::string constants[] =
+    try
     {
-        "u_Far",
-        "u_Near",
-        "u_OcclusionType",
-        "u_DisplayType",
-        "u_ScreenWidth",
-        "u_ScreenHeight",
-        "u_Light",
-        "u_LightIl",
-        "u_toonOn",
-        "u_Persp",
-        "u_Color",
-        "glowmask",
-        "u_Model",
-        "u_View",
-        "u_InvTrans",
-        "u_LightCol",
-        "u_InvScrHeight",
-        "u_InvScrWidth",
-        "u_mouseTexX",
-        "u_mouseTexY",
-        "u_lenQuant",
-        "u_BloomOn",
-        "u_DOFOn",
-        "u_DOFDebug"
-    };
+        ConstantBuffer* existingBuffer = m_constantBufferNameToDataMap.at(constantBufferName);
 
-    uint32_t arrayLength = 24;
-    std::vector<std::string>* constantList = new std::vector<std::string>(arrayLength);
-    constantList->resize(arrayLength);
-
-    uint32_t activeConstants = 0;
-    for (uint32_t i = 0; i < arrayLength; ++i)
-    {
-        int32_t constantBindLocation = glGetUniformLocation(programId, constants[i].c_str());
-        if (constantBindLocation > -1)
+        // Already exists. Check if the signatures match:
+        uint32_t i;
+        for (i = 0; i < constantBufferSignature.size(); ++i)
         {
-            (*constantList)[constantBindLocation] = constants[i];
-            ++activeConstants;
+            try
+            {
+                const ShaderConstantSignature& thisSignature = existingBuffer->m_signature.at(constantBufferSignature[i].name);
+                if ((constantBufferSignature[i].type == thisSignature.type) && (constantBufferSignature[i].size == thisSignature.size) && (constantBufferSignature[i].offset == thisSignature.offset))
+                    continue;
+                else
+                    break;
+            }
+            catch (std::out_of_range&)
+            {
+                break;
+            }
+        }
+
+        if (i == constantBufferSignature.size())    // Signatures match. Don't create a duplicate. 
+            return;
+        
+        // If not, try again with resolver integer appended to buffer name.
+        std::ostringstream newConstantBufferName;
+        newConstantBufferName << constantBufferName << resolver++;
+        constantBufferName = std::string(newConstantBufferName.str());
+        m_constantBufferNameToDataMap.at(constantBufferName);
+    }
+    catch (std::out_of_range&)
+    {
+        ConstantBuffer* newConstantBuffer = new ConstantBuffer();
+        assert(newConstantBuffer != nullptr);
+        assert(constantBufferSize > 0);
+
+        for (const auto& thisSignature : constantBufferSignature)
+            newConstantBuffer->m_signature[thisSignature.name] = thisSignature;
+        newConstantBuffer->m_data = new char[constantBufferSize];
+        newConstantBuffer->m_size = constantBufferSize;
+        memset(newConstantBuffer->m_data, 0, constantBufferSize);
+        glGenBuffers(1, &newConstantBuffer->m_id);
+        m_constantBufferNameToDataMap[constantBufferName] = newConstantBuffer;
+    }
+
+    ApplyShaderConstantChanges(constantBufferName);
+}
+
+void ShaderConstantManager::SetShaderConstant(const std::string& constantName, const std::string& constantBufferName, const void* value_in)
+{
+    try
+    {
+        ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(constantBufferName);
+        const ShaderConstantSignature& constantSignature = constantBuffer->m_signature.at(constantName);
+        char* data = reinterpret_cast<char*>(constantBuffer->m_data);
+        data += constantSignature.offset;
+        const char* value_in_bytePtr = reinterpret_cast<const char*>(value_in);
+        switch (constantSignature.type)
+        {
+            case MAT4:
+            {
+                glm::mat4& constantData = reinterpret_cast<glm::mat4&>(*data);
+                const glm::mat4& value = reinterpret_cast<const glm::mat4&>(*value_in_bytePtr);
+                if (glm::any(glm::notEqual(constantData[0], value[0])) ||
+                    glm::any(glm::notEqual(constantData[1], value[1])) ||
+                    glm::any(glm::notEqual(constantData[2], value[2])) ||
+                    glm::any(glm::notEqual(constantData[3], value[3])))
+                {
+                    constantData = value;
+                    constantBuffer->m_dirty = true;
+                }
+                break;
+            }
+            case VEC3:
+            {
+                glm::vec3& constantData = reinterpret_cast<glm::vec3&>(*data);
+                const glm::vec3& value = reinterpret_cast<const glm::vec3&>(*value_in_bytePtr);
+                if (glm::any(glm::notEqual(constantData, value)))
+                {
+                    constantData = value;
+                    constantBuffer->m_dirty = true;
+                }
+                break;
+            }
+            case VEC4:
+            {
+                glm::vec4& constantData = reinterpret_cast<glm::vec4&>(*data);
+                const glm::vec4& value = reinterpret_cast<const glm::vec4&>(*value_in_bytePtr);
+                if (glm::any(glm::notEqual(constantData, value)))
+                {
+                    constantData = value;
+                    constantBuffer->m_dirty = true;
+                }
+                break;
+            }
+            case BOOL:
+            case INT:
+            {
+                int32_t& constantData = reinterpret_cast<int32_t&>(*data);
+                const int32_t& value = reinterpret_cast<const int32_t&>(*value_in_bytePtr);
+                if (constantData != value)
+                {
+                    constantData = value;
+                    constantBuffer->m_dirty = true;
+                }
+                break;
+            }
+            case FLOAT:
+            {
+                float& constantData = reinterpret_cast<float&>(*data);
+                const float& value = reinterpret_cast<const float&>(*value_in_bytePtr);
+                if (!AreFloatsEqual(constantData, value))
+                {
+                    constantData = value;
+                    constantBuffer->m_dirty = true;
+                }
+                break;
+            }
+            default:
+                assert(false);
+                break;
         }
     }
-    constantList->resize(activeConstants);
-
-    if (constantList->size())
+    catch (std::out_of_range&)
     {
-        m_programShaderConstantsMap[programId] = constantList;
+        assert(false);  // No such constant buffer, or the specified constant doesn't exist in the specified constant buffer.
+    }
+}
+
+void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& constantBufferName /* = std::string() */) const
+{
+    if (constantBufferName.length() == 0)
+    {
+        for (auto& itr : m_constantBufferNameToDataMap)
+        {
+            if (itr.second->m_dirty)
+            {
+                glBindBuffer(GL_UNIFORM_BUFFER, itr.second->m_id);
+                glBufferData(GL_UNIFORM_BUFFER, itr.second->m_size, itr.second->m_data, GL_STATIC_DRAW);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+                itr.second->m_dirty = false;
+            }
+        }
     }
     else
     {
-        delete constantList;    // DO NOT delete constantList if it has a size, since it will get assigned to the shaderConstantsMap. It'll get deleted/destroyed when ShaderConstantManager gets destroyed.
+        try
+        {
+            ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(constantBufferName);
+            if (constantBuffer->m_dirty)
+            {
+                glBindBuffer(GL_UNIFORM_BUFFER, constantBuffer->m_id);
+//                glInvalidateBufferData(constantBuffer->m_id);
+                glBufferData(GL_UNIFORM_BUFFER, constantBuffer->m_size, constantBuffer->m_data, GL_STATIC_DRAW);
+                constantBuffer->m_dirty = false;
+            }
+        }
+        catch (std::out_of_range&)
+        {
+            assert(false);  // No such constant buffer.
+        }
     }
 }
 
-void ShaderConstantManager::SetShaderConstant(const std::string& constantName, const void* value_in)
+uint32_t ShaderConstantManager::GetConstantBufferObject(const std::string& constantBufferName) const
 {
     try
     {
-        ShaderConstant* constant = m_shaderConstantNameToDataMap.at(constantName);
-        assert(constant != nullptr);
-        assert(constant->data != nullptr);
-
-        if (constant->type == MAT4)
-        {
-            glm::mat4& constantData = *(reinterpret_cast<glm::mat4*>(constant->data));
-            const glm::mat4& value = *(reinterpret_cast<const glm::mat4*>(value_in));
-            if (glm::any(glm::notEqual(constantData[0], value[0])) || 
-                glm::any(glm::notEqual(constantData[1], value[1])) ||
-                glm::any(glm::notEqual(constantData[2], value[2])) || 
-                glm::any(glm::notEqual(constantData[3], value[3])))
-            {
-                constantData = value;
-                constant->dirty = true;
-            }
-        }
-        else if (constant->type == VEC3)
-        {
-            glm::vec3& constantData = *(reinterpret_cast<glm::vec3*>(constant->data));
-            const glm::vec3& value = *(reinterpret_cast<const glm::vec3*>(value_in));
-            if (glm::any(glm::notEqual(constantData, value)))
-            {
-                constantData = value;
-                constant->dirty = true;
-            }
-        }
-        else if (constant->type == VEC4)
-        {
-            glm::vec4& constantData = *(reinterpret_cast<glm::vec4*>(constant->data));
-            const glm::vec4& value = *(reinterpret_cast<const glm::vec4*>(value_in));
-            if (glm::any(glm::notEqual(constantData, value)))
-            {
-                constantData = value;
-                constant->dirty = true;
-            }
-        }
-        else if (constant->type == FLOAT)
-        {
-            float& constantData = *(reinterpret_cast<float*>(constant->data));
-            const float& value = *(reinterpret_cast<const float*>(value_in));
-            if (!AreFloatsEqual(constantData, value))
-            {
-                constantData = value;
-                constant->dirty = true;
-            }
-        }
-        else if ((constant->type == INT) || (constant->type == BOOL))
-        {
-            int32_t& constantData = *(reinterpret_cast<int32_t*>(constant->data));
-            const int32_t& value = *(reinterpret_cast<const int32_t*>(value_in));
-            if (constantData != value)
-            {
-                constantData = value;
-                constant->dirty = true;
-            }
-        }
-        else
-            assert(true);
+        ConstantBuffer* buffer = m_constantBufferNameToDataMap.at(constantBufferName);
+        assert(buffer != nullptr);
+        return buffer->m_id;
     }
     catch (std::out_of_range&)
     {
-        // Invalid shader constant. Ignore!
-        std::string shaderConstantNotFoundMessage;
-        //shaderConstantNotFoundMessage.append("Shader constant ");
-        //shaderConstantNotFoundMessage.append(constantName);
-        //shaderConstantNotFoundMessage.append(" not found in map. Adding...\n");
-        shaderConstantNotFoundMessage.append("Invalid shader constant. Ignoring..\n");
-        Utility::LogOutput(shaderConstantNotFoundMessage.c_str());
+        assert(false);  // No such constant buffer.
     }
 }
 
-void ShaderConstantManager::ApplyShaderConstantsForProgram(uint32_t program) const
+ConstantBuffer::ConstantBuffer()
+    : m_data(nullptr),
+    m_dirty(true),
+    m_size(0),
+    m_id(0)
+{}
+
+ConstantBuffer::~ConstantBuffer()
 {
-    const std::vector<std::string>* shaderConstantArrayPointer = nullptr;
-    try
-    {
-        shaderConstantArrayPointer = m_programShaderConstantsMap.at(program);
-        assert(shaderConstantArrayPointer != nullptr);
-    }
-    catch (std::out_of_range&)
-    {
-        assert(true); // Invalid program!
-        return;
-    }
-
-    const std::vector<std::string>& shaderConstantArray = *shaderConstantArrayPointer;
-    for (uint32_t i = 0; i < shaderConstantArray.size(); ++i)
-    {
-        const std::string& thisConstant = shaderConstantArray[i];
-        ShaderConstant* constant = m_shaderConstantNameToDataMap.at(thisConstant);
-        assert(constant != nullptr);
-        assert(constant->data != nullptr);
-        if ((program != m_lastUsedProgram) || constant->dirty)
-        {
-            switch (constant->type)
-            {
-            case MAT4:
-                glUniformMatrix4fv(i, 1, GL_FALSE, static_cast<GLfloat*>(constant->data));
-                break;
-            case VEC4:
-                glUniform4fv(i, 1, static_cast<GLfloat*>(constant->data));
-                break;
-            case VEC3:
-                glUniform3fv(i, 1, static_cast<GLfloat*>(constant->data));
-                break;
-            case FLOAT:
-                glUniform1fv(i, 1, static_cast<GLfloat*>(constant->data));
-                break;
-            case BOOL:
-            case INT:
-                glUniform1iv(i, 1, static_cast<GLint*>(constant->data));
-                break;
-            default:
-                assert(true);   // Unsupported shader constant type!
-                break;
-            }
-            constant->dirty = false;
-        }
-    }
-
-    m_lastUsedProgram = program;
+    delete[] m_data;
+    m_data = nullptr;
+    m_signature.clear();
+    m_size = 0;
+    m_id = 0;
 }

@@ -13,9 +13,12 @@ class GLProgram
     std::map<std::string, uint32_t> m_constantBufferBindIndicesMap;
     std::map<std::string, uint32_t> m_attributeBindIndicesMap;
     std::map<std::string, uint32_t> m_outputBindIndicesMap;
+    std::map<std::string, std::string> m_shaderConstantToConstantBufferBindingMap;
 
-    void SetupTextureBindings();
+    void SetupTextureBindings(const std::vector<std::string>& textureNames);
     void SetShaderConstant(const std::string& constantName, const void* value_in) const;
+    void PreprocessShaderSource(std::string& shaderSource, const std::string& workingDirectory) const;
+    void SetupTextureBindingsAndConstantBuffers(const std::string& shaderSource);
 
 public:
     GLProgram();
