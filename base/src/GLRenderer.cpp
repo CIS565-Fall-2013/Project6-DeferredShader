@@ -81,31 +81,31 @@ void GLRenderer::ApplyPerFrameShaderConstants()
 {
     ShaderConstantManager* shaderConstantManager = ShaderConstantManager::GetSingleton();
 
-    shaderConstantManager->SetShaderConstant("u_Far", "PerFrame", &m_farPlane); //LOOKY
-    shaderConstantManager->SetShaderConstant("u_Near", "PerFrame", &m_nearPlane); //LOOKY
-    shaderConstantManager->SetShaderConstant("u_ScreenHeight", "PerFrame", &m_height); //LOOKY
-    shaderConstantManager->SetShaderConstant("u_ScreenWidth", "PerFrame", &m_width); //LOOKY
-    shaderConstantManager->SetShaderConstant("u_InvScrHeight", "PerFrame", &m_invHeight); //LOOKY
-    shaderConstantManager->SetShaderConstant("u_InvScrWidth", "PerFrame", &m_invWidth); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_Far", "PerFrame", &m_farPlane);
+    shaderConstantManager->SetShaderConstant("u_Near", "PerFrame", &m_nearPlane);
+    shaderConstantManager->SetShaderConstant("u_ScreenHeight", "PerFrame", &m_height);
+    shaderConstantManager->SetShaderConstant("u_ScreenWidth", "PerFrame", &m_width);
+    shaderConstantManager->SetShaderConstant("u_InvScrHeight", "PerFrame", &m_invHeight);
+    shaderConstantManager->SetShaderConstant("u_InvScrWidth", "PerFrame", &m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexX"), mouse_dof_x*m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
 
     glm::mat4 view = m_pRenderCam->get_view();
     glm::mat4 persp = m_pRenderCam->GetPerspective();
-    shaderConstantManager->SetShaderConstant("u_View", "PerFrame", &view);  //LOOKY
-    shaderConstantManager->SetShaderConstant("u_Persp", "PerFrame", &persp); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_View", "PerFrame", &view); 
+    shaderConstantManager->SetShaderConstant("u_Persp", "PerFrame", &persp);
 
     float zero = 0.0f;
-    shaderConstantManager->SetShaderConstant("glowmask", "PerFrame", &zero); //LOOKY
+    shaderConstantManager->SetShaderConstant("glowmask", "PerFrame", &zero);
 
     int32_t value = 0;
-    shaderConstantManager->SetShaderConstant("u_BloomOn", "PerFrame", &value/*m_bloomEnabled*/); //LOOKY
-    shaderConstantManager->SetShaderConstant("u_toonOn", "PerFrame", &value/*m_toonEnabled*/); //LOOKY
-    shaderConstantManager->SetShaderConstant("u_DOFOn", "PerFrame", &value/*m_DOFEnabled*/); //LOOKY
-    shaderConstantManager->SetShaderConstant("u_DOFDebug", "PerFrame", &value/*m_DOFDebug*/); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_BloomOn", "PerFrame", &value/*m_bloomEnabled*/);
+    shaderConstantManager->SetShaderConstant("u_toonOn", "PerFrame", &value/*m_toonEnabled*/);
+    shaderConstantManager->SetShaderConstant("u_DOFOn", "PerFrame", &value/*m_DOFEnabled*/);
+    shaderConstantManager->SetShaderConstant("u_DOFDebug", "PerFrame", &value/*m_DOFDebug*/);
 
     value = 1;
-    shaderConstantManager->SetShaderConstant("u_DisplayType", "PerFrame", &value); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_DisplayType", "PerFrame", &value);
 }
 
 void GLRenderer::ApplyShaderConstantsForFullScreenPass()
