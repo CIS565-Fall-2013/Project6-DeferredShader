@@ -77,16 +77,40 @@ void GLRenderer::AddDrawableGeometryToList(const DrawableGeometry* geometry, Ren
     }
 }
 
+void GLRenderer::ApplyPerFrameShaderConstants()
+{
+    ShaderConstantManager* shaderConstantManager = ShaderConstantManager::GetSingleton();
+
+    shaderConstantManager->SetShaderConstant("u_Far", "PerFrame", &m_farPlane); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_Near", "PerFrame", &m_nearPlane); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_ScreenHeight", "PerFrame", &m_height); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_ScreenWidth", "PerFrame", &m_width); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_InvScrHeight", "PerFrame", &m_invHeight); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_InvScrWidth", "PerFrame", &m_invWidth); //LOOKY
+    //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexX"), mouse_dof_x*m_invWidth);
+    //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
+
+    glm::mat4 view = m_pRenderCam->get_view();
+    glm::mat4 persp = m_pRenderCam->GetPerspective();
+    shaderConstantManager->SetShaderConstant("u_View", "PerFrame", &view);  //LOOKY
+    shaderConstantManager->SetShaderConstant("u_Persp", "PerFrame", &persp); //LOOKY
+
+    float zero = 0.0f;
+    shaderConstantManager->SetShaderConstant("glowmask", "PerFrame", &zero); //LOOKY
+
+    int32_t value = 0;
+    shaderConstantManager->SetShaderConstant("u_BloomOn", "PerFrame", &value/*m_bloomEnabled*/); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_toonOn", "PerFrame", &value/*m_toonEnabled*/); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_DOFOn", "PerFrame", &value/*m_DOFEnabled*/); //LOOKY
+    shaderConstantManager->SetShaderConstant("u_DOFDebug", "PerFrame", &value/*m_DOFDebug*/); //LOOKY
+
+    value = 1;
+    shaderConstantManager->SetShaderConstant("u_DisplayType", "PerFrame", &value); //LOOKY
+}
+
 void GLRenderer::ApplyShaderConstantsForFullScreenPass()
 {
     glm::mat4 persp = m_pRenderCam->GetPerspective();
-
-    m_currentProgram->SetShaderConstant("u_ScreenHeight", m_height);
-    m_currentProgram->SetShaderConstant("u_ScreenWidth", m_width);
-    m_currentProgram->SetShaderConstant("u_Far", m_farPlane);
-    m_currentProgram->SetShaderConstant("u_Near", m_nearPlane);
-    m_currentProgram->SetShaderConstant("u_DisplayType", 1);
-    m_currentProgram->SetShaderConstant("u_Persp", persp);
 
     m_currentProgram->SetTexture("u_Depthtex", m_depthTexture);
     m_currentProgram->SetTexture("u_Normaltex", m_normalTexture);
@@ -192,7 +216,7 @@ void GLRenderer::DrawLightList()
 {
     SetShaderProgram(m_pointProg);
     ApplyShaderConstantsForFullScreenPass();
-    m_pointProg->SetShaderConstant("u_toonOn", 0);
+
     m_pointProg->SetShaderConstant("u_LightCol", Colours::yellow);
     glDepthMask(GL_FALSE);
     drawLight(glm::vec3(5.4, -0.5, 3.0), 1.0);
@@ -215,13 +239,7 @@ void GLRenderer::DrawLightList()
 void GLRenderer::DrawOpaqueList()
 {
     glm::mat4 view = m_pRenderCam->get_view();
-    glm::mat4 persp = m_pRenderCam->GetPerspective();
-
     SetShaderProgram(m_passProg);
-    m_passProg->SetShaderConstant("u_Far", m_farPlane);
-    m_passProg->SetShaderConstant("glowmask", 0.0f);
-    m_passProg->SetShaderConstant("u_View", view);
-    m_passProg->SetShaderConstant("u_Persp", persp);
 
     for (uint32_t i = 0; i < m_opaqueList.size(); ++i)
     {
@@ -566,6 +584,8 @@ void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out,
 
 void GLRenderer::Render()
 {
+    ApplyPerFrameShaderConstants();
+
     // GBuffer Pass
     SetFramebufferActive(RenderEnums::GBUFFER_FRAMEBUFFER);
     ClearFramebuffer(RenderEnums::CLEAR_ALL);
@@ -621,19 +641,6 @@ void GLRenderer::RenderPostProcessEffects()
     m_postProg->SetTexture("u_RandomNormaltex", m_randomNormalTexture);
     m_postProg->SetTexture("u_RandomScalartex", m_randomScalarTexture);
     m_postProg->SetTexture("u_depthTex", m_depthTexture);
-
-    m_postProg->SetShaderConstant("u_ScreenHeight", m_height);
-    m_postProg->SetShaderConstant("u_ScreenWidth", m_width);
-    m_postProg->SetShaderConstant("u_InvScrHeight", m_invHeight);
-    m_postProg->SetShaderConstant("u_InvScrWidth", m_invWidth);
-    //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexX"), mouse_dof_x*m_invWidth);
-    //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
-    m_postProg->SetShaderConstant("u_Far", m_farPlane);
-    m_postProg->SetShaderConstant("u_Near", m_nearPlane);
-    m_postProg->SetShaderConstant("u_BloomOn", 0/*m_bloomEnabled*/);
-    m_postProg->SetShaderConstant("u_toonOn", 0/*m_toonEnabled*/);
-    m_postProg->SetShaderConstant("u_DOFOn", 0/*m_DOFEnabled*/);
-    m_postProg->SetShaderConstant("u_DOFDebug", 0/*m_DOFDebug*/);
 
     glDepthMask(GL_FALSE);
     RenderQuad();

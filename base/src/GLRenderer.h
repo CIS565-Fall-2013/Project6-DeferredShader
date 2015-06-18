@@ -118,6 +118,7 @@ class GLRenderer
 
     void RenderAmbientLighting();
     void RenderPostProcessEffects();
+    void ApplyPerFrameShaderConstants();
 
     void ApplyShaderConstantsForFullScreenPass();
 
