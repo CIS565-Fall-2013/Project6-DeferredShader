@@ -100,7 +100,10 @@
     <None Include="..\..\..\res\shaders\shade.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="toon.frag">
+    <None Include="..\..\..\res\shaders\ShaderCommon.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\res\shaders\LightingCommon.glsl">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

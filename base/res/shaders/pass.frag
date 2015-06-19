@@ -1,26 +1,4 @@
-#version 430
-
-// Shader constants
-layout(binding = 0) uniform PerFrame
-{
-    mat4 u_View;
-    mat4 u_Persp;
-    float u_Far;
-    float u_Near;
-    float u_InvScrHeight;
-    float u_InvScrWidth;
-    float u_mouseTexX;
-    float u_mouseTexY;
-    float glowmask;
-    int u_OcclusionType;
-    int u_DisplayType;
-    int u_ScreenWidth;
-    int u_ScreenHeight;
-    bool u_BloomOn;
-    bool u_toonOn;
-    bool u_DOFOn;
-    bool u_DOFDebug;
-};
+#include "ShaderCommon.glsl"
 
 layout(binding = 1) uniform PerDraw_Object
 {

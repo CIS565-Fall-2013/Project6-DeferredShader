@@ -1,4 +1,4 @@
-#version 430
+#include "ShaderCommon.glsl"
 
 in vec3 Position;
 in vec2 Texcoord;
