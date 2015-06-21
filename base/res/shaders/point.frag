@@ -21,14 +21,14 @@ void main()
     vec3 normal = SampleTexture(u_Normaltex, fs_Texcoord);
     vec3 position = SampleTexture(u_Positiontex, fs_Texcoord);
     vec3 color = SampleTexture(u_Colortex, fs_Texcoord);
-    vec3 light = u_Light.xyz;
-    float lightRadius = u_Light.w;
+    vec3 light = uf4Light.xyz;
+    float lightRadius = uf4Light.w;
     out_Color = vec4(0, 0, 0, 1.0);
 
     if(u_DisplayType == DISPLAY_LIGHTS)
     {
         //Put some code here to visualize the fragment associated with this point light
-		out_Color = vec4 (u_LightCol, 1.0);
+		out_Color = vec4 (uf3LightCol, 1.0);
     }
     else
     {
@@ -51,7 +51,7 @@ void main()
 			else
 				clampedDotPdt = 0.0;
 		}
-		vec3 finalColour = (color * u_LightCol * u_LightIl * clampedDotPdt) * decay;
+		vec3 finalColour = (color * uf3LightCol * ufLightIl * clampedDotPdt) * decay;
 		out_Color = vec4(finalColour, 1.0);		// Because light and normal are both in view space.
     }
 }

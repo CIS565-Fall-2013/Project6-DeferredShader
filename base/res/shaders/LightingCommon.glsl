@@ -1,6 +1,6 @@
 layout(binding = 1) uniform PerDraw_Light
 {
-    vec4 u_Light;
-    vec3 u_LightCol;
-    float u_LightIl;
+    vec4 uf4Light;
+    vec3 uf3LightCol;
+    float ufLightIl;
 };

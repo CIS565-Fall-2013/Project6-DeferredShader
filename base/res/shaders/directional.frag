@@ -21,9 +21,9 @@ void main()
     vec3 normal = SampleTexture(u_Normaltex, fs_Texcoord);
     vec3 position = SampleTexture(u_Positiontex, fs_Texcoord);
     vec3 color = SampleTexture(u_Colortex, fs_Texcoord);
-    vec3 light = u_Light.xyz;
-    float lightRadius = u_Light.w;
+    vec3 light = uf4Light.xyz;
+    float lightRadius = uf4Light.w;
 
     float diffuse = max(0.0, dot(normalize(light), normal));
-    out_Color = vec4(color*u_LightIl*diffuse, 1.0f);
+    out_Color = vec4(color*ufLightIl*diffuse, 1.0f);
 }

@@ -185,8 +185,8 @@ void GLRenderer::drawLight(glm::vec3 pos, float strength)
         return;
     }
     light.w = radius;
-    m_currentProgram->SetShaderConstant("u_Light", light);
-    m_currentProgram->SetShaderConstant("u_LightIl", strength);
+    m_currentProgram->SetShaderConstant("uf4Light", light);
+    m_currentProgram->SetShaderConstant("ufLightIl", strength);
 
     //glm::vec4 left = vp * glm::vec4(pos + radius*m_pRenderCam->start_left, 1.0);
     //glm::vec4 up = vp * glm::vec4(pos + radius*m_pRenderCam->up, 1.0);
@@ -217,21 +217,21 @@ void GLRenderer::DrawLightList()
     SetShaderProgram(m_pointProg);
     ApplyShaderConstantsForFullScreenPass();
 
-    m_pointProg->SetShaderConstant("u_LightCol", Colours::yellow);
+    m_pointProg->SetShaderConstant("uf3LightCol", Colours::yellow);
     glDepthMask(GL_FALSE);
     drawLight(glm::vec3(5.4, -0.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -0.5, 3.0), 1.0);
-    m_pointProg->SetShaderConstant("u_LightCol", Colours::orange);
+    m_pointProg->SetShaderConstant("uf3LightCol", Colours::orange);
     drawLight(glm::vec3(5.4, -2.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -2.5, 3.0), 1.0);
-    m_pointProg->SetShaderConstant("u_LightCol", Colours::yellow);
+    m_pointProg->SetShaderConstant("uf3LightCol", Colours::yellow);
     drawLight(glm::vec3(5.4, -4.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -4.5, 3.0), 1.0);
 
-    m_pointProg->SetShaderConstant("u_LightCol", Colours::red);
+    m_pointProg->SetShaderConstant("uf3LightCol", Colours::red);
     drawLight(glm::vec3(2.5, -1.2, 0.5), 2.5);
 
-    m_pointProg->SetShaderConstant("u_LightCol", Colours::blue);
+    m_pointProg->SetShaderConstant("uf3LightCol", Colours::blue);
     drawLight(glm::vec3(2.5, -5.0, 4.2), 2.5);
     glDepthMask(GL_TRUE);
 }
@@ -619,8 +619,8 @@ void GLRenderer::RenderAmbientLighting()
 
     SetShaderProgram(m_ambientProg);
     ApplyShaderConstantsForFullScreenPass();
-    m_ambientProg->SetShaderConstant("u_Light", dir_light);
-    m_ambientProg->SetShaderConstant("u_LightIl", strength);
+    m_ambientProg->SetShaderConstant("uf4Light", dir_light);
+    m_ambientProg->SetShaderConstant("ufLightIl", strength);
 
     glDepthMask(GL_FALSE);
     RenderQuad();

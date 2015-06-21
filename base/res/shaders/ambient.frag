@@ -21,8 +21,8 @@ void main()
     vec3 normal = SampleTexture(u_Normaltex, fs_Texcoord);
     vec3 position = SampleTexture(u_Positiontex, fs_Texcoord);
     vec3 color = SampleTexture(u_Colortex, fs_Texcoord);
-    vec3 light = u_Light.xyz;
-    float strength = u_Light.w;
+    vec3 light = uf4Light.xyz;
+    float strength = uf4Light.w;
 	vec4 finalcolour = vec4(0.0, 0.0, 0.0, 1.0);
     if (lin_depth > 0.99f) 
     {
@@ -30,7 +30,7 @@ void main()
     } 
     else 
     {
-        float ambient = u_LightIl;
+        float ambient = ufLightIl;
         float diffuse = max(0.0, dot(normalize(light),normal));
 		if (u_toonOn)
 		{

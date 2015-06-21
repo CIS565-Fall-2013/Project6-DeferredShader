@@ -22,9 +22,9 @@ void main()
     vec3 normal = SampleTexture(u_Normaltex, fs_Texcoord);
     vec3 position = SampleTexture(u_Positiontex, fs_Texcoord);
     vec3 color = SampleTexture(u_Colortex, fs_Texcoord);
-    vec3 light = u_Light.xyz;
+    vec3 light = uf4Light.xyz;
 	vec3 glowMask = SampleTexture(u_GlowMask, fs_Texcoord).rrr;
-    float lightRadius = u_Light.w;
+    float lightRadius = uf4Light.w;
 
     switch (u_DisplayType) 
     {
