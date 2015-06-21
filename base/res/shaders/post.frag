@@ -24,10 +24,10 @@ const float GaussianMat5 [] = {	1/273.0, 4/273.0, 7/273.0, 4/273.0, 1/273.0,
 								
 void main() 
 {
-    vec3 color = sampleCol(fs_Texcoord);
+    vec3 color = SampleTexture(u_Posttex, fs_Texcoord);
 	if (u_BloomOn)
 	{
-//		if (sampleGlowMask(fs_Texcoord))
+//		if (SampleTexture(u_GlowMask, fs_Texcoord).r)
 //		{
 			vec3 bloomColour = vec3(0);
 			for (int i = -1; i < 2; ++i)

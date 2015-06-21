@@ -56,15 +56,15 @@ void GLProgram::Create(RenderEnums::ProgramType programType, const std::vector<s
 
     std::string workingDirectory;
     if (vert_shader.find_last_of('\\') != std::string::npos)
-        workingDirectory = vert_shader.substr(0, vert_shader.find_last_of('\\'));
+        workingDirectory = vert_shader.substr(0, vert_shader.find_last_of('\\') + 1);   // Include trailing \\
     else
-        workingDirectory = vert_shader.substr(0, vert_shader.find_last_of('/'));
+        workingDirectory = vert_shader.substr(0, vert_shader.find_last_of('/') + 1); // Include trailing /
     PreprocessShaderSource(vertShaderSource, workingDirectory);
 
     if (frag_shader.find_last_of('\\') != std::string::npos)
-        workingDirectory = frag_shader.substr(0, frag_shader.find_last_of('\\'));
+        workingDirectory = frag_shader.substr(0, frag_shader.find_last_of('\\') + 1);
     else
-        workingDirectory = frag_shader.substr(0, frag_shader.find_last_of('/'));
+        workingDirectory = frag_shader.substr(0, frag_shader.find_last_of('/') + 1);
     PreprocessShaderSource(fragShaderSource, workingDirectory);
 
     shaders = Utility::createShaders(vertShaderSource, fragShaderSource);
@@ -116,13 +116,21 @@ void GLProgram::PreprocessShaderSource(std::string& shaderSource, const std::str
             std::size_t includeNameEnd = includeEndPosition;
             while ((shaderSource[includeNameEnd] == '\r') || (shaderSource[includeNameEnd] == '\n') || (shaderSource[includeNameEnd] == '\t') || (shaderSource[includeNameEnd] == ' '))
                 --includeNameEnd;
-            std::string headerNameWithQuotes = shaderSource.substr(includePosition + 9, includeNameEnd);  // 9: '#','i','n','c','l','u','d','e',' '
-            std::string headerName = headerNameWithQuotes.substr(headerNameWithQuotes.find_first_of('"'), headerNameWithQuotes.find_last_of('"'));
+            std::string headerNameWithQuotes = shaderSource.substr(includePosition + 9, includeNameEnd - (includePosition + 9) + 1);  // 9: '#','i','n','c','l','u','d','e',' '
+            std::string headerName;
+            if (headerNameWithQuotes.find_first_of('"') != headerNameWithQuotes.find_last_of('"'))
+            {
+                headerName = headerNameWithQuotes.substr(headerNameWithQuotes.find_first_of('"') + 1, headerNameWithQuotes.find_last_of('"') - headerNameWithQuotes.find_first_of('"') - 1);
+            }
+            else
+            {
+                assert(false);  // Header not enclosed in quotes.
+            }
             headerName.insert(0, workingDirectory);
 
             int32_t headerSize = 0;
             char* includeSourceRaw = Utility::loadFile(headerName.c_str(), headerSize);
-            shaderSource.replace(includePosition, includeEndPosition, includeSourceRaw);
+            shaderSource.replace(includePosition, includeEndPosition - includePosition - 1, includeSourceRaw);
             delete[] includeSourceRaw;  includeSourceRaw = nullptr;
         }
         else

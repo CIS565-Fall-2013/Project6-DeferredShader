@@ -18,9 +18,9 @@ void main()
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
     float lin_depth = linearizeDepth(exp_depth, u_Near, u_Far);
 
-    vec3 normal = sampleNrm(fs_Texcoord);
-    vec3 position = samplePos(fs_Texcoord);
-    vec3 color = sampleCol(fs_Texcoord);
+    vec3 normal = SampleTexture(u_Normaltex, fs_Texcoord);
+    vec3 position = SampleTexture(u_Positiontex, fs_Texcoord);
+    vec3 color = SampleTexture(u_Colortex, fs_Texcoord);
     vec3 light = u_Light.xyz;
     float lightRadius = u_Light.w;
 
