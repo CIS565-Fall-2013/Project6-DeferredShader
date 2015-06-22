@@ -482,12 +482,12 @@ void GLRenderer::InitShaders()
     std::vector<std::pair<std::string, RenderEnums::RenderProgramStage>> shaderSourceAndStagePair;
     std::map<std::string, uint32_t> meshAttributeBindIndices, quadAttributeBindIndices, outputBindIndices;
 
-    meshAttributeBindIndices["Position"] = mesh_attributes::POSITION;
-    meshAttributeBindIndices["Normal"] = mesh_attributes::NORMAL;
-    meshAttributeBindIndices["Texcoord"] = mesh_attributes::TEXCOORD;
+    meshAttributeBindIndices["in_f3Position"] = mesh_attributes::POSITION;
+    meshAttributeBindIndices["in_f3Normal"] = mesh_attributes::NORMAL;
+    meshAttributeBindIndices["in_f2Texcoord"] = mesh_attributes::TEXCOORD;
 
-    quadAttributeBindIndices["Position"] = quad_attributes::POSITION;
-    quadAttributeBindIndices["Texcoord"] = quad_attributes::TEXCOORD;
+    quadAttributeBindIndices["in_f3Position"] = quad_attributes::POSITION;
+    quadAttributeBindIndices["in_f2Texcoord"] = quad_attributes::TEXCOORD;
 
     outputBindIndices["out_Color"] = 0;
     outputBindIndices["out_Normal"] = 1;
