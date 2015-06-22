@@ -10,20 +10,20 @@ uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 uniform sampler2D u_GlowMask;
 
-in vec2 fs_Texcoord;
+in vec2 vo_f2TexCoord;
 out vec4 out_f4Colour;
 
 const float occlusion_strength = 1.5f;
 void main() 
 {
-    float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
+    float exp_depth = texture(u_Depthtex, vo_f2TexCoord).r;
     float lin_depth = linearizeDepth(exp_depth);
 
-    vec3 normal = SampleTexture(u_Normaltex, fs_Texcoord);
-    vec3 position = SampleTexture(u_Positiontex, fs_Texcoord);
-    vec3 color = SampleTexture(u_Colortex, fs_Texcoord);
+    vec3 normal = SampleTexture(u_Normaltex, vo_f2TexCoord);
+    vec3 position = SampleTexture(u_Positiontex, vo_f2TexCoord);
+    vec3 color = SampleTexture(u_Colortex, vo_f2TexCoord);
     vec3 light = uf4Light.xyz;
-	vec3 glowMask = SampleTexture(u_GlowMask, fs_Texcoord).rrr;
+	vec3 glowMask = SampleTexture(u_GlowMask, vo_f2TexCoord).rrr;
     float lightRadius = uf4Light.w;
 
     switch (uiDisplayType) 
