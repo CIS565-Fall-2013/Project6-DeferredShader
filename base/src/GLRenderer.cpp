@@ -244,9 +244,9 @@ void GLRenderer::DrawOpaqueList()
     for (uint32_t i = 0; i < m_opaqueList.size(); ++i)
     {
         glm::mat4 inverse_transposed = glm::transpose(glm::inverse(view*m_opaqueList[i]->modelMat));
-        m_passProg->SetShaderConstant("u_Model", m_opaqueList[i]->modelMat);
-        m_passProg->SetShaderConstant("u_InvTrans", inverse_transposed);
-        m_passProg->SetShaderConstant("u_Color", m_opaqueList[i]->color);
+        m_passProg->SetShaderConstant("um4Model", m_opaqueList[i]->modelMat);
+        m_passProg->SetShaderConstant("um4InvTrans", inverse_transposed);
+        m_passProg->SetShaderConstant("uf3Color", m_opaqueList[i]->color);
 
         DrawGeometry(m_opaqueList[i]);
     }
