@@ -17,7 +17,7 @@ void main()
 {
     fs_Normal = (u_InvTrans*vec4(Normal,0.0f)).xyz;
     vec4 world = u_Model * vec4(Position, 1.0);
-    vec4 camera = u_View * world;
+    vec4 camera = um4View * world;
     fs_Position = camera;
-    gl_Position = u_Persp * camera;
+    gl_Position = um4Persp * camera;
 }

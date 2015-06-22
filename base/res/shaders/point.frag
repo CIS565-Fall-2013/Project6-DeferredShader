@@ -16,7 +16,7 @@ const float occlusion_strength = 1.5f;
 void main() 
 {
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
-    float lin_depth = linearizeDepth(exp_depth, u_Near, u_Far);
+    float lin_depth = linearizeDepth(exp_depth);
 
     vec3 normal = SampleTexture(u_Normaltex, fs_Texcoord);
     vec3 position = SampleTexture(u_Positiontex, fs_Texcoord);
@@ -25,7 +25,7 @@ void main()
     float lightRadius = uf4Light.w;
     out_Color = vec4(0, 0, 0, 1.0);
 
-    if(u_DisplayType == DISPLAY_LIGHTS)
+    if(uiDisplayType == DISPLAY_LIGHTS)
     {
         //Put some code here to visualize the fragment associated with this point light
 		out_Color = vec4 (uf3LightCol, 1.0);
@@ -36,7 +36,7 @@ void main()
 		float decay = max(1 - (distLight / lightRadius), 0);
 		float clampedDotPdt = clamp (dot (normalize(normal), (light-position)/distLight), 0.0, 1.0);
 
-		if (u_toonOn)
+		if (ubToonOn)
 		{
 			if (clampedDotPdt == 1.0)
 				clampedDotPdt = 1.0;

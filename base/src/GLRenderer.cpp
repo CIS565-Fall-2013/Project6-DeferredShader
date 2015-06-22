@@ -81,31 +81,31 @@ void GLRenderer::ApplyPerFrameShaderConstants()
 {
     ShaderConstantManager* shaderConstantManager = ShaderConstantManager::GetSingleton();
 
-    shaderConstantManager->SetShaderConstant("u_Far", "PerFrame", &m_farPlane);
-    shaderConstantManager->SetShaderConstant("u_Near", "PerFrame", &m_nearPlane);
-    shaderConstantManager->SetShaderConstant("u_ScreenHeight", "PerFrame", &m_height);
-    shaderConstantManager->SetShaderConstant("u_ScreenWidth", "PerFrame", &m_width);
-    shaderConstantManager->SetShaderConstant("u_InvScrHeight", "PerFrame", &m_invHeight);
-    shaderConstantManager->SetShaderConstant("u_InvScrWidth", "PerFrame", &m_invWidth);
-    //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexX"), mouse_dof_x*m_invWidth);
-    //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
+    shaderConstantManager->SetShaderConstant("ufFar", "PerFrame", &m_farPlane);
+    shaderConstantManager->SetShaderConstant("ufNear", "PerFrame", &m_nearPlane);
+    shaderConstantManager->SetShaderConstant("uiScreenHeight", "PerFrame", &m_height);
+    shaderConstantManager->SetShaderConstant("uiScreenWidth", "PerFrame", &m_width);
+    shaderConstantManager->SetShaderConstant("ufInvScrHeight", "PerFrame", &m_invHeight);
+    shaderConstantManager->SetShaderConstant("ufInvScrWidth", "PerFrame", &m_invWidth);
+    //glUniform1f(glGetUniformLocation(m_postProg, "ufMouseTexX"), mouse_dof_x*m_invWidth);
+    //glUniform1f(glGetUniformLocation(m_postProg, "ufMouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
 
     glm::mat4 view = m_pRenderCam->get_view();
     glm::mat4 persp = m_pRenderCam->GetPerspective();
-    shaderConstantManager->SetShaderConstant("u_View", "PerFrame", &view); 
-    shaderConstantManager->SetShaderConstant("u_Persp", "PerFrame", &persp);
+    shaderConstantManager->SetShaderConstant("um4View", "PerFrame", &view); 
+    shaderConstantManager->SetShaderConstant("um4Persp", "PerFrame", &persp);
 
     float zero = 0.0f;
-    shaderConstantManager->SetShaderConstant("glowmask", "PerFrame", &zero);
+    shaderConstantManager->SetShaderConstant("ufGlowmask", "PerFrame", &zero);
 
     int32_t value = 0;
-    shaderConstantManager->SetShaderConstant("u_BloomOn", "PerFrame", &value/*m_bloomEnabled*/);
-    shaderConstantManager->SetShaderConstant("u_toonOn", "PerFrame", &value/*m_toonEnabled*/);
-    shaderConstantManager->SetShaderConstant("u_DOFOn", "PerFrame", &value/*m_DOFEnabled*/);
-    shaderConstantManager->SetShaderConstant("u_DOFDebug", "PerFrame", &value/*m_DOFDebug*/);
+    shaderConstantManager->SetShaderConstant("ubBloomOn", "PerFrame", &value/*m_bloomEnabled*/);
+    shaderConstantManager->SetShaderConstant("ubToonOn", "PerFrame", &value/*m_toonEnabled*/);
+    shaderConstantManager->SetShaderConstant("ubDOFOn", "PerFrame", &value/*m_DOFEnabled*/);
+    shaderConstantManager->SetShaderConstant("ubDOFDebug", "PerFrame", &value/*m_DOFDebug*/);
 
     value = 1;
-    shaderConstantManager->SetShaderConstant("u_DisplayType", "PerFrame", &value);
+    shaderConstantManager->SetShaderConstant("uiDisplayType", "PerFrame", &value);
 }
 
 void GLRenderer::ApplyShaderConstantsForFullScreenPass()

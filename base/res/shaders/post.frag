@@ -25,7 +25,7 @@ const float GaussianMat5 [] = {	1/273.0, 4/273.0, 7/273.0, 4/273.0, 1/273.0,
 void main() 
 {
     vec3 color = SampleTexture(u_Posttex, fs_Texcoord);
-	if (u_BloomOn)
+	if (ubBloomOn)
 	{
 //		if (SampleTexture(u_GlowMask, fs_Texcoord).r)
 //		{
@@ -33,31 +33,31 @@ void main()
 			for (int i = -1; i < 2; ++i)
 			{
 				int j = -1;
-				bloomColour += (texture(u_GlowMask, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 2).xyz * GaussianMat3 [i+1].x);
+				bloomColour += (texture(u_GlowMask, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight), 2).xyz * GaussianMat3 [i+1].x);
 				++ j;
-				bloomColour += (texture(u_GlowMask, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 2).xyz * GaussianMat3 [i+1].y);
+				bloomColour += (texture(u_GlowMask, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight), 2).xyz * GaussianMat3 [i+1].y);
 				++ j;
-				bloomColour += (texture(u_GlowMask, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight), 2).xyz * GaussianMat3 [i+1].z);
+				bloomColour += (texture(u_GlowMask, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight), 2).xyz * GaussianMat3 [i+1].z);
 				++ j;
 			}  
 			color += color*bloomColour;  
 //		}
 	}
 
-	if (u_toonOn)
+	if (ubToonOn)
 	{
 		float dotPdt = dot (texture(u_normalTex, fs_Texcoord).xyz, -(texture(u_positionTex, fs_Texcoord).xyz));
 		if (dotPdt < 0.1)
 			color = vec3(0.0, 0.0, 0.0);
 	}
 
-	if (u_DOFOn)
+	if (ubDOFOn)
 	{
 		float depth = texture(u_depthTex, fs_Texcoord).x;
-		depth = linearizeDepth(depth, u_Near, u_Far);
+		depth = linearizeDepth(depth);
 
-		float focalLen = texture(u_depthTex, vec2 (u_mouseTexX, u_mouseTexY)).x;
-		focalLen = linearizeDepth(focalLen, u_Near, u_Far);
+		float focalLen = texture(u_depthTex, vec2 (ufMouseTexX, ufMouseTexY)).x;
+		focalLen = linearizeDepth(focalLen);
 
 		float lenQuant = 0.01;
 		depth = abs (focalLen - depth); 
@@ -69,19 +69,19 @@ void main()
 			for (int i = -2; i < 3; ++i)
 			{
 				int j = -2;
-				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
+				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
 				++ j;
-				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
+				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
 				++ j;
-				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
+				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
 				++ j;
-				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
+				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
 				++ j;
-				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
+				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
 				++ j;
 			}
 
-			if (!u_DOFDebug)
+			if (!ubDOFDebug)
 				color = bloomColour;
 			else
 				color = vec3 (1.0, 0.0, 0.0);
@@ -92,14 +92,14 @@ void main()
 			for (int i = -1; i < 2; ++i)
 			{
 				int j = -1;
-				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight)).xyz * GaussianMat3 [i+1].x);
+				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight)).xyz * GaussianMat3 [i+1].x);
 				++ j;
-				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight)).xyz * GaussianMat3 [i+1].y);
+				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight)).xyz * GaussianMat3 [i+1].y);
 				++ j;
-				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight)).xyz * GaussianMat3 [i+1].z);
+				bloomColour += (texture(u_Posttex, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight)).xyz * GaussianMat3 [i+1].z);
 				++ j;
 			}
-			if (!u_DOFDebug)
+			if (!ubDOFDebug)
 				color = bloomColour;
 			else
 				color = vec3(0.0, 1.0, 0.0);
@@ -110,12 +110,12 @@ void main()
 			{			
 				for (int j = 0; j < 2; ++ j)
 				{
-					bloomColour += texture(u_Posttex, vec2(fs_Texcoord.x + i*u_InvScrWidth, fs_Texcoord.y + j*u_InvScrHeight)).xyz;
+					bloomColour += texture(u_Posttex, vec2(fs_Texcoord.x + i*ufInvScrWidth, fs_Texcoord.y + j*ufInvScrHeight)).xyz;
 				}
 			}
 			bloomColour /= 4.0;
 			
-			if (!u_DOFDebug)
+			if (!ubDOFDebug)
 				color = bloomColour;
 			else
 				color = vec3(0.0, 0.0, 1.0);

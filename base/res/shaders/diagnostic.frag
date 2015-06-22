@@ -17,7 +17,7 @@ const float occlusion_strength = 1.5f;
 void main() 
 {
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
-    float lin_depth = linearizeDepth(exp_depth, u_Near, u_Far);
+    float lin_depth = linearizeDepth(exp_depth);
 
     vec3 normal = SampleTexture(u_Normaltex, fs_Texcoord);
     vec3 position = SampleTexture(u_Positiontex, fs_Texcoord);
@@ -26,7 +26,7 @@ void main()
 	vec3 glowMask = SampleTexture(u_GlowMask, fs_Texcoord).rrr;
     float lightRadius = uf4Light.w;
 
-    switch (u_DisplayType) 
+    switch (uiDisplayType) 
     {
         case DISPLAY_DEPTH:
             out_Color = vec4(vec3(lin_depth), 1.0f);
@@ -35,7 +35,7 @@ void main()
             out_Color = vec4(abs(normal), 1.0f);
             break;
         case DISPLAY_POSITION:
-            out_Color = vec4(abs(position) / u_Far, 1.0f);
+            out_Color = vec4(abs(position) / ufFar, 1.0f);
             break;
         case DISPLAY_COLOR:
             out_Color = vec4(color, 1.0);

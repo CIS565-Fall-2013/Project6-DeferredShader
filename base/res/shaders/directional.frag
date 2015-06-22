@@ -16,7 +16,7 @@ const float occlusion_strength = 1.5f;
 void main() 
 {
     float exp_depth = texture(u_Depthtex, fs_Texcoord).r;
-    float lin_depth = linearizeDepth(exp_depth, u_Near, u_Far);
+    float lin_depth = linearizeDepth(exp_depth);
 
     vec3 normal = SampleTexture(u_Normaltex, fs_Texcoord);
     vec3 position = SampleTexture(u_Positiontex, fs_Texcoord);
