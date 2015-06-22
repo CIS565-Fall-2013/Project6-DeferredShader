@@ -10,7 +10,7 @@ uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
 in vec2 fs_Texcoord;
-out vec4 out_Color;
+out vec4 out_f4Colour;
 
 const float occlusion_strength = 1.5f;
 void main() 
@@ -26,7 +26,7 @@ void main()
 	vec4 finalcolour = vec4(0.0, 0.0, 0.0, 1.0);
     if (lin_depth > 0.99f) 
     {
-        out_Color = vec4(vec3(0.0), 1.0);
+        out_f4Colour = vec4(vec3(0.0), 1.0);
     } 
     else 
     {
@@ -56,7 +56,7 @@ void main()
 		else
 			finalcolour = vec4(color*(strength*diffuse + ambient), 1.0f);
 		
-		out_Color = finalcolour;
+		out_f4Colour = finalcolour;
     }	
 }
 

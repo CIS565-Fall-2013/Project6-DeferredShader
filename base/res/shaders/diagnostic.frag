@@ -11,7 +11,7 @@ uniform sampler2D u_RandomScalartex;
 uniform sampler2D u_GlowMask;
 
 in vec2 fs_Texcoord;
-out vec4 out_Color;
+out vec4 out_f4Colour;
 
 const float occlusion_strength = 1.5f;
 void main() 
@@ -29,19 +29,19 @@ void main()
     switch (uiDisplayType) 
     {
         case DISPLAY_DEPTH:
-            out_Color = vec4(vec3(lin_depth), 1.0f);
+            out_f4Colour = vec4(vec3(lin_depth), 1.0f);
             break;
         case DISPLAY_NORMAL:
-            out_Color = vec4(abs(normal), 1.0f);
+            out_f4Colour = vec4(abs(normal), 1.0f);
             break;
         case DISPLAY_POSITION:
-            out_Color = vec4(abs(position) / ufFar, 1.0f);
+            out_f4Colour = vec4(abs(position) / ufFar, 1.0f);
             break;
         case DISPLAY_COLOR:
-            out_Color = vec4(color, 1.0);
+            out_f4Colour = vec4(color, 1.0);
             break;
 		case DISPLAY_GLOWMASK:
-			out_Color = vec4(glowMask, 1.0);
+			out_f4Colour = vec4(glowMask, 1.0);
         case DISPLAY_LIGHTS:
         case DISPLAY_TOTAL:
             break;

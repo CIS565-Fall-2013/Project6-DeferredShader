@@ -10,7 +10,7 @@ uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
 in vec2 fs_Texcoord;
-out vec4 out_Color;
+out vec4 out_f4Colour;
 
 const float occlusion_strength = 1.5f;
 void main() 
@@ -25,5 +25,5 @@ void main()
     float lightRadius = uf4Light.w;
 
     float diffuse = max(0.0, dot(normalize(light), normal));
-    out_Color = vec4(color*ufLightIl*diffuse, 1.0f);
+    out_f4Colour = vec4(color*ufLightIl*diffuse, 1.0f);
 }

@@ -10,7 +10,7 @@ uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 
 in vec2 fs_Texcoord;
-out vec4 out_Color;
+out vec4 out_f4Colour;
 
 const float occlusion_strength = 1.5f;
 void main() 
@@ -23,12 +23,12 @@ void main()
     vec3 color = SampleTexture(u_Colortex, fs_Texcoord);
     vec3 light = uf4Light.xyz;
     float lightRadius = uf4Light.w;
-    out_Color = vec4(0, 0, 0, 1.0);
+    out_f4Colour = vec4(0, 0, 0, 1.0);
 
     if(uiDisplayType == DISPLAY_LIGHTS)
     {
         //Put some code here to visualize the fragment associated with this point light
-		out_Color = vec4 (uf3LightCol, 1.0);
+		out_f4Colour = vec4 (uf3LightCol, 1.0);
     }
     else
     {
@@ -52,6 +52,6 @@ void main()
 				clampedDotPdt = 0.0;
 		}
 		vec3 finalColour = (color * uf3LightCol * ufLightIl * clampedDotPdt) * decay;
-		out_Color = vec4(finalColour, 1.0);		// Because light and normal are both in view space.
+		out_f4Colour = vec4(finalColour, 1.0);		// Because light and normal are both in view space.
     }
 }

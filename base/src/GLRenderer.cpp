@@ -326,16 +326,16 @@ void GLRenderer::InitFramebuffers()
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_NONE);
     GLint normal_loc;
-    if (!m_passProg->GetOutputBindLocation("out_Normal", reinterpret_cast<uint32_t&>(normal_loc)))
+    if (!m_passProg->GetOutputBindLocation("out_f4Normal", reinterpret_cast<uint32_t&>(normal_loc)))
         assert(false);
     GLint position_loc;
-    if (!m_passProg->GetOutputBindLocation("out_Position", reinterpret_cast<uint32_t&>(position_loc)))
+    if (!m_passProg->GetOutputBindLocation("out_f4Position", reinterpret_cast<uint32_t&>(position_loc)))
         assert(false);
     GLint color_loc;
-    if (!m_passProg->GetOutputBindLocation("out_Color", reinterpret_cast<uint32_t&>(color_loc)))
+    if (!m_passProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<uint32_t&>(color_loc)))
         assert(false);
     GLint glowmask_loc;
-    if (!m_passProg->GetOutputBindLocation("out_GlowMask", reinterpret_cast<uint32_t&>(glowmask_loc)))
+    if (!m_passProg->GetOutputBindLocation("out_f4GlowMask", reinterpret_cast<uint32_t&>(glowmask_loc)))
         assert(false);
 
     GLenum draws[4];
@@ -382,7 +382,7 @@ void GLRenderer::InitFramebuffers()
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_BACK);
-    if (!m_ambientProg->GetOutputBindLocation("out_Color", reinterpret_cast<uint32_t&>(color_loc)))
+    if (!m_ambientProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<uint32_t&>(color_loc)))
         assert(false);
     GLenum draw[1];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
@@ -489,10 +489,10 @@ void GLRenderer::InitShaders()
     quadAttributeBindIndices["in_f3Position"] = quad_attributes::POSITION;
     quadAttributeBindIndices["in_f2Texcoord"] = quad_attributes::TEXCOORD;
 
-    outputBindIndices["out_Color"] = 0;
-    outputBindIndices["out_Normal"] = 1;
-    outputBindIndices["out_Position"] = 2;
-    outputBindIndices["out_GlowMask"] = 3;
+    outputBindIndices["out_f4Colour"] = 0;
+    outputBindIndices["out_f4Normal"] = 1;
+    outputBindIndices["out_f4Position"] = 2;
+    outputBindIndices["out_f4GlowMask"] = 3;
 
     shaderSourceAndStagePair.clear();
     shaderSourceAndStagePair.push_back(std::make_pair(pass_vert, RenderEnums::VERT));

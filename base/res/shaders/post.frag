@@ -10,7 +10,7 @@ uniform sampler2D u_positionTex;
 uniform sampler2D u_depthTex;
 
 in vec2 fs_Texcoord;
-out vec4 out_Color;
+out vec4 out_f4Colour;
 
 const float occlusion_strength = 1.5f;
 const mat3 GaussianMat3 = mat3(vec3 (1,2,1), 
@@ -124,6 +124,6 @@ void main()
 
 //    float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
 //    float vin = min(2*distance(vec2(0.5), fs_Texcoord), 1.0);
-    out_Color = vec4(color,1.0);//vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+    out_f4Colour = vec4(color,1.0);//vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
 }
 
