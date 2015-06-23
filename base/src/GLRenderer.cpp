@@ -81,31 +81,31 @@ void GLRenderer::ApplyPerFrameShaderConstants()
 {
     ShaderConstantManager* shaderConstantManager = ShaderConstantManager::GetSingleton();
 
-    shaderConstantManager->SetShaderConstant("u_Far", "PerFrame", &m_farPlane);
-    shaderConstantManager->SetShaderConstant("u_Near", "PerFrame", &m_nearPlane);
-    shaderConstantManager->SetShaderConstant("u_ScreenHeight", "PerFrame", &m_height);
-    shaderConstantManager->SetShaderConstant("u_ScreenWidth", "PerFrame", &m_width);
-    shaderConstantManager->SetShaderConstant("u_InvScrHeight", "PerFrame", &m_invHeight);
-    shaderConstantManager->SetShaderConstant("u_InvScrWidth", "PerFrame", &m_invWidth);
-    //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexX"), mouse_dof_x*m_invWidth);
-    //glUniform1f(glGetUniformLocation(m_postProg, "u_mouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
+    shaderConstantManager->SetShaderConstant("ufFar", "PerFrame", &m_farPlane);
+    shaderConstantManager->SetShaderConstant("ufNear", "PerFrame", &m_nearPlane);
+    shaderConstantManager->SetShaderConstant("uiScreenHeight", "PerFrame", &m_height);
+    shaderConstantManager->SetShaderConstant("uiScreenWidth", "PerFrame", &m_width);
+    shaderConstantManager->SetShaderConstant("ufInvScrHeight", "PerFrame", &m_invHeight);
+    shaderConstantManager->SetShaderConstant("ufInvScrWidth", "PerFrame", &m_invWidth);
+    //glUniform1f(glGetUniformLocation(m_postProg, "ufMouseTexX"), mouse_dof_x*m_invWidth);
+    //glUniform1f(glGetUniformLocation(m_postProg, "ufMouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
 
     glm::mat4 view = m_pRenderCam->get_view();
     glm::mat4 persp = m_pRenderCam->GetPerspective();
-    shaderConstantManager->SetShaderConstant("u_View", "PerFrame", &view); 
-    shaderConstantManager->SetShaderConstant("u_Persp", "PerFrame", &persp);
+    shaderConstantManager->SetShaderConstant("um4View", "PerFrame", &view); 
+    shaderConstantManager->SetShaderConstant("um4Persp", "PerFrame", &persp);
 
     float zero = 0.0f;
-    shaderConstantManager->SetShaderConstant("glowmask", "PerFrame", &zero);
+    shaderConstantManager->SetShaderConstant("ufGlowmask", "PerFrame", &zero);
 
     int32_t value = 0;
-    shaderConstantManager->SetShaderConstant("u_BloomOn", "PerFrame", &value/*m_bloomEnabled*/);
-    shaderConstantManager->SetShaderConstant("u_toonOn", "PerFrame", &value/*m_toonEnabled*/);
-    shaderConstantManager->SetShaderConstant("u_DOFOn", "PerFrame", &value/*m_DOFEnabled*/);
-    shaderConstantManager->SetShaderConstant("u_DOFDebug", "PerFrame", &value/*m_DOFDebug*/);
+    shaderConstantManager->SetShaderConstant("ubBloomOn", "PerFrame", &value/*m_bloomEnabled*/);
+    shaderConstantManager->SetShaderConstant("ubToonOn", "PerFrame", &value/*m_toonEnabled*/);
+    shaderConstantManager->SetShaderConstant("ubDOFOn", "PerFrame", &value/*m_DOFEnabled*/);
+    shaderConstantManager->SetShaderConstant("ubDOFDebug", "PerFrame", &value/*m_DOFDebug*/);
 
     value = 1;
-    shaderConstantManager->SetShaderConstant("u_DisplayType", "PerFrame", &value);
+    shaderConstantManager->SetShaderConstant("uiDisplayType", "PerFrame", &value);
 }
 
 void GLRenderer::ApplyShaderConstantsForFullScreenPass()
@@ -185,8 +185,8 @@ void GLRenderer::drawLight(glm::vec3 pos, float strength)
         return;
     }
     light.w = radius;
-    m_currentProgram->SetShaderConstant("u_Light", light);
-    m_currentProgram->SetShaderConstant("u_LightIl", strength);
+    m_currentProgram->SetShaderConstant("uf4Light", light);
+    m_currentProgram->SetShaderConstant("ufLightIl", strength);
 
     //glm::vec4 left = vp * glm::vec4(pos + radius*m_pRenderCam->start_left, 1.0);
     //glm::vec4 up = vp * glm::vec4(pos + radius*m_pRenderCam->up, 1.0);
@@ -217,21 +217,21 @@ void GLRenderer::DrawLightList()
     SetShaderProgram(m_pointProg);
     ApplyShaderConstantsForFullScreenPass();
 
-    m_pointProg->SetShaderConstant("u_LightCol", Colours::yellow);
+    m_pointProg->SetShaderConstant("uf3LightCol", Colours::yellow);
     glDepthMask(GL_FALSE);
     drawLight(glm::vec3(5.4, -0.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -0.5, 3.0), 1.0);
-    m_pointProg->SetShaderConstant("u_LightCol", Colours::orange);
+    m_pointProg->SetShaderConstant("uf3LightCol", Colours::orange);
     drawLight(glm::vec3(5.4, -2.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -2.5, 3.0), 1.0);
-    m_pointProg->SetShaderConstant("u_LightCol", Colours::yellow);
+    m_pointProg->SetShaderConstant("uf3LightCol", Colours::yellow);
     drawLight(glm::vec3(5.4, -4.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -4.5, 3.0), 1.0);
 
-    m_pointProg->SetShaderConstant("u_LightCol", Colours::red);
+    m_pointProg->SetShaderConstant("uf3LightCol", Colours::red);
     drawLight(glm::vec3(2.5, -1.2, 0.5), 2.5);
 
-    m_pointProg->SetShaderConstant("u_LightCol", Colours::blue);
+    m_pointProg->SetShaderConstant("uf3LightCol", Colours::blue);
     drawLight(glm::vec3(2.5, -5.0, 4.2), 2.5);
     glDepthMask(GL_TRUE);
 }
@@ -244,9 +244,9 @@ void GLRenderer::DrawOpaqueList()
     for (uint32_t i = 0; i < m_opaqueList.size(); ++i)
     {
         glm::mat4 inverse_transposed = glm::transpose(glm::inverse(view*m_opaqueList[i]->modelMat));
-        m_passProg->SetShaderConstant("u_Model", m_opaqueList[i]->modelMat);
-        m_passProg->SetShaderConstant("u_InvTrans", inverse_transposed);
-        m_passProg->SetShaderConstant("u_Color", m_opaqueList[i]->color);
+        m_passProg->SetShaderConstant("um4Model", m_opaqueList[i]->modelMat);
+        m_passProg->SetShaderConstant("um4InvTrans", inverse_transposed);
+        m_passProg->SetShaderConstant("uf3Color", m_opaqueList[i]->color);
 
         DrawGeometry(m_opaqueList[i]);
     }
@@ -326,16 +326,16 @@ void GLRenderer::InitFramebuffers()
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_NONE);
     GLint normal_loc;
-    if (!m_passProg->GetOutputBindLocation("out_Normal", reinterpret_cast<uint32_t&>(normal_loc)))
+    if (!m_passProg->GetOutputBindLocation("out_f4Normal", reinterpret_cast<uint32_t&>(normal_loc)))
         assert(false);
     GLint position_loc;
-    if (!m_passProg->GetOutputBindLocation("out_Position", reinterpret_cast<uint32_t&>(position_loc)))
+    if (!m_passProg->GetOutputBindLocation("out_f4Position", reinterpret_cast<uint32_t&>(position_loc)))
         assert(false);
     GLint color_loc;
-    if (!m_passProg->GetOutputBindLocation("out_Color", reinterpret_cast<uint32_t&>(color_loc)))
+    if (!m_passProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<uint32_t&>(color_loc)))
         assert(false);
     GLint glowmask_loc;
-    if (!m_passProg->GetOutputBindLocation("out_GlowMask", reinterpret_cast<uint32_t&>(glowmask_loc)))
+    if (!m_passProg->GetOutputBindLocation("out_f4GlowMask", reinterpret_cast<uint32_t&>(glowmask_loc)))
         assert(false);
 
     GLenum draws[4];
@@ -382,7 +382,7 @@ void GLRenderer::InitFramebuffers()
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_BACK);
-    if (!m_ambientProg->GetOutputBindLocation("out_Color", reinterpret_cast<uint32_t&>(color_loc)))
+    if (!m_ambientProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<uint32_t&>(color_loc)))
         assert(false);
     GLenum draw[1];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
@@ -482,17 +482,17 @@ void GLRenderer::InitShaders()
     std::vector<std::pair<std::string, RenderEnums::RenderProgramStage>> shaderSourceAndStagePair;
     std::map<std::string, uint32_t> meshAttributeBindIndices, quadAttributeBindIndices, outputBindIndices;
 
-    meshAttributeBindIndices["Position"] = mesh_attributes::POSITION;
-    meshAttributeBindIndices["Normal"] = mesh_attributes::NORMAL;
-    meshAttributeBindIndices["Texcoord"] = mesh_attributes::TEXCOORD;
+    meshAttributeBindIndices["in_f3Position"] = mesh_attributes::POSITION;
+    meshAttributeBindIndices["in_f3Normal"] = mesh_attributes::NORMAL;
+    meshAttributeBindIndices["in_f2Texcoord"] = mesh_attributes::TEXCOORD;
 
-    quadAttributeBindIndices["Position"] = quad_attributes::POSITION;
-    quadAttributeBindIndices["Texcoord"] = quad_attributes::TEXCOORD;
+    quadAttributeBindIndices["in_f3Position"] = quad_attributes::POSITION;
+    quadAttributeBindIndices["in_f2Texcoord"] = quad_attributes::TEXCOORD;
 
-    outputBindIndices["out_Color"] = 0;
-    outputBindIndices["out_Normal"] = 1;
-    outputBindIndices["out_Position"] = 2;
-    outputBindIndices["out_GlowMask"] = 3;
+    outputBindIndices["out_f4Colour"] = 0;
+    outputBindIndices["out_f4Normal"] = 1;
+    outputBindIndices["out_f4Position"] = 2;
+    outputBindIndices["out_f4GlowMask"] = 3;
 
     shaderSourceAndStagePair.clear();
     shaderSourceAndStagePair.push_back(std::make_pair(pass_vert, RenderEnums::VERT));
@@ -619,8 +619,8 @@ void GLRenderer::RenderAmbientLighting()
 
     SetShaderProgram(m_ambientProg);
     ApplyShaderConstantsForFullScreenPass();
-    m_ambientProg->SetShaderConstant("u_Light", dir_light);
-    m_ambientProg->SetShaderConstant("u_LightIl", strength);
+    m_ambientProg->SetShaderConstant("uf4Light", dir_light);
+    m_ambientProg->SetShaderConstant("ufLightIl", strength);
 
     glDepthMask(GL_FALSE);
     RenderQuad();

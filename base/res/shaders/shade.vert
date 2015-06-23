@@ -1,12 +1,12 @@
-#version 430
+#include "ShaderCommon.glsl"
 
-in vec3 Position;
-in vec2 Texcoord;
+in vec3 in_f3Position;
+in vec2 in_f2Texcoord;
 
-out vec2 fs_Texcoord;
+out vec2 vo_f2TexCoord;
 
 void main() 
 {
-    fs_Texcoord = Texcoord;
-    gl_Position = vec4(Position, 1.0f);
+    vo_f2TexCoord = in_f2Texcoord;
+    gl_Position = vec4(in_f3Position, 1.0f);
 }

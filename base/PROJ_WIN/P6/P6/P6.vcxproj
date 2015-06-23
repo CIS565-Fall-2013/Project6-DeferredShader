@@ -98,13 +98,14 @@
     <None Include="..\..\..\res\shaders\ambient.frag" />
     <None Include="..\..\..\res\shaders\diagnostic.frag" />
     <None Include="..\..\..\res\shaders\directional.frag" />
+    <None Include="..\..\..\res\shaders\LightingCommon.glsl" />
     <None Include="..\..\..\res\shaders\pass.frag" />
     <None Include="..\..\..\res\shaders\pass.vert" />
     <None Include="..\..\..\res\shaders\point.frag" />
     <None Include="..\..\..\res\shaders\post.frag" />
     <None Include="..\..\..\res\shaders\post.vert" />
     <None Include="..\..\..\res\shaders\shade.vert" />
-    <None Include="toon.frag" />
+    <None Include="..\..\..\res\shaders\ShaderCommon.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
