@@ -13,117 +13,119 @@ in vec2 vo_f2TexCoord;
 out vec4 out_f4Colour;
 
 const float occlusion_strength = 1.5f;
-const mat3 GaussianMat3 = mat3(vec3 (1,2,1), 
-							   vec3 (2,4,2),
-							   vec3 (1,2,1)) / 16.0;
-const float GaussianMat5 [] = {	1/273.0, 4/273.0, 7/273.0, 4/273.0, 1/273.0,
-								4/273.0, 16/273.0, 26/273.0, 16/273.0, 4/273.0,
-							    7/273.0, 26/273.0, 41/273.0, 26/273.0, 7/273.0,
-							    4/273.0, 16/273.0, 26/273.0, 16/273.0, 4/273.0,
-							    1/273.0, 4/273.0, 7/273.0, 4/273.0, 1/273.0	};
+const mat3 m3Gaussian = mat3(vec3 (1,2,1), 
+							 vec3 (2,4,2),
+							 vec3 (1,2,1)) / 16.0f;
+const float m5Gaussian[] = {    
+                                1/273.0f, 4/273.0f, 7/273.0f, 4/273.0f, 1/273.0f,
+							    4/273.0f, 16/273.0f, 26/273.0f, 16/273.0f, 4/273.0f,
+							    7/273.0f, 26/273.0f, 41/273.0f, 26/273.0f, 7/273.0f,
+							    4/273.0f, 16/273.0f, 26/273.0f, 16/273.0f, 4/273.0f,
+							    1/273.0f, 4/273.0f, 7/273.0f, 4/273.0f, 1/273.0f
+                           };
 								
 void main() 
 {
-    vec3 color = SampleTexture(u_Posttex, vo_f2TexCoord);
+    vec3 f3Colour = SampleTexture(u_Posttex, vo_f2TexCoord);
 	if (ubBloomOn)
 	{
-//		if (SampleTexture(u_GlowMask, vo_f2TexCoord).r)
-//		{
-			vec3 bloomColour = vec3(0);
+		if (SampleTexture(u_GlowMask, vo_f2TexCoord).r)
+		{
+			vec3 f3BloomColour = vec3(0);
 			for (int i = -1; i < 2; ++i)
 			{
 				int j = -1;
-				bloomColour += (texture(u_GlowMask, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight), 2).xyz * GaussianMat3 [i+1].x);
-				++ j;
-				bloomColour += (texture(u_GlowMask, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight), 2).xyz * GaussianMat3 [i+1].y);
-				++ j;
-				bloomColour += (texture(u_GlowMask, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight), 2).xyz * GaussianMat3 [i+1].z);
-				++ j;
+				f3BloomColour += (SampleTexture(u_GlowMask, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m3Gaussian[i+1].x);
+				++j;
+				f3BloomColour += (SampleTexture(u_GlowMask, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m3Gaussian[i+1].y);
+				++j;
+				f3BloomColour += (SampleTexture(u_GlowMask, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m3Gaussian[i+1].z);
+				++j;
 			}  
-			color += color*bloomColour;  
-//		}
+			f3Colour += f3Colour * f3BloomColour;  
+		}
 	}
 
 	if (ubToonOn)
 	{
-		float dotPdt = dot (texture(u_normalTex, vo_f2TexCoord).xyz, -(texture(u_positionTex, vo_f2TexCoord).xyz));
-		if (dotPdt < 0.1)
-			color = vec3(0.0, 0.0, 0.0);
+		float fDotPdt = dot(SampleTexture(u_normalTex, vo_f2TexCoord).xyz, -(SampleTexture(u_positionTex, vo_f2TexCoord).xyz));
+		if (fDotPdt < 0.1)
+			f3Colour = vec3(0.0, 0.0, 0.0);
 	}
 
 	if (ubDOFOn)
 	{
-		float depth = texture(u_depthTex, vo_f2TexCoord).x;
-		depth = linearizeDepth(depth);
+		float fDepth = SampleTexture(u_depthTex, vo_f2TexCoord).x;
+		fDepth = linearizeDepth(fDepth);
 
-		float focalLen = texture(u_depthTex, vec2 (ufMouseTexX, ufMouseTexY)).x;
-		focalLen = linearizeDepth(focalLen);
+		float fFocalLen = SampleTexture(u_depthTex, vec2(ufMouseTexX, ufMouseTexY)).x;
+		fFocalLen = linearizeDepth(fFocalLen);
 
-		float lenQuant = 0.01;
-		depth = abs (focalLen - depth); 
-		depth /= lenQuant;
+		float fLenQuant = 0.01f;
+		fDepth = abs(fFocalLen - fDepth); 
+		fDepth /= fLenQuant;
 
-		vec3 bloomColour = vec3(0);
-		if (depth >= 3.0)
+		vec3 f3BloomColour = vec3(0);
+		if (fDepth >= 3.0f)
 		{
+            // 5x5 kernel - Maximum strength DOF
 			for (int i = -2; i < 3; ++i)
 			{
 				int j = -2;
-				bloomColour += (texture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
-				++ j;
-				bloomColour += (texture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
-				++ j;
-				bloomColour += (texture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
-				++ j;
-				bloomColour += (texture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
-				++ j;
-				bloomColour += (texture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * GaussianMat5 [(j+2)*5+ (i+2)]);
-				++ j;
+				f3BloomColour += (SampleTexture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m5Gaussian[(j+2)*5+ (i+2)]);
+				++j;
+				f3BloomColour += (SampleTexture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m5Gaussian[(j+2)*5+ (i+2)]);
+				++j;
+				f3BloomColour += (SampleTexture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m5Gaussian[(j+2)*5+ (i+2)]);
+				++j;
+				f3BloomColour += (SampleTexture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m5Gaussian[(j+2)*5+ (i+2)]);
+				++j;
+				f3BloomColour += (SampleTexture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m5Gaussian[(j+2)*5+ (i+2)]);
+				++j;
 			}
 
 			if (!ubDOFDebug)
-				color = bloomColour;
+				f3Colour = f3BloomColour;
 			else
-				color = vec3 (1.0, 0.0, 0.0);
+				f3Colour = vec3(1.0f, 0.0f, 0.0f);
 		}
-
-		else if (depth >= 2.0)
+		else if (fDepth >= 2.0f)
 		{
+            // 3x3 kernel - Medium strength DOF
 			for (int i = -1; i < 2; ++i)
 			{
 				int j = -1;
-				bloomColour += (texture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * GaussianMat3 [i+1].x);
-				++ j;
-				bloomColour += (texture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * GaussianMat3 [i+1].y);
-				++ j;
-				bloomColour += (texture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * GaussianMat3 [i+1].z);
-				++ j;
+				f3BloomColour += (SampleTexture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m3Gaussian[i+1].x);
+				++j;
+				f3BloomColour += (SampleTexture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m3Gaussian[i+1].y);
+				++j;
+				f3BloomColour += (SampleTexture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m3Gaussian[i+1].z);
+				++j;
 			}
 			if (!ubDOFDebug)
-				color = bloomColour;
+				f3Colour = f3BloomColour;
 			else
-				color = vec3(0.0, 1.0, 0.0);
+				f3Colour = vec3(0.0f, 1.0f, 0.0f);
 		}
-		else if (depth >= 1.0)
+		else if (fDepth >= 1.0f)
 		{
+            // 2x2 kernel - Minimum strength DOF
 			for (int i = 0; i < 2; ++ i)
 			{			
 				for (int j = 0; j < 2; ++ j)
 				{
-					bloomColour += texture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz;
+					f3BloomColour += SampleTexture(u_Posttex, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz;
 				}
 			}
-			bloomColour /= 4.0;
+			f3BloomColour /= 4.0f;
 			
 			if (!ubDOFDebug)
-				color = bloomColour;
+				f3Colour = f3BloomColour;
 			else
-				color = vec3(0.0, 0.0, 1.0);
+				f3Colour = vec3(0.0f, 0.0f, 1.0f);
 		}
 	}
 
-//    float gray = dot(color, vec3(0.2125, 0.7154, 0.0721));
-//    float vin = min(2*distance(vec2(0.5), vo_f2TexCoord), 1.0);
-    out_f4Colour = vec4(color,1.0);//vec4(mix(pow(color,vec3(1.0/1.8)),vec3(gray),vin), 1.0);
+    out_f4Colour = vec4(f3Colour, 1.0f);
 }
 

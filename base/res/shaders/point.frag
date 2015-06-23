@@ -15,43 +15,40 @@ out vec4 out_f4Colour;
 const float occlusion_strength = 1.5f;
 void main() 
 {
-    float exp_depth = texture(u_Depthtex, vo_f2TexCoord).r;
-    float lin_depth = linearizeDepth(exp_depth);
+    vec3 f3Normal = SampleTexture(u_Normaltex, vo_f2TexCoord);
+    vec3 f3Position = SampleTexture(u_Positiontex, vo_f2TexCoord);
+    vec3 f3Colour = SampleTexture(u_Colortex, vo_f2TexCoord);
 
-    vec3 normal = SampleTexture(u_Normaltex, vo_f2TexCoord);
-    vec3 position = SampleTexture(u_Positiontex, vo_f2TexCoord);
-    vec3 color = SampleTexture(u_Colortex, vo_f2TexCoord);
-    vec3 light = uf4Light.xyz;
-    float lightRadius = uf4Light.w;
-    out_f4Colour = vec4(0, 0, 0, 1.0);
+    vec3 f3FinalColour = vec3(0.0f);
 
     if(uiDisplayType == DISPLAY_LIGHTS)
     {
         //Put some code here to visualize the fragment associated with this point light
-		out_f4Colour = vec4 (uf3LightCol, 1.0);
+		f3FinalColour = uf3LightCol;
     }
     else
     {
-		float distLight = length (light-position);
-		float decay = max(1 - (distLight / lightRadius), 0);
-		float clampedDotPdt = clamp (dot (normalize(normal), (light-position)/distLight), 0.0, 1.0);
+		float fDistToLight = length(uf4Light.xyz - f3Position);
+		float fDecay = max(1.0f - (fDistToLight / uf4Light.w), 0.0f);
+		float fClampedDotPdt = clamp(dot(normalize(f3Normal), (uf4Light.xyz - f3Position)/fDistToLight), 0.0f, 1.0f);
 
 		if (ubToonOn)
 		{
-			if (clampedDotPdt == 1.0)
-				clampedDotPdt = 1.0;
-			else if (clampedDotPdt >= 0.8)
-				clampedDotPdt = 0.8;
-			else if (clampedDotPdt >= 0.6)
-				clampedDotPdt = 0.6;
-			else if (clampedDotPdt >= 0.4)
-				clampedDotPdt = 0.4;
-			else if (clampedDotPdt >= 0.2)
-				clampedDotPdt = 0.2;
+			if (fClampedDotPdt == 1.0f)
+				fClampedDotPdt = 1.0f;
+			else if (fClampedDotPdt >= 0.8f)
+				fClampedDotPdt = 0.8f;
+			else if (fClampedDotPdt >= 0.6f)
+				fClampedDotPdt = 0.6f;
+			else if (fClampedDotPdt >= 0.4f)
+				fClampedDotPdt = 0.4f;
+			else if (fClampedDotPdt >= 0.2f)
+				fClampedDotPdt = 0.2f;
 			else
-				clampedDotPdt = 0.0;
+				fClampedDotPdt = 0.0f;
 		}
-		vec3 finalColour = (color * uf3LightCol * ufLightIl * clampedDotPdt) * decay;
-		out_f4Colour = vec4(finalColour, 1.0);		// Because light and normal are both in view space.
+		f3FinalColour = (f3Colour * uf3LightCol * ufLightIl * fClampedDotPdt) * fDecay;
     }
+    
+    out_f4Colour = vec4(f3FinalColour, 1.0);		// Because light and normal are both in view space.
 }
