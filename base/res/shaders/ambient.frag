@@ -15,48 +15,43 @@ out vec4 out_f4Colour;
 const float occlusion_strength = 1.5f;
 void main() 
 {
-    float exp_depth = texture(u_Depthtex, vo_f2TexCoord).r;
-    float lin_depth = linearizeDepth(exp_depth);
+    float fLinearDepth = texture(u_Depthtex, vo_f2TexCoord).r;
+    fLinearDepth = linearizeDepth(fLinearDepth);
 
-    vec3 normal = SampleTexture(u_Normaltex, vo_f2TexCoord);
-    vec3 position = SampleTexture(u_Positiontex, vo_f2TexCoord);
-    vec3 color = SampleTexture(u_Colortex, vo_f2TexCoord);
-    vec3 light = uf4Light.xyz;
-    float strength = uf4Light.w;
-	vec4 finalcolour = vec4(0.0, 0.0, 0.0, 1.0);
-    if (lin_depth > 0.99f) 
+    vec3 f3Normal = SampleTexture(u_Normaltex, vo_f2TexCoord);
+    vec3 f3Position = SampleTexture(u_Positiontex, vo_f2TexCoord);
+    vec3 f3Colour = SampleTexture(u_Colortex, vo_f2TexCoord);
+	vec4 f4FinalColour = vec4(0.0, 0.0, 0.0, 1.0);
+
+    if (fLinearDepth < 0.99f) 
     {
-        out_f4Colour = vec4(vec3(0.0), 1.0);
-    } 
-    else 
-    {
-        float ambient = ufLightIl;
-        float diffuse = max(0.0, dot(normalize(light),normal));
+        float fDiffuse = max(0.0, dot(normalize(uf4Light.xyz), f3Normal));
 		if (ubToonOn)
 		{
-			if (diffuse >= 1.0)
-				diffuse = 1.0;
-			else if (diffuse >= 0.8)
-				diffuse = 0.8;
-			else if (diffuse >= 0.6)
-				diffuse = 0.6;
-			else if (diffuse >= 0.4)
-				diffuse = 0.4;
-			else if (diffuse >= 0.2)
-				diffuse = 0.2;
+			if (fDiffuse >= 1.0)
+				fDiffuse = 1.0;
+			else if (fDiffuse >= 0.8)
+				fDiffuse = 0.8;
+			else if (fDiffuse >= 0.6)
+				fDiffuse = 0.6;
+			else if (fDiffuse >= 0.4)
+				fDiffuse = 0.4;
+			else if (fDiffuse >= 0.2)
+				fDiffuse = 0.2;
 			else
-				diffuse = 0.0;
+				fDiffuse = 0.0;
 
-			float dp = dot (normalize(normal), normalize(-position));
+			float dp = dot (normalize(f3Normal), normalize(-f3Position));
 			if (dp < 0.1)
-				finalcolour = vec4 (0.0, 0.0, 0.0, 1.0);
+				f4FinalColour = vec4 (0.0, 0.0, 0.0, 1.0);
 			else
-				finalcolour = vec4(color*(strength*diffuse + ambient), 1.0f);
+				f4FinalColour = vec4(f3Colour * (uf4Light.w * fDiffuse + ufLightIl), 1.0f);
 		}
 		else
-			finalcolour = vec4(color*(strength*diffuse + ambient), 1.0f);
+			f4FinalColour = vec4(f3Colour * (uf4Light.w * fDiffuse + ufLightIl), 1.0f);
 		
-		out_f4Colour = finalcolour;
     }	
+
+	out_f4Colour = f4FinalColour;
 }
 

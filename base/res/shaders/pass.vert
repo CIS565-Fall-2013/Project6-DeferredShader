@@ -15,9 +15,9 @@ out vec4 vo_f3Position;
 
 void main() 
 {
-    vo_f3Normal = (um4InvTrans*vec4(in_f3Normal,0.0f)).xyz;
-    vec4 world = um4Model * vec4(in_f3Position, 1.0);
-    vec4 camera = um4View * world;
-    vo_f3Position = camera;
-    gl_Position = um4Persp * camera;
+    vo_f3Normal = (um4InvTrans * vec4(in_f3Normal,0.0f)).xyz;
+    vec4 f4World = um4Model * vec4(in_f3Position, 1.0);
+    vec4 f4Camera = um4View * f4World;
+    vo_f3Position = f4Camera;
+    gl_Position = um4Persp * f4Camera;
 }

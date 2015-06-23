@@ -15,15 +15,8 @@ out vec4 out_f4Colour;
 const float occlusion_strength = 1.5f;
 void main() 
 {
-    float exp_depth = texture(u_Depthtex, vo_f2TexCoord).r;
-    float lin_depth = linearizeDepth(exp_depth);
-
-    vec3 normal = SampleTexture(u_Normaltex, vo_f2TexCoord);
-    vec3 position = SampleTexture(u_Positiontex, vo_f2TexCoord);
-    vec3 color = SampleTexture(u_Colortex, vo_f2TexCoord);
-    vec3 light = uf4Light.xyz;
-    float lightRadius = uf4Light.w;
-
-    float diffuse = max(0.0, dot(normalize(light), normal));
-    out_f4Colour = vec4(color*ufLightIl*diffuse, 1.0f);
+    vec3 f3Normal = SampleTexture(u_Normaltex, vo_f2TexCoord);
+    vec3 f3Colour = SampleTexture(u_Colortex, vo_f2TexCoord);
+    float fDiffuse = max(0.0, dot(normalize(uf4Light.xyz), f3Normal));
+    out_f4Colour = vec4(f3Colour * ufLightIl * fDiffuse, 1.0f);
 }
