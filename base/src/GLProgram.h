@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -11,9 +12,9 @@ class GLProgram
     uint32_t m_id;
     std::map<std::string, std::pair<uint32_t, uint32_t>> m_textureBindIndicesMap;   // first -> texture bind point; second -> texture object name.
     std::map<std::string, uint32_t> m_constantBufferBindIndicesMap;
+    std::unordered_map<std::string, std::string> m_shaderConstantToConstantBufferBindingMap;
     std::map<std::string, uint32_t> m_attributeBindIndicesMap;
     std::map<std::string, uint32_t> m_outputBindIndicesMap;
-    std::map<std::string, std::string> m_shaderConstantToConstantBufferBindingMap;
 
     void SetupTextureBindings(const std::vector<std::string>& textureNames);
     void SetShaderConstant(const std::string& constantName, const void* value_in) const;
