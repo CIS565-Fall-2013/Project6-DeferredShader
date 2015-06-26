@@ -8,7 +8,8 @@ private:
     glm::mat4 m_view;
     glm::mat4 m_transform;
     glm::mat4 m_perspective;
-    
+    glm::mat4 m_inversePerspective;
+
     float rx;
     float ry;
 
@@ -23,6 +24,8 @@ public:
     void adjust(float dx, float dy, float dz, float tx, float ty, float tz);
     void CalculateViewProjection(float fov, float width, float height, float nearPlane, float farPlane);
 
-    glm::mat4 get_view() const;
+    glm::mat4 GetView() const;
     glm::mat4 GetPerspective() const;
+    glm::mat4 GetInverseView() const;
+    glm::mat4 GetInversePerspective() const;
 };

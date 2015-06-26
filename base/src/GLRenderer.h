@@ -34,6 +34,7 @@ public:
     uint32_t num_indices;
     glm::vec3 color;
     glm::mat4 modelMat;
+    glm::mat4 inverseModelMat;
     std::string texname;
 };
 

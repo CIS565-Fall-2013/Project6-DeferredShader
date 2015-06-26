@@ -90,7 +90,7 @@ void GLRenderer::ApplyPerFrameShaderConstants()
     //glUniform1f(glGetUniformLocation(m_postProg, "ufMouseTexX"), mouse_dof_x*m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "ufMouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
 
-    glm::mat4 view = m_pRenderCam->get_view();
+    glm::mat4 view = m_pRenderCam->GetView();
     glm::mat4 persp = m_pRenderCam->GetPerspective();
     shaderConstantManager->SetShaderConstant("um4View", "PerFrame", &view); 
     shaderConstantManager->SetShaderConstant("um4Persp", "PerFrame", &persp);
@@ -179,7 +179,7 @@ void GLRenderer::DrawGeometry(const DrawableGeometry* geom)
 void GLRenderer::drawLight(glm::vec3 pos, float strength)
 {
     float radius = strength;
-    glm::vec4 light = m_pRenderCam->get_view() * glm::vec4(pos, 1.0);
+    glm::vec4 light = m_pRenderCam->GetView() * glm::vec4(pos, 1.0);
     if (light.z > m_nearPlane)
     {
         return;
@@ -238,12 +238,12 @@ void GLRenderer::DrawLightList()
 
 void GLRenderer::DrawOpaqueList()
 {
-    glm::mat4 view = m_pRenderCam->get_view();
+    glm::mat4 inverseView = m_pRenderCam->GetInverseView();
     SetShaderProgram(m_passProg);
 
     for (uint32_t i = 0; i < m_opaqueList.size(); ++i)
     {
-        glm::mat4 inverse_transposed = glm::transpose(glm::inverse(view*m_opaqueList[i]->modelMat));
+        glm::mat4 inverse_transposed = glm::transpose(m_opaqueList[i]->inverseModelMat * inverseView);
         m_passProg->SetShaderConstant("um4Model", m_opaqueList[i]->modelMat);
         m_passProg->SetShaderConstant("um4InvTrans", inverse_transposed);
         m_passProg->SetShaderConstant("uf3Color", m_opaqueList[i]->color);
@@ -579,6 +579,7 @@ void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out,
 
     out.texname = model.texname;
     out.modelMat = modelMatrix;
+    out.inverseModelMat = glm::inverse(out.modelMat);
     out.color = model.color;
 }
 
@@ -612,7 +613,7 @@ void GLRenderer::Render()
 void GLRenderer::RenderAmbientLighting()
 {
     glm::vec4 dir_light(0.1, 1.0, 1.0, 0.0);
-    dir_light = m_pRenderCam->get_view() * dir_light;
+    dir_light = m_pRenderCam->GetView() * dir_light;
     dir_light = glm::normalize(dir_light);
     dir_light.w = 0.3f;
     float strength = 0.09f;

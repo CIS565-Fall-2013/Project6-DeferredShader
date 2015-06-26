@@ -58,12 +58,13 @@ void Camera::CalculateViewProjection(float fov, float width, float height, float
     m_transform = glm::translate(glm::mat4(), pos);
     m_transform = glm::rotate(m_transform, rx, glm::vec3(0.0f, 1.0f, 0.0f));
     m_transform = glm::rotate(m_transform, ry, glm::vec3(1.0f, 0.0f, 0.0f));
-    m_view = glm::inverse(m_transform);
+    m_perspective = glm::perspective(fov, width / height, nearPlane, farPlane);
 
-    m_perspective = glm::perspective(fov, width/height, nearPlane, farPlane);
+    m_view = glm::inverse(m_transform);
+    m_inversePerspective = glm::inverse(m_perspective);
 }
 
-mat4 Camera::get_view() const
+mat4 Camera::GetView() const
 {
     return m_view;
 }
@@ -71,6 +72,16 @@ mat4 Camera::get_view() const
 mat4 Camera::GetPerspective() const
 {
     return m_perspective;
+}
+
+mat4 Camera::GetInverseView() const
+{
+    return m_transform;
+}
+
+mat4 Camera::GetInversePerspective() const
+{
+    return m_inversePerspective;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
