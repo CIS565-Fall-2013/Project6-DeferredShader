@@ -1,6 +1,6 @@
 #pragma once
 
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -10,8 +10,7 @@ struct ShaderConstantSignature;
 class ConstantBuffer;
 class ShaderConstantManager
 {
-    std::map<std::string, ConstantBuffer*> m_shaderConstantNameToConstantBufferMap;
-    std::map<std::string, ConstantBuffer*> m_constantBufferNameToDataMap;
+    std::unordered_map<std::string, ConstantBuffer*> m_constantBufferNameToDataMap;
     static ShaderConstantManager* singleton;
     static uint32_t resolver;
 
@@ -50,7 +49,7 @@ struct ShaderConstantSignature
 
 class ConstantBuffer
 {
-    std::map<std::string, ShaderConstantSignature> m_signature;
+    std::unordered_map<std::string, ShaderConstantSignature> m_signature;
     void* m_data;
     bool m_dirty;
     uint32_t m_size;

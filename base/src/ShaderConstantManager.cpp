@@ -18,12 +18,6 @@ ShaderConstantManager::ShaderConstantManager()
 
 ShaderConstantManager::~ShaderConstantManager()
 {
-    for (auto& iterator : m_shaderConstantNameToConstantBufferMap)
-    {
-        //iterator->second->clear();
-        iterator.second = nullptr;
-    }
-
     uint32_t* constantBufferIds = new uint32_t[m_constantBufferNameToDataMap.size()];
     uint32_t i = 0;
     for (auto& iterator : m_constantBufferNameToDataMap)
