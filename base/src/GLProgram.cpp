@@ -91,11 +91,12 @@ void GLProgram::SetActive() const
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void GLProgram::SetShaderConstant(const std::string& constantName, const void* value_in) const
+void GLProgram::SetShaderConstant(const char* constantName, const void* value_in) const
 {
+    assert(constantName != nullptr);
     try
     {
-        const std::string& mappedConstantBuffer = m_shaderConstantToConstantBufferBindingMap.at(constantName);
+        const std::string& mappedConstantBuffer = m_shaderConstantToConstantBufferBindingMap.at(Utility::HashCString(constantName));
         ShaderConstantManager::GetSingleton()->SetShaderConstant(constantName, mappedConstantBuffer, value_in);
     }
     catch (std::out_of_range&)
@@ -246,13 +247,13 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
             {
                 try
                 {
-                    std::string& alreadyMappedConstBuffer = m_shaderConstantToConstantBufferBindingMap.at(iterator);
+                    std::string& alreadyMappedConstBuffer = m_shaderConstantToConstantBufferBindingMap.at(Utility::HashCString(iterator.c_str()));
                     if (alreadyMappedConstBuffer.compare(constBufferName) != 0)
                         assert(false);  // This constant is already mapped to a different constant buffer.
                 }
                 catch (std::out_of_range&)
                 {
-                    m_shaderConstantToConstantBufferBindingMap[iterator] = constBufferName;
+                    m_shaderConstantToConstantBufferBindingMap[Utility::HashCString(iterator.c_str())] = constBufferName;
                 }
             }
 
@@ -273,9 +274,10 @@ void GLProgram::SetupTextureBindings(const std::vector<std::string>& textureName
 {
     for (const std::string& i : textureNames)
     {
+        uint32_t hashValue = Utility::HashCString(i.c_str());
         try
         {
-            m_textureBindIndicesMap.at(i);
+            m_textureBindIndicesMap.at(hashValue);
         }
         catch (std::out_of_range&)
         {
@@ -283,7 +285,7 @@ void GLProgram::SetupTextureBindings(const std::vector<std::string>& textureName
             int32_t constantBindLocation = glGetUniformLocation(m_id, i.c_str());
             if (constantBindLocation > -1)
             {
-                m_textureBindIndicesMap[i] = std::make_pair(constantBindLocation, 0);
+                m_textureBindIndicesMap[hashValue] = std::make_pair(constantBindLocation, 0);
             }
 //            else
 //                assert(false); // SetupTextureBindings was passed a texture name that isn't active in the program? Update the shader so that this wouldn't happen anymore.
@@ -291,11 +293,12 @@ void GLProgram::SetupTextureBindings(const std::vector<std::string>& textureName
     }
 }
 
-void GLProgram::SetTexture(const std::string& textureName, uint32_t textureObject)
+void GLProgram::SetTexture(const char* textureName, uint32_t textureObject)
 {
+    assert(textureName != nullptr);
     try
     {
-        std::pair<uint32_t, uint32_t>& textureBindPoint = m_textureBindIndicesMap.at(textureName);
+        std::pair<uint32_t, uint32_t>& textureBindPoint = m_textureBindIndicesMap.at(Utility::HashCString(textureName));
         textureBindPoint.second = textureObject;
     }
     catch (std::out_of_range&)

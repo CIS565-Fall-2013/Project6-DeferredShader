@@ -10,14 +10,14 @@
 class GLProgram
 {
     uint32_t m_id;
-    std::map<std::string, std::pair<uint32_t, uint32_t>> m_textureBindIndicesMap;   // first -> texture bind point; second -> texture object name.
+    std::map<uint32_t, std::pair<uint32_t, uint32_t>> m_textureBindIndicesMap;   // Key: String hash value. Value Pair: first -> texture bind point; second -> texture object name.
     std::map<std::string, uint32_t> m_constantBufferBindIndicesMap;
-    std::unordered_map<std::string, std::string> m_shaderConstantToConstantBufferBindingMap;
+    std::unordered_map<uint32_t, std::string> m_shaderConstantToConstantBufferBindingMap;
     std::map<std::string, uint32_t> m_attributeBindIndicesMap;
     std::map<std::string, uint32_t> m_outputBindIndicesMap;
 
     void SetupTextureBindings(const std::vector<std::string>& textureNames);
-    void SetShaderConstant(const std::string& constantName, const void* value_in) const;
+    void SetShaderConstant(const char* constantName, const void* value_in) const;
     void PreprocessShaderSource(std::string& shaderSource, const std::string& workingDirectory) const;
     void SetupTextureBindingsAndConstantBuffers(const std::string& shaderSource);
 
@@ -32,13 +32,13 @@ public:
 
     void SetAttributeBindLocation(const std::string& attributeName, uint32_t bindLocation) { m_attributeBindIndicesMap[attributeName] = bindLocation; }
     void SetOutputBindLocation(const std::string& outputName, uint32_t bindLocation) { m_outputBindIndicesMap[outputName] = bindLocation; }
-    void SetTexture(const std::string& textureName, uint32_t textureObject);
+    void SetTexture(const char* textureName, uint32_t textureObject);
 
     void SetActive() const;
 
-    template<typename T> void SetShaderConstant(const std::string& constantName, const T& value_in) const;
-    template<> void SetShaderConstant(const std::string& constantName, const uint32_t& value) const;
-    template<> void SetShaderConstant(const std::string& constantName, const bool& value) const;
+    template<typename T> void SetShaderConstant(const char* constantName, const T& value_in) const;
+    template<> void SetShaderConstant(const char* constantName, const uint32_t& value) const;
+    template<> void SetShaderConstant(const char* constantName, const bool& value) const;
 
     bool GetAttributeBindLocation(const std::string& attributeName, uint32_t& bindLocation) const;
     bool GetOutputBindLocation(const std::string& outputName, uint32_t& bindLocation) const;
@@ -48,19 +48,19 @@ public:
 };
 
 template<typename T>
-void GLProgram::SetShaderConstant(const std::string& constantName, const T& value) const
+void GLProgram::SetShaderConstant(const char* constantName, const T& value) const
 {
     SetShaderConstant(constantName, reinterpret_cast<const void*>(&value));
 }
 
 template<>
-void GLProgram::SetShaderConstant(const std::string& constantName, const uint32_t& value) const
+void GLProgram::SetShaderConstant(const char* constantName, const uint32_t& value) const
 {
     SetShaderConstant(constantName, static_cast<const int32_t>(value));
 }
 
 template<>
-void GLProgram::SetShaderConstant(const std::string& constantName, const bool& value) const
+void GLProgram::SetShaderConstant(const char* constantName, const bool& value) const
 {
     SetShaderConstant(constantName, static_cast<const int32_t>(value));
 }

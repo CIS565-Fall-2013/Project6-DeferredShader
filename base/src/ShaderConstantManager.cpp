@@ -112,7 +112,7 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
         {
             try
             {
-                const ShaderConstantSignature& thisSignature = existingBuffer->m_signature.at(constantBufferSignature[i].name);
+                const ShaderConstantSignature& thisSignature = existingBuffer->m_signature.at(Utility::HashCString(constantBufferSignature[i].name.c_str()));
                 if ((constantBufferSignature[i].type == thisSignature.type) && (constantBufferSignature[i].size == thisSignature.size) && (constantBufferSignature[i].offset == thisSignature.offset))
                     continue;
                 else
@@ -140,7 +140,7 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
         assert(constantBufferSize > 0);
 
         for (const auto& thisSignature : constantBufferSignature)
-            newConstantBuffer->m_signature[thisSignature.name] = thisSignature;
+            newConstantBuffer->m_signature[Utility::HashCString(thisSignature.name.c_str())] = thisSignature;
         newConstantBuffer->m_data = new char[constantBufferSize];
         newConstantBuffer->m_size = constantBufferSize;
         memset(newConstantBuffer->m_data, 0, constantBufferSize);
@@ -151,12 +151,15 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
     ApplyShaderConstantChanges(constantBufferName);
 }
 
-void ShaderConstantManager::SetShaderConstant(const std::string& constantName, const std::string& constantBufferName, const void* value_in)
+void ShaderConstantManager::SetShaderConstant(const char* constantName, const std::string& constantBufferName, const void* value_in)
 {
+    if (!constantName)
+        return;
+
     try
     {
         ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(constantBufferName);
-        const ShaderConstantSignature& constantSignature = constantBuffer->m_signature.at(constantName);
+        const ShaderConstantSignature& constantSignature = constantBuffer->m_signature.at(Utility::HashCString(constantName));
         char* data = reinterpret_cast<char*>(constantBuffer->m_data);
         data += constantSignature.offset;
         const char* value_in_bytePtr = reinterpret_cast<const char*>(value_in);

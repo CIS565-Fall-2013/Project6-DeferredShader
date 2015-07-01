@@ -28,7 +28,7 @@ public:
     ShaderConstantManager();
     ~ShaderConstantManager();
     void SetupConstantBuffer(std::string& constantBufferName, int32_t constantBufferSize, std::vector<ShaderConstantSignature>& constantBufferSignature);
-    void SetShaderConstant(const std::string& constantName, const std::string& constantBufferName, const void* value_in);
+    void SetShaderConstant(const char* constantName, const std::string& constantBufferName, const void* value_in);
     void ApplyShaderConstantChanges(const std::string& constantBufferName = std::string()) const;
     uint32_t GetConstantBufferObject(const std::string& constantBufferName) const;
     
@@ -49,7 +49,7 @@ struct ShaderConstantSignature
 
 class ConstantBuffer
 {
-    std::unordered_map<std::string, ShaderConstantSignature> m_signature;
+    std::unordered_map<uint32_t, ShaderConstantSignature> m_signature;
     void* m_data;
     bool m_dirty;
     uint32_t m_size;

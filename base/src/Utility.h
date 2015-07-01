@@ -1,6 +1,8 @@
 #ifndef UTILITY_H_
 #define UTILITY_H_
 
+#include "Common.h"
+
 #include <GL/glew.h>
 #include <cstdlib>
 #include <string>
@@ -28,6 +30,8 @@ namespace Utility
 
     void LogOutput(const char* logMessage);
     void LogFile(const char* logMessage);
+
+    uint32_t HashCString(const char* cString);
 }
  
 #endif

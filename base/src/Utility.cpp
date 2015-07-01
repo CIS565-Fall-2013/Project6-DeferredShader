@@ -5,7 +5,6 @@
 #include <sstream>
 #include <string>
 #include <Windows.h>
-#include <cassert>
 
 using namespace std;
 
@@ -177,5 +176,18 @@ namespace Utility
     void LogOutput(const char* message)
     {
         LogHelper(message);
+    }
+
+    uint32_t HashCString(const char* cString)
+    {
+        // SDBM method found here: http://www.cse.yorku.ca/~oz/hash.html
+        uint32_t hash = 0;
+        int32_t c;
+
+        if (cString)
+            while (c = *(cString++))
+                hash = c + (hash << 6) + (hash << 16) - hash;
+
+        return hash;
     }
 }
