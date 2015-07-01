@@ -9,6 +9,21 @@ static bool AreFloatsEqual(const float a, const float b)
     return ((a >= (b - 1e-6)) && (a <= (b + 1e-6)));
 }
 
+static bool AreVec3sEqual(const glm::vec3& a, const glm::vec3& b)
+{
+    return (AreFloatsEqual(a.x, b.x) && AreFloatsEqual(a.y, b.y) && AreFloatsEqual(a.z, b.z));
+}
+
+static bool AreVec4sEqual(const glm::vec4& a, const glm::vec4& b)
+{
+    return (AreFloatsEqual(a.x, b.x) && AreFloatsEqual(a.y, b.y) && AreFloatsEqual(a.z, b.z) && AreFloatsEqual(a.w, b.w));
+}
+
+static bool AreMat4sEqual(const glm::mat4& a, const glm::mat4& b)
+{
+    return (AreVec4sEqual(a[0], b[0]) && AreVec4sEqual(a[1], b[1]) && AreVec4sEqual(a[2], b[2]) && AreVec4sEqual(a[3], b[3]));
+}
+
 ShaderConstantManager* ShaderConstantManager::singleton = nullptr;
 uint32_t ShaderConstantManager::resolver = 0;
 
@@ -151,10 +166,7 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
             {
                 glm::mat4& constantData = reinterpret_cast<glm::mat4&>(*data);
                 const glm::mat4& value = reinterpret_cast<const glm::mat4&>(*value_in_bytePtr);
-                if (glm::any(glm::notEqual(constantData[0], value[0])) ||
-                    glm::any(glm::notEqual(constantData[1], value[1])) ||
-                    glm::any(glm::notEqual(constantData[2], value[2])) ||
-                    glm::any(glm::notEqual(constantData[3], value[3])))
+                if (!AreMat4sEqual(constantData, value))
                 {
                     constantData = value;
                     constantBuffer->m_dirty = true;
@@ -165,7 +177,7 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
             {
                 glm::vec3& constantData = reinterpret_cast<glm::vec3&>(*data);
                 const glm::vec3& value = reinterpret_cast<const glm::vec3&>(*value_in_bytePtr);
-                if (glm::any(glm::notEqual(constantData, value)))
+                if (!AreVec3sEqual(constantData, value))
                 {
                     constantData = value;
                     constantBuffer->m_dirty = true;
@@ -176,7 +188,7 @@ void ShaderConstantManager::SetShaderConstant(const std::string& constantName, c
             {
                 glm::vec4& constantData = reinterpret_cast<glm::vec4&>(*data);
                 const glm::vec4& value = reinterpret_cast<const glm::vec4&>(*value_in_bytePtr);
-                if (glm::any(glm::notEqual(constantData, value)))
+                if (!AreVec4sEqual(constantData, value))
                 {
                     constantData = value;
                     constantBuffer->m_dirty = true;
