@@ -10,7 +10,7 @@ struct ShaderConstantSignature;
 class ConstantBuffer;
 class ShaderConstantManager
 {
-    std::unordered_map<std::string, ConstantBuffer*> m_constantBufferNameToDataMap;
+    std::unordered_map<uint32_t, ConstantBuffer*> m_constantBufferNameToDataMap;
     static ShaderConstantManager* singleton;
     static uint32_t resolver;
 

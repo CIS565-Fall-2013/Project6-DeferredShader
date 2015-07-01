@@ -104,7 +104,7 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
 {
     try
     {
-        ConstantBuffer* existingBuffer = m_constantBufferNameToDataMap.at(constantBufferName);
+        ConstantBuffer* existingBuffer = m_constantBufferNameToDataMap.at(Utility::HashCString(constantBufferName.c_str()));
 
         // Already exists. Check if the signatures match:
         uint32_t i;
@@ -131,7 +131,7 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
         std::ostringstream newConstantBufferName;
         newConstantBufferName << constantBufferName << resolver++;
         constantBufferName = std::string(newConstantBufferName.str());
-        m_constantBufferNameToDataMap.at(constantBufferName);
+        m_constantBufferNameToDataMap.at(Utility::HashCString(constantBufferName.c_str()));
     }
     catch (std::out_of_range&)
     {
@@ -145,7 +145,7 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
         newConstantBuffer->m_size = constantBufferSize;
         memset(newConstantBuffer->m_data, 0, constantBufferSize);
         glGenBuffers(1, &newConstantBuffer->m_id);
-        m_constantBufferNameToDataMap[constantBufferName] = newConstantBuffer;
+        m_constantBufferNameToDataMap[Utility::HashCString(constantBufferName.c_str())] = newConstantBuffer;
     }
 
     ApplyShaderConstantChanges(constantBufferName);
@@ -158,7 +158,7 @@ void ShaderConstantManager::SetShaderConstant(const char* constantName, const st
 
     try
     {
-        ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(constantBufferName);
+        ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(Utility::HashCString(constantBufferName.c_str()));
         const ShaderConstantSignature& constantSignature = constantBuffer->m_signature.at(Utility::HashCString(constantName));
         char* data = reinterpret_cast<char*>(constantBuffer->m_data);
         data += constantSignature.offset;
@@ -252,7 +252,7 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
     {
         try
         {
-            ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(constantBufferName);
+            ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(Utility::HashCString(constantBufferName.c_str()));
             if (constantBuffer->m_dirty)
             {
                 glBindBuffer(GL_UNIFORM_BUFFER, constantBuffer->m_id);
@@ -272,7 +272,7 @@ uint32_t ShaderConstantManager::GetConstantBufferObject(const std::string& const
 {
     try
     {
-        ConstantBuffer* buffer = m_constantBufferNameToDataMap.at(constantBufferName);
+        ConstantBuffer* buffer = m_constantBufferNameToDataMap.at(Utility::HashCString(constantBufferName.c_str()));
         assert(buffer != nullptr);
         return buffer->m_id;
     }
