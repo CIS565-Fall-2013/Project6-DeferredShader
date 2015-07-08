@@ -14,7 +14,7 @@ using glm::mat4;
 
 GLApp* GLApp::m_singleton = nullptr;
 
-GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle)
+GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle, const std::string& modelBasePath)
     : m_startTime(0), 
     m_currentTime(0),
     m_currentFrame(0),
@@ -29,7 +29,8 @@ GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle)
     m_mouseCaptured(true),
     mouse_dof_x(0),
     mouse_dof_y(0),
-    m_windowTitle(windowTitle)
+    m_windowTitle(windowTitle), 
+    m_modelBasePath(modelBasePath)
 {
     vec3 tilt(1.0f, 0.0f, 0.0f);
     mat4 tilt_mat = mat4();
@@ -113,7 +114,12 @@ void GLApp::ProcessScene(std::vector<tinyobj::shape_t>& scene)
         }
 
         model.color = vec3(shape.material.diffuse[0], shape.material.diffuse[1], shape.material.diffuse[2]);
-        model.texname = shape.material.name;//diffuse_texname;
+        model.diffuse_texpath = m_modelBasePath;
+        model.diffuse_texpath.append(shape.material.diffuse_texname);
+        model.normal_texpath = m_modelBasePath;
+        model.normal_texpath.append(shape.material.normal_texname);
+        model.specular_texpath = m_modelBasePath;
+        model.specular_texpath.append(shape.material.specular_texname);
 
         std::unique_ptr<DrawableGeometry> drawableModel = std::make_unique<DrawableGeometry>();
         m_renderer->MakeDrawableModel(model, *drawableModel, m_world);

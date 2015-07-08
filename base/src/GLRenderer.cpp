@@ -46,12 +46,26 @@ GLRenderer::~GLRenderer()
     ShaderConstantManager::Destroy();
 }
 
+DrawableGeometry::DrawableGeometry()
+    : vertex_array(),
+    vertex_buffer(),
+    index_buffer(),
+    num_indices(),
+    diffuse_tex(),
+    normal_tex(),
+    specular_tex()
+{}
+
 DrawableGeometry::~DrawableGeometry()
 {
     glDeleteVertexArrays(1, &vertex_array);
     glDeleteBuffers(1, &vertex_buffer);
     glDeleteBuffers(1, &index_buffer);
-    
+
+    glDeleteTextures(1, &diffuse_tex);
+    glDeleteTextures(1, &normal_tex);
+    glDeleteTextures(1, &specular_tex);
+
     num_indices = 0;
     color = glm::vec3(0);
 }
@@ -248,6 +262,10 @@ void GLRenderer::DrawOpaqueList()
         m_passProg->SetShaderConstant("um4Model", m_opaqueList[i]->modelMat);
         m_passProg->SetShaderConstant("um4InvTrans", inverse_transposed);
         m_passProg->SetShaderConstant("uf3Color", m_opaqueList[i]->color);
+
+        m_passProg->SetTexture("t2DDiffuse", m_opaqueList[i]->diffuse_tex);
+        m_passProg->SetTexture("t2DNormal", m_opaqueList[i]->normal_tex);
+        m_passProg->SetTexture("t2DSpecular", m_opaqueList[i]->specular_tex);
 
         DrawGeometry(m_opaqueList[i]);
     }
@@ -578,7 +596,10 @@ void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out,
     // Unplug Vertex Array
     glBindVertexArray(0);
 
-    out.texname = model.texname;
+    out.diffuse_tex = SOIL_load_OGL_texture(model.diffuse_texpath.c_str(), 0, 0, 0);
+    out.normal_tex = SOIL_load_OGL_texture(model.normal_texpath.c_str(), 0, 0, 0);
+    out.specular_tex = SOIL_load_OGL_texture(model.specular_texpath.c_str(), 0, 0, 0);
+
     out.modelMat = modelMatrix;
     out.inverseModelMat = glm::inverse(out.modelMat);
     out.color = model.color;
