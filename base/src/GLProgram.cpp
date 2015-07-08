@@ -11,7 +11,7 @@ GLProgram::GLProgram()
 }
 
 GLProgram::GLProgram(RenderEnums::ProgramType programType, const std::vector<std::pair<std::string, RenderEnums::RenderProgramStage>>& shaderSourceFiles, 
-    const std::map<std::string, uint32_t>& attributeBindIndices, const std::map<std::string, uint32_t>& outputBindIndices)
+    const std::map<std::string, GLType_uint>& attributeBindIndices, const std::map<std::string, GLType_uint>& outputBindIndices)
     : m_id(0)
 {
     for (const auto& itr : attributeBindIndices)
@@ -237,9 +237,9 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
                 }
             }
             
-            GLuint constBufferIndex = glGetUniformBlockIndex(m_id, constBufferName.c_str());
+            GLType_uint constBufferIndex = glGetUniformBlockIndex(m_id, constBufferName.c_str());
             assert(constBufferIndex != GL_INVALID_INDEX);
-            GLint constBufferSize = 0;
+            GLType_int constBufferSize = 0;
             glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &constBufferSize);
             ShaderConstantManager::GetSingleton()->SetupConstantBuffer(constBufferName, constBufferSize, constBufferSignature);
 
@@ -257,7 +257,7 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
                 }
             }
 
-            GLint constBufferBindPoint = -1;
+            GLType_int constBufferBindPoint = -1;
             glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_BINDING, &constBufferBindPoint);
             assert(constBufferBindPoint > -1);
             m_constantBufferBindIndicesMap[constBufferName] = constBufferBindPoint;
@@ -282,7 +282,7 @@ void GLProgram::SetupTextureBindings(const std::vector<std::string>& textureName
         catch (std::out_of_range&)
         {
             // Add if it doesn't already exist.
-            int32_t constantBindLocation = glGetUniformLocation(m_id, i.c_str());
+            GLType_int constantBindLocation = glGetUniformLocation(m_id, i.c_str());
             if (constantBindLocation > -1)
             {
                 m_textureBindIndicesMap[hashValue] = std::make_pair(constantBindLocation, 0);
@@ -293,12 +293,12 @@ void GLProgram::SetupTextureBindings(const std::vector<std::string>& textureName
     }
 }
 
-void GLProgram::SetTexture(const char* textureName, uint32_t textureObject)
+void GLProgram::SetTexture(const char* textureName, GLType_uint textureObject)
 {
     assert(textureName != nullptr);
     try
     {
-        std::pair<uint32_t, uint32_t>& textureBindPoint = m_textureBindIndicesMap.at(Utility::HashCString(textureName));
+        std::pair<GLType_uint, GLType_uint>& textureBindPoint = m_textureBindIndicesMap.at(Utility::HashCString(textureName));
         textureBindPoint.second = textureObject;
     }
     catch (std::out_of_range&)
@@ -307,7 +307,7 @@ void GLProgram::SetTexture(const char* textureName, uint32_t textureObject)
     }
 }
 
-bool GLProgram::GetAttributeBindLocation(const std::string& attributeName, uint32_t& bindLocation) const
+bool GLProgram::GetAttributeBindLocation(const std::string& attributeName, GLType_uint& bindLocation) const
 {
     try
     {
@@ -321,7 +321,7 @@ bool GLProgram::GetAttributeBindLocation(const std::string& attributeName, uint3
     return true;
 }
 
-bool GLProgram::GetOutputBindLocation(const std::string& outputName, uint32_t& bindLocation) const
+bool GLProgram::GetOutputBindLocation(const std::string& outputName, GLType_uint& bindLocation) const
 {
     try
     {

@@ -33,7 +33,7 @@ ShaderConstantManager::ShaderConstantManager()
 
 ShaderConstantManager::~ShaderConstantManager()
 {
-    uint32_t* constantBufferIds = new uint32_t[m_constantBufferNameToDataMap.size()];
+    GLType_uint* constantBufferIds = new GLType_uint[m_constantBufferNameToDataMap.size()];
     uint32_t i = 0;
     for (auto& iterator : m_constantBufferNameToDataMap)
     {
@@ -268,7 +268,7 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
     }
 }
 
-uint32_t ShaderConstantManager::GetConstantBufferObject(const std::string& constantBufferName) const
+GLType_uint ShaderConstantManager::GetConstantBufferObject(const std::string& constantBufferName) const
 {
     try
     {

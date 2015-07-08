@@ -62,6 +62,9 @@
     <ClInclude Include="..\..\..\src\Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\GLTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\res\shaders\ambient.frag">

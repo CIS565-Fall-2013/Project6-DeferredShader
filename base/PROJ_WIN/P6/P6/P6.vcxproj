@@ -89,6 +89,7 @@
     <ClInclude Include="..\..\..\src\GLApp.h" />
     <ClInclude Include="..\..\..\src\GLProgram.h" />
     <ClInclude Include="..\..\..\src\GLRenderer.h" />
+    <ClInclude Include="..\..\..\src\GLTypes.h" />
     <ClInclude Include="..\..\..\src\ShaderConstantManager.h" />
     <ClInclude Include="..\..\..\src\Utility.h" />
   </ItemGroup>

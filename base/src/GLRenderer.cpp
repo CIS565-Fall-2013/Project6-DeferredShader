@@ -320,23 +320,23 @@ void GLRenderer::InitFramebuffers()
     glGenerateMipmap(GL_TEXTURE_2D);
 
     // creatwwe a framebuffer object
-    GLuint fbo = 0;
+    GLType_uint fbo = 0;
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_NONE);
-    GLint normal_loc;
-    if (!m_passProg->GetOutputBindLocation("out_f4Normal", reinterpret_cast<uint32_t&>(normal_loc)))
+    GLType_int normal_loc;
+    if (!m_passProg->GetOutputBindLocation("out_f4Normal", reinterpret_cast<GLType_uint&>(normal_loc)))
         assert(false);
-    GLint position_loc;
-    if (!m_passProg->GetOutputBindLocation("out_f4Position", reinterpret_cast<uint32_t&>(position_loc)))
+    GLType_int position_loc;
+    if (!m_passProg->GetOutputBindLocation("out_f4Position", reinterpret_cast<GLType_uint&>(position_loc)))
         assert(false);
-    GLint color_loc;
-    if (!m_passProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<uint32_t&>(color_loc)))
+    GLType_int color_loc;
+    if (!m_passProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<GLType_uint&>(color_loc)))
         assert(false);
-    GLint glowmask_loc;
-    if (!m_passProg->GetOutputBindLocation("out_f4GlowMask", reinterpret_cast<uint32_t&>(glowmask_loc)))
+    GLType_int glowmask_loc;
+    if (!m_passProg->GetOutputBindLocation("out_f4GlowMask", reinterpret_cast<GLType_uint&>(glowmask_loc)))
         assert(false);
 
     GLenum draws[4];
@@ -383,7 +383,7 @@ void GLRenderer::InitFramebuffers()
 
     // Instruct openGL that we won't bind a color texture with the currently bound FBO
     glReadBuffer(GL_BACK);
-    if (!m_ambientProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<uint32_t&>(color_loc)))
+    if (!m_ambientProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<GLType_uint&>(color_loc)))
         assert(false);
     GLenum draw[1];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
@@ -481,7 +481,7 @@ void GLRenderer::InitShaders()
     const char * post_frag = "../res/shaders/post.frag";
 
     std::vector<std::pair<std::string, RenderEnums::RenderProgramStage>> shaderSourceAndStagePair;
-    std::map<std::string, uint32_t> meshAttributeBindIndices, quadAttributeBindIndices, outputBindIndices;
+    std::map<std::string, GLType_uint> meshAttributeBindIndices, quadAttributeBindIndices, outputBindIndices;
 
     meshAttributeBindIndices["in_f3Position"] = mesh_attributes::POSITION;
     meshAttributeBindIndices["in_f3Normal"] = mesh_attributes::NORMAL;
@@ -654,7 +654,7 @@ void GLRenderer::RenderQuad()
     DrawGeometry(&m_QuadGeometry);
 }
 
-void GLRenderer::SetFramebufferActive(uint32_t fbID)
+void GLRenderer::SetFramebufferActive(GLType_uint fbID)
 {
     assert(fbID < m_FBO.size());
     glBindTexture(GL_TEXTURE_2D, 0); //Bad mojo to unbind the framebuffer using the texture

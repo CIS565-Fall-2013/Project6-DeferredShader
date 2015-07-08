@@ -28,9 +28,9 @@ class DrawableGeometry
 {
 public:
     ~DrawableGeometry();
-    uint32_t vertex_array;
-    uint32_t vertex_buffer;
-    uint32_t index_buffer;
+    GLType_uint vertex_array;
+    GLType_uint vertex_buffer;
+    GLType_uint index_buffer;
     uint32_t num_indices;
     glm::vec3 color;
     glm::mat4 modelMat;
@@ -70,14 +70,14 @@ class GLRenderer
     float m_nearPlane;
 
     // Textures
-    uint32_t m_randomNormalTexture;
-    uint32_t m_randomScalarTexture;
-    uint32_t m_depthTexture;
-    uint32_t m_normalTexture;
-    uint32_t m_positionTexture;
-    uint32_t m_colorTexture;
-    uint32_t m_postTexture;
-    uint32_t m_glowmaskTexture;
+    GLType_uint m_randomNormalTexture;
+    GLType_uint m_randomScalarTexture;
+    GLType_uint m_depthTexture;
+    GLType_uint m_normalTexture;
+    GLType_uint m_positionTexture;
+    GLType_uint m_colorTexture;
+    GLType_uint m_postTexture;
+    GLType_uint m_glowmaskTexture;
 
     // Techniques
     GLProgram* m_passProg;
@@ -93,7 +93,7 @@ class GLRenderer
     const Camera* m_pRenderCam;
 
     // FBOs
-    std::vector<uint32_t> m_FBO;
+    std::vector<GLType_uint> m_FBO;
 
     std::vector<const DrawableGeometry*> m_opaqueList;
     std::vector<const DrawableGeometry*> m_alphaMaskedList;
@@ -145,6 +145,6 @@ public:
     void RenderQuad();
     void Render();
 
-    void SetFramebufferActive(uint32_t fbID);
+    void SetFramebufferActive(GLType_uint fbID);
     void EndActiveFramebuffer();
 };

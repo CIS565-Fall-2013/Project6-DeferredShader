@@ -30,7 +30,7 @@ public:
     void SetupConstantBuffer(std::string& constantBufferName, int32_t constantBufferSize, std::vector<ShaderConstantSignature>& constantBufferSignature);
     void SetShaderConstant(const char* constantName, const std::string& constantBufferName, const void* value_in);
     void ApplyShaderConstantChanges(const std::string& constantBufferName = std::string()) const;
-    uint32_t GetConstantBufferObject(const std::string& constantBufferName) const;
+    GLType_uint GetConstantBufferObject(const std::string& constantBufferName) const;
     
     static void Create();
     static void Destroy();
@@ -53,7 +53,7 @@ class ConstantBuffer
     void* m_data;
     bool m_dirty;
     uint32_t m_size;
-    uint32_t m_id;
+    GLType_uint m_id;
 
 public:
     ConstantBuffer();
