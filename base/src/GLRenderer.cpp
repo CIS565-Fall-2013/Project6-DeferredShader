@@ -5,6 +5,7 @@
 #include "SOIL/SOIL.h"
 #include "Camera.h"
 #include "ShaderConstantManager.h"
+#include "TextureManager.h"
 
 namespace Colours
 {
@@ -62,9 +63,12 @@ DrawableGeometry::~DrawableGeometry()
     glDeleteBuffers(1, &vertex_buffer);
     glDeleteBuffers(1, &index_buffer);
 
-    glDeleteTextures(1, &diffuse_tex);
-    glDeleteTextures(1, &normal_tex);
-    glDeleteTextures(1, &specular_tex);
+    if (diffuse_tex != 0)
+        TextureManager::GetSingleton()->Release(diffuse_tex);
+    if (normal_tex != 0)
+        TextureManager::GetSingleton()->Release(normal_tex);
+    if (specular_tex != 0)
+        TextureManager::GetSingleton()->Release(specular_tex);
 
     num_indices = 0;
     color = glm::vec3(0);
@@ -596,9 +600,9 @@ void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out,
     // Unplug Vertex Array
     glBindVertexArray(0);
 
-    out.diffuse_tex = SOIL_load_OGL_texture(model.diffuse_texpath.c_str(), 0, 0, 0);
-    out.normal_tex = SOIL_load_OGL_texture(model.normal_texpath.c_str(), 0, 0, 0);
-    out.specular_tex = SOIL_load_OGL_texture(model.specular_texpath.c_str(), 0, 0, 0);
+    out.diffuse_tex = TextureManager::GetSingleton()->Acquire(model.diffuse_texpath);
+    out.normal_tex = TextureManager::GetSingleton()->Acquire(model.normal_texpath);
+    out.specular_tex = TextureManager::GetSingleton()->Acquire(model.specular_texpath);
 
     out.modelMat = modelMatrix;
     out.inverseModelMat = glm::inverse(out.modelMat);

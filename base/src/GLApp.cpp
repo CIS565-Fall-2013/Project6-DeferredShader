@@ -2,6 +2,7 @@
 #include "Camera.h"
 #include "Utility.h"
 #include "EventHandlers.h"
+#include "TextureManager.h"
 
 #include "GLFW/glfw3.h"
 #include "tiny_obj_loader.h"
@@ -44,6 +45,8 @@ GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle, const std
 
     m_lastX = width / 2.0;
     m_lastY = height / 2.0;
+
+    TextureManager::Create();
 }
 
 GLApp::~GLApp()
@@ -54,6 +57,7 @@ GLApp::~GLApp()
     }
     delete m_cam;
     delete m_renderer;
+    TextureManager::Destroy();
 }
 
 void GLApp::ProcessScene(std::vector<tinyobj::shape_t>& scene)
