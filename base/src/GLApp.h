@@ -50,6 +50,7 @@ class GLApp
     std::vector<std::unique_ptr<DrawableGeometry>> m_drawableModels;
 
     std::string m_windowTitle;
+    std::string m_modelBasePath;
 
     // Loops through each model in the scene and creates Vertex/Index buffers for each.
     // Also uploads data to GPU.
@@ -65,17 +66,17 @@ class GLApp
     void display();
     void reshape(int, int);
 
-    GLApp(uint32_t width, uint32_t height, std::string windowTitle);
+    GLApp(uint32_t width, uint32_t height, std::string windowTitle, const std::string& modelBasePath);
 public:
     ~GLApp();
     int32_t Initialize(std::vector<tinyobj::shape_t>& shapes);
     int32_t Run();
-    static GLApp* Create(uint32_t width, uint32_t height, std::string windowTitle)
+    static GLApp* Create(uint32_t width, uint32_t height, std::string windowTitle, const std::string& modelBasePath)
     { 
         if (m_singleton)
             delete m_singleton;
         
-        m_singleton = new GLApp(width, height, windowTitle);
+        m_singleton = new GLApp(width, height, windowTitle, modelBasePath);
         return m_singleton;
     }
     static GLApp* Get() { return m_singleton; }

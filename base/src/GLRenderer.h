@@ -20,22 +20,29 @@ struct Geometry
 {
     std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
-    std::string texname;
+    std::string diffuse_texpath;
+    std::string normal_texpath;
+    std::string specular_texpath;
     glm::vec3 color;
 };
 
 class DrawableGeometry
 {
 public:
+    DrawableGeometry();
     ~DrawableGeometry();
     GLType_uint vertex_array;
     GLType_uint vertex_buffer;
     GLType_uint index_buffer;
     uint32_t num_indices;
+
+    GLType_uint diffuse_tex;
+    GLType_uint normal_tex;
+    GLType_uint specular_tex;
+
     glm::vec3 color;
     glm::mat4 modelMat;
     glm::mat4 inverseModelMat;
-    std::string texname;
 };
 
 namespace mesh_attributes
