@@ -4,11 +4,6 @@
 #include <glm/glm.hpp>
 #include <sstream>
 
-static bool AreFloatsEqual(const float a, const float b)
-{
-    return ((a >= (b - 1e-6)) && (a <= (b + 1e-6)));
-}
-
 static bool AreVec3sEqual(const glm::vec3& a, const glm::vec3& b)
 {
     return (AreFloatsEqual(a.x, b.x) && AreFloatsEqual(a.y, b.y) && AreFloatsEqual(a.z, b.z));

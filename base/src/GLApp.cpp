@@ -15,6 +15,19 @@ using glm::mat4;
 
 GLApp* GLApp::m_singleton = nullptr;
 
+static void CorrectTexcoord(glm::vec2& texcoord)
+{
+    if ((texcoord.x < 0.0f) || (texcoord.x > 1.0f))
+    {
+        texcoord.x -= floor(texcoord.x);
+    }
+
+    if ((texcoord.y < 0.0f) || (texcoord.y > 1.0f))
+    {
+        texcoord.y -= floor(texcoord.y);
+    }
+}
+
 GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle, const std::string& modelBasePath)
     : m_startTime(0), 
     m_currentTime(0),
@@ -99,6 +112,11 @@ void GLApp::ProcessScene(std::vector<tinyobj::shape_t>& scene)
                 v0.texcoord = vec2(shape.mesh.texcoords[2 * idx0], shape.mesh.texcoords[2 * idx0 + 1]);
                 v1.texcoord = vec2(shape.mesh.texcoords[2 * idx1], shape.mesh.texcoords[2 * idx1 + 1]);
                 v2.texcoord = vec2(shape.mesh.texcoords[2 * idx2], shape.mesh.texcoords[2 * idx2 + 1]);
+
+                // Apparently, obj texcoords can be outside the [0,1] interval.
+                CorrectTexcoord(v0.texcoord);
+                CorrectTexcoord(v1.texcoord);
+                CorrectTexcoord(v2.texcoord);
             }
             else
             {

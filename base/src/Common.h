@@ -44,3 +44,7 @@ namespace RenderEnums
     };
 }
 
+inline bool AreFloatsEqual(const float a, const float b)
+{
+    return ((a >= (b - 1e-4)) && (a <= (b + 1e-4)));
+}
