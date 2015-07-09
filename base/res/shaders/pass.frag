@@ -25,5 +25,6 @@ void main()
     out_f4Normal = vec4(normalize(vo_f3Normal), 0.0f);
     out_f4Position = vec4(vo_f3Position.xyz, 1.0f); //Tuck position into 0 1 range
     out_f4Colour = texture(t2DDiffuse, vo_f2Texcoord);
+    out_f4Colour.xyz = pow(out_f4Colour.xyz, vec3(1.0f/2.2f));
 	out_f4GlowMask = ufGlowmask * out_f4Colour;
 }
