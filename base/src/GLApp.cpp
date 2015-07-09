@@ -96,9 +96,9 @@ void GLApp::ProcessScene(std::vector<tinyobj::shape_t>& scene)
 
             if (shape.mesh.texcoords.size() > 0)
             {
-                v0.texcoord = vec2(shape.mesh.positions[2 * idx0], shape.mesh.positions[2 * idx0 + 1]);
-                v1.texcoord = vec2(shape.mesh.positions[2 * idx1], shape.mesh.positions[2 * idx1 + 1]);
-                v2.texcoord = vec2(shape.mesh.positions[2 * idx2], shape.mesh.positions[2 * idx2 + 1]);
+                v0.texcoord = vec2(shape.mesh.texcoords[2 * idx0], shape.mesh.texcoords[2 * idx0 + 1]);
+                v1.texcoord = vec2(shape.mesh.texcoords[2 * idx1], shape.mesh.texcoords[2 * idx1 + 1]);
+                v2.texcoord = vec2(shape.mesh.texcoords[2 * idx2], shape.mesh.texcoords[2 * idx2 + 1]);
             }
             else
             {
