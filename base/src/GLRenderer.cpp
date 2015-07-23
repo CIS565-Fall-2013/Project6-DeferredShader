@@ -447,6 +447,7 @@ void GLRenderer::InitNoise()
     const char * rand_png = "../res/random.png";
 
     m_randomNormalTexture = SOIL_load_OGL_texture(rand_norm_png, 0, 0, 0);
+    glGetError();   // SOIL is brain dead.
     glBindTexture(GL_TEXTURE_2D, m_randomNormalTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -455,12 +456,16 @@ void GLRenderer::InitNoise()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     m_randomScalarTexture = SOIL_load_OGL_texture(rand_png, 0, 0, 0);
+    glGetError();   // SOIL is brain dead.
     glBindTexture(GL_TEXTURE_2D, m_randomScalarTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    GLenum gl_error = glGetError();
+    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::InitQuad()

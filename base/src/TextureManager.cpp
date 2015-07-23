@@ -45,6 +45,7 @@ GLType_uint TextureManager::Acquire(const std::string& textureName)
     {
         std::pair<GLType_uint, uint32_t> newTextureObject;
         newTextureObject.first = SOIL_load_OGL_texture(textureName.c_str(), 0, 0, 0);
+        glGetError();   // SOIL is brain dead.
         newTextureObject.second = 1;
         m_textureNameToObjectMap[textureNameHash] = newTextureObject;
 

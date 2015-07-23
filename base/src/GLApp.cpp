@@ -209,6 +209,12 @@ int32_t GLApp::Initialize(std::vector<tinyobj::shape_t>& scene)
         return 0;
 
     /* Create a windowed mode window and its OpenGL context */
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef _DEBUG
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif
     m_glfwWindow = glfwCreateWindow(m_width, m_height, m_windowTitle.c_str(), NULL, NULL);
     if (!m_glfwWindow)
     {
@@ -222,12 +228,15 @@ int32_t GLApp::Initialize(std::vector<tinyobj::shape_t>& scene)
     glfwSetMouseButtonCallback(m_glfwWindow, EventHandler::OnMouseClick);
     glfwSetCursorPosCallback(m_glfwWindow, EventHandler::OnMouseMove);
 
+    assert(glGetError() == GL_NO_ERROR);
+
     GLenum err = glewInit();
     if (GLEW_OK != err)
     {
         /* Problem: glewInit failed, something is seriously wrong. */
         return 0;
     }
+    glGetError();   // GLEW is brain dead.
 
     m_renderer = new GLRenderer(m_width, m_height);
     if (m_renderer == nullptr)
