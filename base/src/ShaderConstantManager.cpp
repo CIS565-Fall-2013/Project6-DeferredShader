@@ -54,7 +54,6 @@ void ShaderConstantManager::Create()
 
 void ShaderConstantManager::Destroy()
 {
-    assert(singleton != nullptr);
     delete singleton;
     singleton = nullptr;
 }
