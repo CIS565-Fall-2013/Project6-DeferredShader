@@ -175,7 +175,7 @@ void GLRenderer::CreateBuffersAndUploadData(const Geometry& model, DrawableGeome
     // Upload Indices
     out.num_indices = model.indices.size();
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, out.index_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, out.num_indices * sizeof(GLushort), &model.indices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, out.num_indices * sizeof(GLuint), &model.indices[0], GL_STATIC_DRAW);
 }
 
 void GLRenderer::DrawAlphaMaskedList()
@@ -192,7 +192,7 @@ void GLRenderer::DrawGeometry(const DrawableGeometry* geom)
 
     glBindVertexArray(geom->vertex_array);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buffer);
-    glDrawElements(GL_TRIANGLES, geom->num_indices, GL_UNSIGNED_SHORT, 0);
+    glDrawElements(GL_TRIANGLES, geom->num_indices, GL_UNSIGNED_INT, 0);
 }
 
 void GLRenderer::drawLight(glm::vec3 pos, float strength)
@@ -477,12 +477,12 @@ void GLRenderer::InitQuad()
     quad.vertices.push_back(Vertex(glm::vec3(1, -1, 0), glm::vec3(-1, 1, 0), glm::vec2(1, 0)));
     quad.vertices.push_back(Vertex(glm::vec3(1, 1, 0), glm::vec3(-1, 1, 0), glm::vec2(1, 1)));
 
-    quad.indices.push_back(uint16_t(0));
-    quad.indices.push_back(uint16_t(1));
-    quad.indices.push_back(uint16_t(2));
-    quad.indices.push_back(uint16_t(0));
-    quad.indices.push_back(uint16_t(2));
-    quad.indices.push_back(uint16_t(3));
+    quad.indices.push_back(0);
+    quad.indices.push_back(1);
+    quad.indices.push_back(2);
+    quad.indices.push_back(0);
+    quad.indices.push_back(2);
+    quad.indices.push_back(3);
 
     CreateBuffersAndUploadData(quad, m_QuadGeometry);
 
@@ -565,12 +565,12 @@ void GLRenderer::InitSphere()
 
             if ((i < divisor) && (j < divisor))
             {
-                sphere.indices.push_back(uint16_t(j));
-                sphere.indices.push_back(uint16_t((i + 1) * divisor + j));
-                sphere.indices.push_back(uint16_t((i + 1) * divisor + (j + 1)));
-                sphere.indices.push_back(uint16_t(j));
-                sphere.indices.push_back(uint16_t((i + 1) * divisor + (j + 1)));
-                sphere.indices.push_back(uint16_t(j + 1));
+                sphere.indices.push_back(j);
+                sphere.indices.push_back(((i + 1) * divisor + j));
+                sphere.indices.push_back(((i + 1) * divisor + (j + 1)));
+                sphere.indices.push_back(j);
+                sphere.indices.push_back(((i + 1) * divisor + (j + 1)));
+                sphere.indices.push_back(j + 1);
             }
         }
     }

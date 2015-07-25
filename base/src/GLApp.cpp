@@ -78,61 +78,24 @@ void GLApp::ProcessScene(std::vector<tinyobj::shape_t>& scene)
     for (auto it = scene.begin(); it != scene.end(); ++it)
     {
         tinyobj::shape_t shape = *it;
-        uint32_t nVertices = shape.mesh.indices.size();
+        uint32_t nIndices = shape.mesh.indices.size();
+        uint32_t nVertices = shape.mesh.positions.size() / 3;
+        uint32_t nNormals = shape.mesh.normals.size();
+        assert(nNormals != 0);
 
         Geometry model;
-        for (uint32_t i = 0; i < nVertices; i+=3)
+        for (uint32_t i = 0; i < nIndices; ++i)
         {
-            Vertex v0, v1, v2;
+            model.indices.push_back(shape.mesh.indices[i]);
+        }
+        for (uint32_t i = 0; i < nVertices; ++i)
+        {
+            Vertex v;
+            v.position = vec3(shape.mesh.positions[3 * i], shape.mesh.positions[3 * i + 1], shape.mesh.positions[3 * i + 2]);
+            v.normal = vec3(shape.mesh.normals[3 * i], shape.mesh.normals[3 * i + 1], shape.mesh.normals[3 * i + 2]);
+            v.texcoord = vec2(shape.mesh.texcoords[2 * i], shape.mesh.texcoords[2 * i + 1]);
 
-            uint32_t idx0 = shape.mesh.indices[i];
-            uint32_t idx1 = shape.mesh.indices[i + 1];
-            uint32_t idx2 = shape.mesh.indices[i + 2];
-
-            v0.position = vec3(shape.mesh.positions[3 * idx0], shape.mesh.positions[3 * idx0 + 1], shape.mesh.positions[3 * idx0 + 2]);
-            v1.position = vec3(shape.mesh.positions[3 * idx1], shape.mesh.positions[3 * idx1 + 1], shape.mesh.positions[3 * idx1 + 2]);
-            v2.position = vec3(shape.mesh.positions[3 * idx2], shape.mesh.positions[3 * idx2 + 1], shape.mesh.positions[3 * idx2 + 2]);
-
-            if (shape.mesh.normals.size() > 0)
-            {
-                v0.normal = vec3(shape.mesh.normals[3 * idx0], shape.mesh.normals[3 * idx0 + 1], shape.mesh.normals[3 * idx0 + 2]);
-                v1.normal = vec3(shape.mesh.normals[3 * idx1], shape.mesh.normals[3 * idx1 + 1], shape.mesh.normals[3 * idx1 + 2]);
-                v2.normal = vec3(shape.mesh.normals[3 * idx2], shape.mesh.normals[3 * idx2 + 1], shape.mesh.normals[3 * idx2 + 2]);
-            }
-            else
-            {
-                vec3 norm = glm::normalize(glm::cross(glm::normalize(v1.position - v0.position), glm::normalize(v2.position - v0.position)));
-                v0.normal = norm;
-                v1.normal = norm;
-                v2.normal = norm;
-            }
-
-            if (shape.mesh.texcoords.size() > 0)
-            {
-                v0.texcoord = vec2(shape.mesh.texcoords[2 * idx0], shape.mesh.texcoords[2 * idx0 + 1]);
-                v1.texcoord = vec2(shape.mesh.texcoords[2 * idx1], shape.mesh.texcoords[2 * idx1 + 1]);
-                v2.texcoord = vec2(shape.mesh.texcoords[2 * idx2], shape.mesh.texcoords[2 * idx2 + 1]);
-
-                // Apparently, obj texcoords can be outside the [0,1] interval.
-                CorrectTexcoord(v0.texcoord);
-                CorrectTexcoord(v1.texcoord);
-                CorrectTexcoord(v2.texcoord);
-            }
-            else
-            {
-                vec2 tex(0.0);
-                v0.texcoord = tex;
-                v1.texcoord = tex;
-                v2.texcoord = tex;
-            }
-
-            model.vertices.push_back(v0);
-            model.vertices.push_back(v1);
-            model.vertices.push_back(v2);
-            
-            model.indices.push_back(i);
-            model.indices.push_back(i + 1);
-            model.indices.push_back(i + 2);
+            model.vertices.push_back(v);
         }
 
         model.color = vec3(shape.material.diffuse[0], shape.material.diffuse[1], shape.material.diffuse[2]);
