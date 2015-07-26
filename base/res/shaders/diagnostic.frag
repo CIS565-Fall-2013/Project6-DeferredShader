@@ -7,7 +7,6 @@ uniform sampler2D u_Positiontex;
 uniform sampler2D u_Colortex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
-uniform sampler2D u_GlowMask;
 
 in vec2 vo_f2TexCoord;
 out vec4 out_f4Colour;
@@ -21,7 +20,6 @@ void main()
     vec3 f3Normal = SampleTexture(u_Normaltex, vo_f2TexCoord);
     vec3 f3Position = SampleTexture(u_Positiontex, vo_f2TexCoord);
     vec3 f3Colour = SampleTexture(u_Colortex, vo_f2TexCoord);
-	vec3 f3GlowMask = SampleTexture(u_GlowMask, vo_f2TexCoord).rrr;
 
     switch (uiDisplayType) 
     {
@@ -37,8 +35,6 @@ void main()
         case DISPLAY_COLOR:
             out_f4Colour = vec4(f3Colour, 1.0);
             break;
-		case DISPLAY_GLOWMASK:
-			out_f4Colour = vec4(f3GlowMask, 1.0);
         case DISPLAY_LIGHTS:
         case DISPLAY_TOTAL:
             break;

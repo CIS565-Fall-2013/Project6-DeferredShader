@@ -2,7 +2,6 @@
 
 // Textures
 uniform sampler2D u_Posttex;
-uniform sampler2D u_GlowMask;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
 uniform sampler2D u_normalTex;
@@ -27,25 +26,6 @@ const float m5Gaussian[] = {
 void main() 
 {
     vec3 f3Colour = SampleTexture(u_Posttex, vo_f2TexCoord);
-	if (ubBloomOn)
-	{
-		if (SampleTexture(u_GlowMask, vo_f2TexCoord).r)
-		{
-			vec3 f3BloomColour = vec3(0);
-			for (int i = -1; i < 2; ++i)
-			{
-				int j = -1;
-				f3BloomColour += (SampleTexture(u_GlowMask, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m3Gaussian[i+1].x);
-				++j;
-				f3BloomColour += (SampleTexture(u_GlowMask, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m3Gaussian[i+1].y);
-				++j;
-				f3BloomColour += (SampleTexture(u_GlowMask, vec2(vo_f2TexCoord.x + i*ufInvScrWidth, vo_f2TexCoord.y + j*ufInvScrHeight)).xyz * m3Gaussian[i+1].z);
-				++j;
-			}  
-			f3Colour += f3Colour * f3BloomColour;  
-		}
-	}
-
 	if (ubToonOn)
 	{
 		float fDotPdt = dot(SampleTexture(u_normalTex, vo_f2TexCoord).xyz, -(SampleTexture(u_positionTex, vo_f2TexCoord).xyz));

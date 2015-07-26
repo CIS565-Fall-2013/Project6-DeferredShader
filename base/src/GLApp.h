@@ -12,7 +12,6 @@ enum Display
     DISPLAY_COLOR = 3,
     DISPLAY_TOTAL = 4,
     DISPLAY_LIGHTS = 5,
-    DISPLAY_GLOWMASK = 6,
 };
 
 class Camera;

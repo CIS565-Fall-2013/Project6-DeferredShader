@@ -84,7 +84,6 @@ class GLRenderer
     GLType_uint m_positionTexture;
     GLType_uint m_colorTexture;
     GLType_uint m_postTexture;
-    GLType_uint m_glowmaskTexture;
 
     // Techniques
     GLProgram* m_passProg;

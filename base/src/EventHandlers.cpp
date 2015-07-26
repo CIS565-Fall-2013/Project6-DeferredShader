@@ -98,10 +98,6 @@ namespace EventHandler
         case GLFW_KEY_KP_5:
             thisApp->SetDisplayType(DISPLAY_LIGHTS);
             break;
-        case GLFW_KEY_6:
-        case GLFW_KEY_KP_6:
-            thisApp->SetDisplayType(DISPLAY_GLOWMASK);
-            break;
         case GLFW_KEY_0:
         case GLFW_KEY_KP_0:
             thisApp->SetDisplayType(DISPLAY_TOTAL);

@@ -27,7 +27,6 @@ GLRenderer::GLRenderer(uint32_t width, uint32_t height)
     m_positionTexture(0),
     m_colorTexture(0),
     m_postTexture(0),
-    m_glowmaskTexture(0),
     m_passProg(0),
     m_pointProg(0),
     m_ambientProg(0),
@@ -129,15 +128,12 @@ void GLRenderer::ApplyPerFrameShaderConstants()
 
 void GLRenderer::ApplyShaderConstantsForFullScreenPass()
 {
-    glm::mat4 persp = m_pRenderCam->GetPerspective();
-
     m_currentProgram->SetTexture("u_Depthtex", m_depthTexture);
     m_currentProgram->SetTexture("u_Normaltex", m_normalTexture);
     m_currentProgram->SetTexture("u_Positiontex", m_positionTexture);
     m_currentProgram->SetTexture("u_Colortex", m_colorTexture);
     m_currentProgram->SetTexture("u_RandomNormaltex", m_randomNormalTexture);
     m_currentProgram->SetTexture("u_RandomScalartex", m_randomScalarTexture);
-    m_currentProgram->SetTexture("u_GlowMask", m_glowmaskTexture);
 }
 
 void GLRenderer::ClearFramebuffer(RenderEnums::ClearType clearFlags)
@@ -297,11 +293,10 @@ void GLRenderer::InitFramebuffers()
     glGenTextures(1, &m_normalTexture);
     glGenTextures(1, &m_positionTexture);
     glGenTextures(1, &m_colorTexture);
-    glGenTextures(1, &m_glowmaskTexture);
 
     glEnable(GL_FRAMEBUFFER_SRGB);
 
-    //Set up depth FBO
+    //Set up depth texture
     glBindTexture(GL_TEXTURE_2D, m_depthTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -310,40 +305,30 @@ void GLRenderer::InitFramebuffers()
     glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
-    //Set up normal FBO
+    //Set up normal texture
     glBindTexture(GL_TEXTURE_2D, m_normalTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_FLOAT, 0);
 
-    //Set up position FBO
+    //Set up position texture
     glBindTexture(GL_TEXTURE_2D, m_positionTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_FLOAT, 0);
 
-    //Set up color FBO
+    //Set up color texture
     glBindTexture(GL_TEXTURE_2D, m_colorTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_FLOAT, 0);
 
-    //Set up glowmap FBO
-    glBindTexture(GL_TEXTURE_2D, m_glowmaskTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, m_width, m_height, 0, GL_RGBA, GL_FLOAT, 0);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    // creatwwe a framebuffer object
     GLType_uint fbo = 0;
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -380,8 +365,6 @@ void GLRenderer::InitFramebuffers()
     glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], m_positionTexture, 0);
     glBindTexture(GL_TEXTURE_2D, m_colorTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], m_colorTexture, 0);
-    glBindTexture(GL_TEXTURE_2D, m_glowmaskTexture);
-    glFramebufferTexture(GL_FRAMEBUFFER, draws[glowmask_loc], m_glowmaskTexture, 0);
 
     // check FBO status
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -669,7 +652,6 @@ void GLRenderer::RenderPostProcessEffects()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     m_postProg->SetTexture("u_Posttex", m_postTexture);
-    m_postProg->SetTexture("u_GlowMask", m_glowmaskTexture);
     m_postProg->SetTexture("u_normalTex", m_normalTexture);
     m_postProg->SetTexture("u_positionTex", m_positionTexture);
     m_postProg->SetTexture("u_RandomNormaltex", m_randomNormalTexture);
