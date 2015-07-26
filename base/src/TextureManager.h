@@ -14,6 +14,8 @@ class TextureManager
     static void Create();
     static void Destroy();
 
+    GLType_uint LoadImageAndCreateTexture(const std::string& textureName, int32_t forceChannels, uint32_t reuseTextureName, uint32_t flags);
+
 public:
     static TextureManager* GetSingleton() { return singleton; }
 

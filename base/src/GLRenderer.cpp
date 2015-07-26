@@ -286,7 +286,6 @@ void GLRenderer::EndActiveFramebuffer()
 void GLRenderer::InitFramebuffers()
 {
     GLenum FBOstatus;
-
     glActiveTexture(GL_TEXTURE9);
 
     glGenTextures(1, &m_depthTexture);
@@ -300,41 +299,39 @@ void GLRenderer::InitFramebuffers()
     glBindTexture(GL_TEXTURE_2D, m_depthTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_DEPTH_COMPONENT);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
     //Set up normal texture
     glBindTexture(GL_TEXTURE_2D, m_normalTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_FLOAT, 0);
 
     //Set up position texture
     glBindTexture(GL_TEXTURE_2D, m_positionTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_FLOAT, 0);
 
     //Set up color texture
     glBindTexture(GL_TEXTURE_2D, m_colorTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_FLOAT, 0);
 
     GLType_uint fbo = 0;
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    // Instruct openGL that we won't bind a color texture with the currently bound FBO
-    glReadBuffer(GL_NONE);
     GLType_int normal_loc;
     if (!m_passProg->GetOutputBindLocation("out_f4Normal", reinterpret_cast<GLType_uint&>(normal_loc)))
         assert(false);
@@ -356,7 +353,6 @@ void GLRenderer::InitFramebuffers()
     glDrawBuffers(4, draws);
 
     // attach the texture to FBO depth attachment point
-    int test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, m_depthTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_depthTexture, 0);
     glBindTexture(GL_TEXTURE_2D, m_normalTexture);
@@ -370,17 +366,17 @@ void GLRenderer::InitFramebuffers()
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (FBOstatus == GL_FRAMEBUFFER_COMPLETE)
         m_FBO.push_back(fbo);
+    else
+        assert(false);
 
     //Post Processing buffer!
-    glActiveTexture(GL_TEXTURE9);
-
+    //Set up post texture
     glGenTextures(1, &m_postTexture);
-    //Set up post FBO
     glBindTexture(GL_TEXTURE_2D, m_postTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, m_width, m_height, 0, GL_RGB, GL_FLOAT, 0);
 
     // create a framebuffer object
@@ -388,8 +384,6 @@ void GLRenderer::InitFramebuffers()
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    // Instruct openGL that we won't bind a color texture with the currently bound FBO
-    glReadBuffer(GL_BACK);
     if (!m_ambientProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<GLType_uint&>(color_loc)))
         assert(false);
     GLenum draw[1];
@@ -397,7 +391,6 @@ void GLRenderer::InitFramebuffers()
     glDrawBuffers(1, draw);
 
     // attach the texture to FBO depth attachment point
-    test = GL_COLOR_ATTACHMENT0;
     glBindTexture(GL_TEXTURE_2D, m_postTexture);
     glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], m_postTexture, 0);
 
@@ -405,11 +398,16 @@ void GLRenderer::InitFramebuffers()
     FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (FBOstatus == GL_FRAMEBUFFER_COMPLETE)
         m_FBO.push_back(fbo);
+    else
+        assert(false);
 
     // switch back to window-system-provided framebuffer
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    GLenum gl_error = glGetError();
+    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::Initialize(const Camera* renderCamera)
@@ -429,8 +427,7 @@ void GLRenderer::InitNoise()
     const char * rand_norm_png = "../res/random_normal.png";
     const char * rand_png = "../res/random.png";
 
-    m_randomNormalTexture = SOIL_load_OGL_texture(rand_norm_png, 0, 0, 0);
-    glGetError();   // SOIL is brain dead.
+    m_randomNormalTexture = TextureManager::GetSingleton()->Acquire(rand_norm_png);
     glBindTexture(GL_TEXTURE_2D, m_randomNormalTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -438,8 +435,7 @@ void GLRenderer::InitNoise()
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    m_randomScalarTexture = SOIL_load_OGL_texture(rand_png, 0, 0, 0);
-    glGetError();   // SOIL is brain dead.
+    m_randomScalarTexture = TextureManager::GetSingleton()->Acquire(rand_png);
     glBindTexture(GL_TEXTURE_2D, m_randomScalarTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -478,6 +474,9 @@ void GLRenderer::InitQuad()
     glEnableVertexAttribArray(quad_attributes::TEXCOORD);
 
     glBindVertexArray(0);
+
+    GLenum gl_error = glGetError();
+    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::InitShaders()
@@ -527,6 +526,9 @@ void GLRenderer::InitShaders()
     shaderSourceAndStagePair.push_back(std::make_pair(post_vert, RenderEnums::VERT));
     shaderSourceAndStagePair.push_back(std::make_pair(post_frag, RenderEnums::FRAG));
     m_postProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
+
+    GLenum gl_error = glGetError();
+    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::InitSphere()
@@ -571,6 +573,9 @@ void GLRenderer::InitSphere()
     glEnableVertexAttribArray(mesh_attributes::TEXCOORD);
 
     glBindVertexArray(0);
+
+    GLenum gl_error = glGetError();
+    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out, const glm::mat4& modelMatrix)
@@ -597,6 +602,9 @@ void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out,
     out.modelMat = modelMatrix;
     out.inverseModelMat = glm::inverse(out.modelMat);
     out.color = model.color;
+ 
+    GLenum gl_error = glGetError();
+    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::Render()
