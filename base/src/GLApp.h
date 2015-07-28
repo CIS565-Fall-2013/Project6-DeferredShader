@@ -10,8 +10,7 @@ enum Display
     DISPLAY_NORMAL = 1,
     DISPLAY_POSITION = 2,
     DISPLAY_COLOR = 3,
-    DISPLAY_TOTAL = 4,
-    DISPLAY_LIGHTS = 5,
+    DISPLAY_TOTAL = 4
 };
 
 class Camera;

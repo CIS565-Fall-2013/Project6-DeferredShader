@@ -35,7 +35,6 @@ void main()
         case DISPLAY_COLOR:
             out_f4Colour = vec4(f3Colour, 1.0);
             break;
-        case DISPLAY_LIGHTS:
         case DISPLAY_TOTAL:
             break;
     }	

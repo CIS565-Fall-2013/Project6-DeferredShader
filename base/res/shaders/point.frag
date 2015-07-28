@@ -21,34 +21,26 @@ void main()
 
     vec3 f3FinalColour = vec3(0.0f);
 
-    if(uiDisplayType == DISPLAY_LIGHTS)
-    {
-        //Put some code here to visualize the fragment associated with this point light
-		f3FinalColour = uf3LightCol;
-    }
-    else
-    {
-		float fDistToLight = length(uf4Light.xyz - f3Position);
-		float fDecay = max(1.0f - (fDistToLight / uf4Light.w), 0.0f);
-		float fClampedDotPdt = clamp(dot(normalize(f3Normal), (uf4Light.xyz - f3Position)/fDistToLight), 0.0f, 1.0f);
+	float fDistToLight = length(uf4Light.xyz - f3Position);
+	float fDecay = max(1.0f - (fDistToLight / uf4Light.w), 0.0f);
+	float fClampedDotPdt = clamp(dot(normalize(f3Normal), (uf4Light.xyz - f3Position)/fDistToLight), 0.0f, 1.0f);
 
-		if (ubToonOn)
-		{
-			if (fClampedDotPdt == 1.0f)
-				fClampedDotPdt = 1.0f;
-			else if (fClampedDotPdt >= 0.8f)
-				fClampedDotPdt = 0.8f;
-			else if (fClampedDotPdt >= 0.6f)
-				fClampedDotPdt = 0.6f;
-			else if (fClampedDotPdt >= 0.4f)
-				fClampedDotPdt = 0.4f;
-			else if (fClampedDotPdt >= 0.2f)
-				fClampedDotPdt = 0.2f;
-			else
-				fClampedDotPdt = 0.0f;
-		}
-		f3FinalColour = (f3Colour * uf3LightCol * ufLightIl * fClampedDotPdt) * fDecay;
-    }
+	if (ubToonOn)
+	{
+		if (fClampedDotPdt == 1.0f)
+			fClampedDotPdt = 1.0f;
+		else if (fClampedDotPdt >= 0.8f)
+			fClampedDotPdt = 0.8f;
+		else if (fClampedDotPdt >= 0.6f)
+			fClampedDotPdt = 0.6f;
+		else if (fClampedDotPdt >= 0.4f)
+			fClampedDotPdt = 0.4f;
+		else if (fClampedDotPdt >= 0.2f)
+			fClampedDotPdt = 0.2f;
+		else
+			fClampedDotPdt = 0.0f;
+	}
+	f3FinalColour = (f3Colour * uf3LightCol * ufLightIl * fClampedDotPdt) * fDecay;
     
     out_f4Colour = vec4(f3FinalColour, 1.0);		// Because light and normal are both in view space.
 }
