@@ -42,6 +42,15 @@ namespace RenderEnums
         GEOM, 
         FRAG
     };
+
+    enum DisplayType
+    {
+        DISPLAY_DEPTH = 0,
+        DISPLAY_NORMAL = 1,
+        DISPLAY_POSITION = 2,
+        DISPLAY_COLOR = 3,
+        DISPLAY_TOTAL = 4
+    };
 }
 
 inline bool AreFloatsEqual(const float a, const float b)

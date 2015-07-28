@@ -76,6 +76,8 @@ class GLRenderer
     float m_farPlane;
     float m_nearPlane;
 
+    RenderEnums::DisplayType m_displayType;
+
     // Textures
     GLType_uint m_randomNormalTexture;
     GLType_uint m_randomScalarTexture;
@@ -124,6 +126,7 @@ class GLRenderer
     void DrawLightList();
 
     void RenderAmbientLighting();
+    void RenderFramebuffers();
     void RenderPostProcessEffects();
     void ApplyPerFrameShaderConstants();
 
@@ -144,6 +147,7 @@ public:
     const DrawableGeometry& GetSphereGeometry() const { return m_SphereGeometry; }
     const float GetNearPlaneDistance() const { return m_nearPlane; }
     const float GetFarPlaneDistance() const { return m_farPlane; }
+    void SetDisplayType(RenderEnums::DisplayType displayType) { m_displayType = displayType; }
 
     void AddDrawableGeometryToList(const DrawableGeometry* geometry, RenderEnums::DrawListType listType);
     void ClearLists();

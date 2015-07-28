@@ -32,7 +32,7 @@ GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle, const std
     : m_startTime(0), 
     m_currentTime(0),
     m_currentFrame(0),
-    m_displayType(DISPLAY_TOTAL),
+    m_displayType(RenderEnums::DISPLAY_TOTAL),
     m_width(width),
     m_height(height),
     m_bloomEnabled(true),
@@ -117,6 +117,7 @@ void GLApp::display()
     m_cam->CalculateViewProjection(45.0f, m_width, m_height, RENDERER->GetNearPlaneDistance(), RENDERER->GetFarPlaneDistance());
 
     m_renderer->ClearLists();
+    m_renderer->SetDisplayType(m_displayType);
     for (uint32_t i = 0; i < m_drawableModels.size(); ++i)
     {
         m_renderer->AddDrawableGeometryToList(m_drawableModels[i].get(), RenderEnums::OPAQUE_LIST);

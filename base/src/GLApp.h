@@ -4,15 +4,6 @@
 #include "tiny_obj_loader.h"
 #include <memory>
 
-enum Display
-{
-    DISPLAY_DEPTH = 0,
-    DISPLAY_NORMAL = 1,
-    DISPLAY_POSITION = 2,
-    DISPLAY_COLOR = 3,
-    DISPLAY_TOTAL = 4
-};
-
 class Camera;
 struct GLFWwindow;
 class GLApp
@@ -20,7 +11,7 @@ class GLApp
     uint32_t m_startTime;
     uint32_t m_currentTime;
     uint32_t m_currentFrame;
-    Display m_displayType;
+    RenderEnums::DisplayType m_displayType;
     uint32_t m_width;
     uint32_t m_height;
     float m_invWidth;
@@ -105,7 +96,7 @@ public:
     void ToggleDOFDebug() { m_DOFDebug = !m_DOFDebug; }
     void ToggleMouseCaptured() { m_mouseCaptured = !m_mouseCaptured; }
 
-    void SetDisplayType(Display newDisplayType) { m_displayType = newDisplayType; }
+    void SetDisplayType(RenderEnums::DisplayType newDisplayType) { m_displayType = newDisplayType; }
     void SetLastX(double lastX) { m_lastX = lastX; }
     void SetLastY(double lastY) { m_lastY = lastY; }
 

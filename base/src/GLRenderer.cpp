@@ -122,7 +122,7 @@ void GLRenderer::ApplyPerFrameShaderConstants()
     shaderConstantManager->SetShaderConstant("ubDOFOn", perFrameConstantBuffer, &value/*m_DOFEnabled*/);
     shaderConstantManager->SetShaderConstant("ubDOFDebug", perFrameConstantBuffer, &value/*m_DOFDebug*/);
 
-    value = 1;
+    value = m_displayType;
     shaderConstantManager->SetShaderConstant("uiDisplayType", perFrameConstantBuffer, &value);
 }
 
@@ -621,7 +621,10 @@ void GLRenderer::Render()
     // Post Process Pass
     ClearFramebuffer(RenderEnums::CLEAR_ALL);
     glDisable(GL_DEPTH_TEST);
-    RenderPostProcessEffects();
+    if (m_displayType != RenderEnums::DISPLAY_TOTAL)
+        RenderFramebuffers();
+    else
+        RenderPostProcessEffects();
     glEnable(GL_DEPTH_TEST);
 }
 
@@ -638,6 +641,15 @@ void GLRenderer::RenderAmbientLighting()
     m_ambientProg->SetTexture("u_Colortex", m_colorTexture);
     m_ambientProg->SetShaderConstant("uf4Light", dir_light);
     m_ambientProg->SetShaderConstant("ufLightIl", strength);
+void GLRenderer::RenderFramebuffers()
+{
+    SetShaderProgram(m_diagnosticProg);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    SetTexturesForFullScreenPass();
+    m_diagnosticProg->SetTexture("u_Colortex", m_colorTexture);
 
     glDepthMask(GL_FALSE);
     RenderQuad();

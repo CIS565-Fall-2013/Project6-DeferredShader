@@ -80,27 +80,27 @@ namespace EventHandler
             break;
         case GLFW_KEY_1:
         case GLFW_KEY_KP_1:
-            thisApp->SetDisplayType(DISPLAY_DEPTH);
+            thisApp->SetDisplayType(RenderEnums::DISPLAY_DEPTH);
             break;
         case GLFW_KEY_2:
         case GLFW_KEY_KP_2:
-            thisApp->SetDisplayType(DISPLAY_NORMAL);
+            thisApp->SetDisplayType(RenderEnums::DISPLAY_NORMAL);
             break;
         case GLFW_KEY_3:
         case GLFW_KEY_KP_3:
-            thisApp->SetDisplayType(DISPLAY_COLOR);
+            thisApp->SetDisplayType(RenderEnums::DISPLAY_COLOR);
             break;
         case GLFW_KEY_4:
         case GLFW_KEY_KP_4:
-            thisApp->SetDisplayType(DISPLAY_POSITION);
+            thisApp->SetDisplayType(RenderEnums::DISPLAY_POSITION);
             break;
         case GLFW_KEY_5:
         case GLFW_KEY_KP_5:
-//            thisApp->SetDisplayType(DISPLAY_LIGHTS);
+//            thisApp->SetDisplayType(RenderEnums::DISPLAY_LIGHTS);
             break;
         case GLFW_KEY_0:
         case GLFW_KEY_KP_0:
-            thisApp->SetDisplayType(DISPLAY_TOTAL);
+            thisApp->SetDisplayType(RenderEnums::DISPLAY_TOTAL);
             break;
         case GLFW_KEY_X:
             thisApp->ToggleScissor();
