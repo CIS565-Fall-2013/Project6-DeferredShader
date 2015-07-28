@@ -127,7 +127,7 @@ class GLRenderer
     void RenderPostProcessEffects();
     void ApplyPerFrameShaderConstants();
 
-    void ApplyShaderConstantsForFullScreenPass();
+    void SetTexturesForFullScreenPass();
 
     void drawLight(glm::vec3 pos, float strength); //TODORC
     void SetShaderProgram(GLProgram* currentlyUsedProgram);

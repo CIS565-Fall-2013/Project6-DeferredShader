@@ -126,7 +126,7 @@ void GLRenderer::ApplyPerFrameShaderConstants()
     shaderConstantManager->SetShaderConstant("uiDisplayType", perFrameConstantBuffer, &value);
 }
 
-void GLRenderer::ApplyShaderConstantsForFullScreenPass()
+void GLRenderer::SetTexturesForFullScreenPass()
 {
     m_currentProgram->SetTexture("u_Depthtex", m_depthTexture);
     m_currentProgram->SetTexture("u_Normaltex", m_normalTexture);
@@ -230,7 +230,7 @@ void GLRenderer::drawLight(glm::vec3 pos, float strength)
 void GLRenderer::DrawLightList()
 {
     SetShaderProgram(m_pointProg);
-    ApplyShaderConstantsForFullScreenPass();
+    SetTexturesForFullScreenPass();
 
     m_pointProg->SetShaderConstant("uf3LightCol", Colours::yellow);
     glDepthMask(GL_FALSE);
@@ -643,7 +643,7 @@ void GLRenderer::RenderAmbientLighting()
     float strength = 0.09f;
 
     SetShaderProgram(m_ambientProg);
-    ApplyShaderConstantsForFullScreenPass();
+    SetTexturesForFullScreenPass();
     m_ambientProg->SetShaderConstant("uf4Light", dir_light);
     m_ambientProg->SetShaderConstant("ufLightIl", strength);
 
