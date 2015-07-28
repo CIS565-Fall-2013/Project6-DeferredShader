@@ -126,16 +126,6 @@ void GLRenderer::ApplyPerFrameShaderConstants()
     shaderConstantManager->SetShaderConstant("uiDisplayType", perFrameConstantBuffer, &value);
 }
 
-void GLRenderer::SetTexturesForFullScreenPass()
-{
-    m_currentProgram->SetTexture("u_Depthtex", m_depthTexture);
-    m_currentProgram->SetTexture("u_Normaltex", m_normalTexture);
-    m_currentProgram->SetTexture("u_Positiontex", m_positionTexture);
-    m_currentProgram->SetTexture("u_Colortex", m_colorTexture);
-    m_currentProgram->SetTexture("u_RandomNormaltex", m_randomNormalTexture);
-    m_currentProgram->SetTexture("u_RandomScalartex", m_randomScalarTexture);
-}
-
 void GLRenderer::ClearFramebuffer(RenderEnums::ClearType clearFlags)
 {
     GLenum flags = 0;
@@ -232,6 +222,7 @@ void GLRenderer::DrawLightList()
     SetShaderProgram(m_pointProg);
     SetTexturesForFullScreenPass();
 
+    m_pointProg->SetTexture("u_Colortex", m_colorTexture);
     m_pointProg->SetShaderConstant("uf3LightCol", Colours::yellow);
     glDepthMask(GL_FALSE);
     drawLight(glm::vec3(5.4, -0.5, 3.0), 1.0);
@@ -644,6 +635,7 @@ void GLRenderer::RenderAmbientLighting()
 
     SetShaderProgram(m_ambientProg);
     SetTexturesForFullScreenPass();
+    m_ambientProg->SetTexture("u_Colortex", m_colorTexture);
     m_ambientProg->SetShaderConstant("uf4Light", dir_light);
     m_ambientProg->SetShaderConstant("ufLightIl", strength);
 
@@ -659,12 +651,8 @@ void GLRenderer::RenderPostProcessEffects()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    SetTexturesForFullScreenPass();
     m_postProg->SetTexture("u_Posttex", m_postTexture);
-    m_postProg->SetTexture("u_normalTex", m_normalTexture);
-    m_postProg->SetTexture("u_positionTex", m_positionTexture);
-    m_postProg->SetTexture("u_RandomNormaltex", m_randomNormalTexture);
-    m_postProg->SetTexture("u_RandomScalartex", m_randomScalarTexture);
-    m_postProg->SetTexture("u_depthTex", m_depthTexture);
 
     glDepthMask(GL_FALSE);
     RenderQuad();
@@ -687,4 +675,13 @@ void GLRenderer::SetShaderProgram(GLProgram* currentlyUsedProgram)
 { 
     m_currentProgram = currentlyUsedProgram; 
     m_currentProgram->SetActive();
+}
+
+void GLRenderer::SetTexturesForFullScreenPass()
+{
+    m_currentProgram->SetTexture("u_Depthtex", m_depthTexture);
+    m_currentProgram->SetTexture("u_Normaltex", m_normalTexture);
+    m_currentProgram->SetTexture("u_Positiontex", m_positionTexture);
+    m_currentProgram->SetTexture("u_RandomNormaltex", m_randomNormalTexture);
+    m_currentProgram->SetTexture("u_RandomScalartex", m_randomScalarTexture);
 }

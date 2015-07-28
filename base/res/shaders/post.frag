@@ -4,9 +4,9 @@
 uniform sampler2D u_Posttex;
 uniform sampler2D u_RandomNormaltex;
 uniform sampler2D u_RandomScalartex;
-uniform sampler2D u_normalTex;
-uniform sampler2D u_positionTex;
-uniform sampler2D u_depthTex;
+uniform sampler2D u_Normaltex;
+uniform sampler2D u_Positiontex;
+uniform sampler2D u_Depthtex;
 
 in vec2 vo_f2TexCoord;
 out vec4 out_f4Colour;
@@ -28,17 +28,17 @@ void main()
     vec3 f3Colour = SampleTexture(u_Posttex, vo_f2TexCoord);
 	if (ubToonOn)
 	{
-		float fDotPdt = dot(SampleTexture(u_normalTex, vo_f2TexCoord).xyz, -(SampleTexture(u_positionTex, vo_f2TexCoord).xyz));
+		float fDotPdt = dot(SampleTexture(u_Normaltex, vo_f2TexCoord).xyz, -(SampleTexture(u_Positiontex, vo_f2TexCoord).xyz));
 		if (fDotPdt < 0.1)
 			f3Colour = vec3(0.0, 0.0, 0.0);
 	}
 
 	if (ubDOFOn)
 	{
-		float fDepth = SampleTexture(u_depthTex, vo_f2TexCoord).x;
+		float fDepth = SampleTexture(u_Depthtex, vo_f2TexCoord).x;
 		fDepth = linearizeDepth(fDepth);
 
-		float fFocalLen = SampleTexture(u_depthTex, vec2(ufMouseTexX, ufMouseTexY)).x;
+		float fFocalLen = SampleTexture(u_Depthtex, vec2(ufMouseTexX, ufMouseTexY)).x;
 		fFocalLen = linearizeDepth(fFocalLen);
 
 		float fLenQuant = 0.01f;
