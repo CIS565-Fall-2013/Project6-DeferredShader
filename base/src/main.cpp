@@ -4,8 +4,7 @@
 #include "tiny_obj_loader.h"
 #include "Utility.h"
 
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/matrix_projection.hpp>
+#include "glm/gtc/matrix_transform.hpp"
 
 #include <iostream>
 #include <string>
@@ -117,7 +116,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return EXIT_SUCCESS;
     }
 
-    GLApp* app = GLApp::Create(1280, 720, "CIS 565 OpenGL Frame", path);
+    GLApp* app = GLApp::Create(1280, 720, "P6", path);
     if (!app || !app->Initialize(scene))
     {
         delete app;

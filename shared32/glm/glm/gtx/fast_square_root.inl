@@ -1,237 +1,110 @@
+///////////////////////////////////////////////////////////////////////////////////
+/// OpenGL Mathematics (glm.g-truc.net)
+///
+/// Copyright (c) 2005 - 2015 G-Truc Creation (www.g-truc.net)
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+/// 
+/// The above copyright notice and this permission notice shall be included in
+/// all copies or substantial portions of the Software.
+/// 
+/// Restrictions:
+///		By making use of the Software for military purposes, you choose to make
+///		a Bunny unhappy.
+/// 
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
+///
+/// @ref gtx_fast_square_root
+/// @file glm/gtx/fast_square_root.inl
+/// @date 2006-01-04 / 2011-06-07
+/// @author Christophe Riccio
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Created : 2006-01-04
-// Updated : 2008-10-07
-// Licence : This source is under MIT License
-// File    : glm/gtx/fast_square_root.inl
-///////////////////////////////////////////////////////////////////////////////////////////////////
 
-namespace glm{
-namespace gtx{
-namespace fast_square_root{
-
-// fastSqrt
-template <typename genType>
-inline genType fastSqrt
-(
-	genType const & x
-)
+namespace glm
 {
-    return genType(1) / fastInverseSqrt(x);
-}
+	// fastSqrt
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType fastSqrt(genType x)
+	{
+		GLM_STATIC_ASSERT(std::numeric_limits<genType>::is_iec559, "'fastSqrt' only accept floating-point input");
 
-template <typename valType>
-inline detail::tvec2<valType> fastSqrt
-(
-	detail::tvec2<valType> const & x
-)
-{
-    return detail::tvec2<valType>(
-        fastSqrt(x.x), 
-        fastSqrt(x.y));
-}
+		return genType(1) / fastInverseSqrt(x);
+	}
 
-template <typename valType>
-inline detail::tvec3<valType> fastSqrt
-(
-	detail::tvec3<valType> const & x
-)
-{
-    return detail::tvec3<valType>(
-        fastSqrt(x.x), 
-        fastSqrt(x.y), 
-        fastSqrt(x.z));
-}
+	template <typename T, precision P, template <typename, precision> class vecType>
+	GLM_FUNC_QUALIFIER vecType<T, P> fastSqrt(vecType<T, P> const & x)
+	{
+		return detail::functor1<T, T, P, vecType>::call(fastSqrt, x);
+	}
 
-template <typename valType>
-inline detail::tvec4<valType> fastSqrt
-(
-	detail::tvec4<valType> const & x
-)
-{
-    return detail::tvec4<valType>(
-        fastSqrt(x.x), 
-        fastSqrt(x.y), 
-        fastSqrt(x.z), 
-        fastSqrt(x.w));
-}
+	// fastInversesqrt
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType fastInverseSqrt(genType x)
+	{
+#		ifdef __CUDACC__ // Wordaround for a CUDA compiler bug up to CUDA6
+			tvec1<T, P> tmp(detail::compute_inversesqrt<tvec1, genType, lowp>::call(tvec1<genType, lowp>(x)));
+			return tmp.x;
+#		else
+			return detail::compute_inversesqrt<tvec1, genType, lowp>::call(tvec1<genType, lowp>(x)).x;
+#		endif
+	}
 
-// fastInversesqrt
-template <typename genType>
-inline genType fastInverseSqrt
-(
-	genType const & x
-)
-{
-	genType tmp = x;
-    float xhalf = 0.5f * float(tmp);
-    uint i = *(uint*)&x;
-    i = 0x5f375a86 - (i >> 1);
-    //x = *(float*)&i;
-	//x = *((float*)(char*)&i);
-	tmp = detail::uif(i).f;
-	tmp = tmp * (1.5f - xhalf * tmp * tmp);
-    return genType(tmp);
-}
+	template <typename T, precision P, template <typename, precision> class vecType>
+	GLM_FUNC_QUALIFIER vecType<T, P> fastInverseSqrt(vecType<T, P> const & x)
+	{
+		return detail::compute_inversesqrt<vecType, T, P>::call(x);
+	}
 
-template <typename valType>
-inline detail::tvec2<valType> fastInverseSqrt
-(
-	detail::tvec2<valType> const & x
-)
-{
-    return detail::tvec2<valType>(
-        fastInverseSqrt(x.x), 
-        fastInverseSqrt(x.y));
-}
+	// fastLength
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType fastLength(genType x)
+	{
+		GLM_STATIC_ASSERT(std::numeric_limits<genType>::is_iec559, "'fastLength' only accept floating-point inputs");
 
-template <typename valType>
-inline detail::tvec3<valType> fastInverseSqrt
-(
-	detail::tvec3<valType> const & x
-)
-{
-    return detail::tvec3<valType>(
-        fastInverseSqrt(x.x), 
-        fastInverseSqrt(x.y), 
-        fastInverseSqrt(x.z));
-}
+		return abs(x);
+	}
 
-template <typename valType>
-inline detail::tvec4<valType> fastInverseSqrt
-(
-	detail::tvec4<valType> const & x
-)
-{
-    return detail::tvec4<valType>(
-        fastInverseSqrt(x.x), 
-        fastInverseSqrt(x.y), 
-        fastInverseSqrt(x.z), 
-        fastInverseSqrt(x.w));
-}
+	template <typename T, precision P, template <typename, precision> class vecType>
+	GLM_FUNC_QUALIFIER T fastLength(vecType<T, P> const & x)
+	{
+		GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559, "'fastLength' only accept floating-point inputs");
 
-// fastLength
-template <typename genType>
-inline genType fastLength
-(
-	genType const & x
-)
-{
-    return abs(x);
-}
+		return fastSqrt(dot(x, x));
+	}
 
-template <typename valType>
-inline valType fastLength
-(
-	detail::tvec2<valType> const & x
-)
-{
-    valType sqr = x.x * x.x + x.y * x.y;
-    return fastSqrt(sqr);
-}
+	// fastDistance
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType fastDistance(genType x, genType y)
+	{
+		return fastLength(y - x);
+	}
 
-template <typename valType>
-inline valType fastLength
-(
-	detail::tvec3<valType> const & x
-)
-{
-    valType sqr = x.x * x.x + x.y * x.y + x.z * x.z;
-    return fastSqrt(sqr);
-}
+	template <typename T, precision P, template <typename, precision> class vecType>
+	GLM_FUNC_QUALIFIER T fastDistance(vecType<T, P> const & x, vecType<T, P> const & y)
+	{
+		return fastLength(y - x);
+	}
 
-template <typename valType>
-inline valType fastLength
-(
-	detail::tvec4<valType> const & x
-)
-{
-    valType sqr = x.x * x.x + x.y * x.y + x.z * x.z + x.w * x.w;
-    return fastSqrt(sqr);
-}
+	// fastNormalize
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType fastNormalize(genType x)
+	{
+		return x > genType(0) ? genType(1) : -genType(1);
+	}
 
-// fastDistance
-template <typename genType>
-inline genType fastDistance
-(
-	genType const & x, 
-	genType const & y
-)
-{
-    return fastLength(y - x);
-}
-
-template <typename valType>
-inline valType fastDistance
-(
-	detail::tvec2<valType> const & x, 
-	detail::tvec2<valType> const & y
-)
-{
-    return fastLength(y - x);
-}
-
-template <typename valType>
-inline valType fastDistance
-(
-	detail::tvec3<valType> const & x, 
-	detail::tvec3<valType> const & y
-)
-{
-    return fastLength(y - x);
-}
-
-template <typename valType>
-inline valType fastDistance
-(
-	detail::tvec4<valType> const & x, 
-	detail::tvec4<valType> const & y
-)
-{
-    return fastLength(y - x);
-}
-
-// fastNormalize
-template <typename genType>
-inline genType fastNormalize
-(
-	genType const & x
-)
-{
-    return x > genType(0) ? genType(1) : -genType(1);
-}
-
-template <typename valType>
-inline detail::tvec2<valType> fastNormalize
-(
-	detail::tvec2<valType> const & x
-)
-{
-    valType sqr = x.x * x.x + x.y * x.y;
-    return x * fastInverseSqrt(sqr);
-}
-
-template <typename valType>
-inline detail::tvec3<valType> fastNormalize
-(
-	detail::tvec3<valType> const & x
-)
-{
-    valType sqr = x.x * x.x + x.y * x.y + x.z * x.z;
-    return x * fastInverseSqrt(sqr);
-}
-
-template <typename valType>
-inline detail::tvec4<valType> fastNormalize
-(
-	detail::tvec4<valType> const & x
-)
-{
-    valType sqr = x.x * x.x + x.y * x.y + x.z * x.z + x.w * x.w;
-    return x * fastInverseSqrt(sqr);
-}
-
-}//namespace fast_square_root
-}//namespace gtx
+	template <typename T, precision P, template <typename, precision> class vecType>
+	GLM_FUNC_QUALIFIER vecType<T, P> fastNormalize(vecType<T, P> const & x)
+	{
+		return x * fastInverseSqrt(dot(x, x));
+	}
 }//namespace glm

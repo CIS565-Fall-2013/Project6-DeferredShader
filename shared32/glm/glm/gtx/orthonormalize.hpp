@@ -1,50 +1,74 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Created : 2005-12-21
-// Updated : 2006-11-13
-// Licence : This source is under MIT License
-// File    : glm/gtx/orthonormalize.hpp
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Dependency:
-// - GLM core
-///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/// OpenGL Mathematics (glm.g-truc.net)
+///
+/// Copyright (c) 2005 - 2015 G-Truc Creation (www.g-truc.net)
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+/// 
+/// The above copyright notice and this permission notice shall be included in
+/// all copies or substantial portions of the Software.
+/// 
+/// Restrictions:
+///		By making use of the Software for military purposes, you choose to make
+///		a Bunny unhappy.
+/// 
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
+///
+/// @ref gtx_orthonormalize
+/// @file glm/gtx/orthonormalize.hpp
+/// @date 2005-12-21 / 2011-06-07
+/// @author Christophe Riccio
+///
+/// @see core (dependence)
+/// @see gtx_extented_min_max (dependence)
+///
+/// @defgroup gtx_orthonormalize GLM_GTX_orthonormalize
+/// @ingroup gtx
+/// 
+/// @brief Orthonormalize matrices.
+/// 
+/// <glm/gtx/orthonormalize.hpp> need to be included to use these functionalities.
+///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef glm_gtx_orthonormalize
-#define glm_gtx_orthonormalize
+#pragma once
 
 // Dependency:
-#include "../glm.hpp"
+#include "../vec3.hpp"
+#include "../mat3x3.hpp"
+#include "../geometric.hpp"
+
+#if(defined(GLM_MESSAGES) && !defined(GLM_EXT_INCLUDED))
+#	pragma message("GLM: GLM_GTX_orthonormalize extension included")
+#endif
 
 namespace glm
 {
-	namespace test{
-		void main_gtx_orthonormalize();
-	}//namespace test
+	/// @addtogroup gtx_orthonormalize
+	/// @{
 
-    namespace gtx{
-	//! GLM_GTX_orthonormalize extension: Orthonormalize matrices.
-    namespace orthonormalize
-    {
-        //! Returns the orthonormalized matrix of m.
-		//! From GLM_GTX_orthonormalize extension.
-		template <typename T> 
-		detail::tmat3x3<T> orthonormalize(
-			const detail::tmat3x3<T>& m);
+	/// Returns the orthonormalized matrix of m.
+	///
+	/// @see gtx_orthonormalize
+	template <typename T, precision P> 
+	GLM_FUNC_DECL tmat3x3<T, P> orthonormalize(tmat3x3<T, P> const & m);
 		
-        //! Orthonormalizes x according y.
-		//! From GLM_GTX_orthonormalize extension.
-		template <typename T> 
-		detail::tvec3<T> orthonormalize(
-			const detail::tvec3<T>& x, 
-			const detail::tvec3<T>& y);
+	/// Orthonormalizes x according y.
+	///
+	/// @see gtx_orthonormalize
+	template <typename T, precision P> 
+	GLM_FUNC_DECL tvec3<T, P> orthonormalize(tvec3<T, P> const & x, tvec3<T, P> const & y);
 
-    }//namespace orthonormalize
-    }//namespace gtx
+	/// @}
 }//namespace glm
 
 #include "orthonormalize.inl"
-
-namespace glm{using namespace gtx::orthonormalize;}
-
-#endif//glm_gtx_orthonormalize

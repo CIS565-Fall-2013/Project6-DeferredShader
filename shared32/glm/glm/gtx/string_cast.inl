@@ -1,11 +1,34 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2006 G-Truc Creation (www.g-truc.net)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Created : 2008-04-27
-// Updated : 2008-05-24
-// Licence : This source is under MIT License
-// File    : glm/gtx/string_cast.hpp
-///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/// OpenGL Mathematics (glm.g-truc.net)
+///
+/// Copyright (c) 2005 - 2015 G-Truc Creation (www.g-truc.net)
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+/// 
+/// The above copyright notice and this permission notice shall be included in
+/// all copies or substantial portions of the Software.
+/// 
+/// Restrictions:
+///		By making use of the Software for military purposes, you choose to make
+///		a Bunny unhappy.
+/// 
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
+///
+/// @ref gtx_string_cast
+/// @file glm/gtx/string_cast.inl
+/// @date 2008-04-26 / 2014-05-10
+/// @author Christophe Riccio
+///////////////////////////////////////////////////////////////////////////////////
 
 #include <cstdarg>
 #include <cstdio>
@@ -13,9 +36,9 @@
 namespace glm{
 namespace detail
 {
-	inline std::string format(const char* msg, ...)
+	GLM_FUNC_QUALIFIER std::string format(const char* msg, ...)
 	{
-		const int STRING_BUFFER = 4096;
+		std::size_t const STRING_BUFFER(4096);
 		char text[STRING_BUFFER];
 		va_list list;
 
@@ -23,575 +46,410 @@ namespace detail
 			return std::string();
 
 		va_start(list, msg);
+#		if(GLM_COMPILER & GLM_COMPILER_VC)
+			vsprintf_s(text, STRING_BUFFER, msg, list);
+#		else//
 			vsprintf(text, msg, list);
+#		endif//
 		va_end(list);
 
 		return std::string(text);
 	}
 
-	static const char* True = "true";
-	static const char* False = "false";
+	static const char* LabelTrue = "true";
+	static const char* LabelFalse = "false";
+
+	template <typename T, bool isFloat = false>
+	struct literal
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "%d";};
+	};
+
+	template <typename T>
+	struct literal<T, true>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "%f";};
+	};
+
+#	if GLM_MODEL == GLM_MODEL_32 && GLM_COMPILER && GLM_COMPILER_VC
+	template <>
+	struct literal<uint64_t, false>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "%lld";};
+	};
+
+	template <>
+	struct literal<int64_t, false>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "%lld";};
+	};
+#	endif//GLM_MODEL == GLM_MODEL_32 && GLM_COMPILER && GLM_COMPILER_VC
+
+	template <typename T>
+	struct prefix{};
+
+	template <>
+	struct prefix<float>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "";};
+	};
+
+	template <>
+	struct prefix<double>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "d";};
+	};
+
+	template <>
+	struct prefix<bool>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "b";};
+	};
+
+	template <>
+	struct prefix<uint8_t>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "u8";};
+	};
+
+	template <>
+	struct prefix<int8_t>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "i8";};
+	};
+
+	template <>
+	struct prefix<uint16_t>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "u16";};
+	};
+
+	template <>
+	struct prefix<int16_t>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "i16";};
+	};
+
+	template <>
+	struct prefix<uint32_t>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "u";};
+	};
+
+	template <>
+	struct prefix<int32_t>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "i";};
+	};
+
+	template <>
+	struct prefix<uint64_t>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "u64";};
+	};
+
+	template <>
+	struct prefix<int64_t>
+	{
+		GLM_FUNC_QUALIFIER static char const * value() {return "i64";};
+	};
+
+	template <template <typename, precision> class matType, typename T, precision P>
+	struct compute_to_string
+	{};
+
+	template <precision P>
+	struct compute_to_string<tvec1, bool, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tvec1<bool, P> const & x)
+		{
+			return detail::format("bvec1(%s)",
+				x[0] ? detail::LabelTrue : detail::LabelFalse);
+		}
+	};
+
+	template <precision P>
+	struct compute_to_string<tvec2, bool, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tvec2<bool, P> const & x)
+		{
+			return detail::format("bvec2(%s, %s)",
+				x[0] ? detail::LabelTrue : detail::LabelFalse,
+				x[1] ? detail::LabelTrue : detail::LabelFalse);
+		}
+	};
+
+	template <precision P>
+	struct compute_to_string<tvec3, bool, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tvec3<bool, P> const & x)
+		{
+			return detail::format("bvec3(%s, %s, %s)",
+				x[0] ? detail::LabelTrue : detail::LabelFalse,
+				x[1] ? detail::LabelTrue : detail::LabelFalse,
+				x[2] ? detail::LabelTrue : detail::LabelFalse);
+		}
+	};
+
+	template <precision P>
+	struct compute_to_string<tvec4, bool, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tvec4<bool, P> const & x)
+		{
+			return detail::format("bvec4(%s, %s, %s, %s)",
+				x[0] ? detail::LabelTrue : detail::LabelFalse,
+				x[1] ? detail::LabelTrue : detail::LabelFalse,
+				x[2] ? detail::LabelTrue : detail::LabelFalse,
+				x[3] ? detail::LabelTrue : detail::LabelFalse);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tvec1, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tvec1<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%svec1(%s)",
+				PrefixStr,
+				LiteralStr));
+
+			return detail::format(FormatStr.c_str(), x[0]);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tvec2, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tvec2<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%svec2(%s, %s)",
+				PrefixStr,
+				LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(), x[0], x[1]);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tvec3, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tvec3<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%svec3(%s, %s, %s)",
+				PrefixStr,
+				LiteralStr, LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(), x[0], x[1], x[2]);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tvec4, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tvec4<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%svec4(%s, %s, %s, %s)",
+				PrefixStr,
+				LiteralStr, LiteralStr, LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(), x[0], x[1], x[2], x[3]);
+		}
+	};
+
+
+	template <typename T, precision P>
+	struct compute_to_string<tmat2x2, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tmat2x2<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%smat2x2((%s, %s), (%s, %s))",
+				PrefixStr,
+				LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(),
+				x[0][0], x[0][1],
+				x[1][0], x[1][1]);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tmat2x3, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tmat2x3<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%smat2x3((%s, %s, %s), (%s, %s, %s))",
+				PrefixStr,
+				LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(),
+				x[0][0], x[0][1], x[0][2],
+				x[1][0], x[1][1], x[1][2]);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tmat2x4, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tmat2x4<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%smat2x4((%s, %s, %s, %s), (%s, %s, %s, %s))",
+				PrefixStr,
+				LiteralStr, LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(),
+				x[0][0], x[0][1], x[0][2], x[0][3],
+				x[1][0], x[1][1], x[1][2], x[1][3]);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tmat3x2, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tmat3x2<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%smat3x2((%s, %s), (%s, %s), (%s, %s))",
+				PrefixStr,
+				LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(),
+				x[0][0], x[0][1],
+				x[1][0], x[1][1],
+				x[2][0], x[2][1]);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tmat3x3, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tmat3x3<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%smat3x3((%s, %s, %s), (%s, %s, %s), (%s, %s, %s))",
+				PrefixStr,
+				LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(),
+				x[0][0], x[0][1], x[0][2],
+				x[1][0], x[1][1], x[1][2],
+				x[2][0], x[2][1], x[2][2]);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tmat3x4, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tmat3x4<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%smat3x4((%s, %s, %s, %s), (%s, %s, %s, %s), (%s, %s, %s, %s))",
+				PrefixStr,
+				LiteralStr, LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(),
+				x[0][0], x[0][1], x[0][2], x[0][3],
+				x[1][0], x[1][1], x[1][2], x[1][3],
+				x[2][0], x[2][1], x[2][2], x[2][3]);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tmat4x2, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tmat4x2<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%smat4x2((%s, %s), (%s, %s), (%s, %s), (%s, %s))",
+				PrefixStr,
+				LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(),
+				x[0][0], x[0][1],
+				x[1][0], x[1][1],
+				x[2][0], x[2][1],
+				x[3][0], x[3][1]);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tmat4x3, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tmat4x3<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%smat4x3((%s, %s, %s), (%s, %s, %s), (%s, %s, %s), (%s, %s, %s))",
+				PrefixStr,
+				LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(),
+				x[0][0], x[0][1], x[0][2],
+				x[1][0], x[1][1], x[1][2],
+				x[2][0], x[2][1], x[2][2],
+				x[3][0], x[3][1], x[3][2]);
+		}
+	};
+
+	template <typename T, precision P>
+	struct compute_to_string<tmat4x4, T, P>
+	{
+		GLM_FUNC_QUALIFIER static std::string call(tmat4x4<T, P> const & x)
+		{
+			char const * PrefixStr = prefix<T>::value();
+			char const * LiteralStr = literal<T, std::numeric_limits<T>::is_iec559>::value();
+			std::string FormatStr(detail::format("%smat4x4((%s, %s, %s, %s), (%s, %s, %s, %s), (%s, %s, %s, %s), (%s, %s, %s, %s))",
+				PrefixStr,
+				LiteralStr, LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr, LiteralStr,
+				LiteralStr, LiteralStr, LiteralStr, LiteralStr));
+
+			return detail::format(FormatStr.c_str(),
+				x[0][0], x[0][1], x[0][2], x[0][3],
+				x[1][0], x[1][1], x[1][2], x[1][3],
+				x[2][0], x[2][1], x[2][2], x[2][3],
+				x[3][0], x[3][1], x[3][2], x[3][3]);
+		}
+	};
 }//namespace detail
 
-namespace gtx{
-namespace string_cast
+template <template <typename, precision> class matType, typename T, precision P>
+GLM_FUNC_DECL std::string to_string(matType<T, P> const & x)
 {
-	////////////////////////////////
-	// Scalars
+	return detail::compute_to_string<matType, T, P>::call(x);
+}
 
-	inline std::string string(detail::thalf const & x)
-	{
-		return detail::format("half(%f)", float(x));
-	}
-
-	inline std::string string(float x)
-	{
-		return detail::format("float(%f)", x);
-	}
-
-	inline std::string string(double x)
-	{
-		return detail::format("double(%f)", x);
-	}
-
-	inline std::string string(int x)
-	{
-		return detail::format("int(%d)", x);
-	}
-
-	inline std::string string(unsigned int x)
-	{
-		return detail::format("uint(%d)", x);
-	}
-
-	////////////////////////////////
-	// Bool vectors
-
-	inline std::string string
-	(
-		detail::tvec2<bool> const & v
-	)
-	{
-		return detail::format("bvec2(%s, %s)", 
-			v.x ? detail::True : detail::False, 
-			v.y ? detail::True : detail::False);
-	}
-
-	inline std::string string
-	(
-		detail::tvec3<bool> const & v
-	)
-	{
-		return detail::format("bvec3(%s, %s, %s)", 
-			v.x ? detail::True : detail::False, 
-			v.y ? detail::True : detail::False, 
-			v.z ? detail::True : detail::False);
-	}
-
-	inline std::string string
-	(
-		detail::tvec4<bool> const & v
-	)
-	{
-		return detail::format("bvec4(%s, %s, %s, %s)", 
-			v.x ? detail::True : detail::False, 
-			v.y ? detail::True : detail::False, 
-			v.z ? detail::True : detail::False, 
-			v.w ? detail::True : detail::False);
-	}
-
-	////////////////////////////////
-	// Half vectors
-
-	template <>
-	inline std::string string
-	(
-		detail::tvec2<detail::thalf> const & v
-	)
-	{
-		return detail::format("hvec2(%f, %f)", float(v.x), float(v.y));
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tvec3<detail::thalf> const & v
-	)
-	{
-		return detail::format("hvec3(%f, %f, %f)", float(v.x), float(v.y), float(v.z));
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tvec4<detail::thalf> const & v
-	)
-	{
-		return detail::format("hvec4(%f, %f, %f, %f)", float(v.x), float(v.y), float(v.z), float(v.w));
-	}
-
-	////////////////////////////////
-	// Float vectors
-
-	template <>
-	inline std::string string
-	(
-		detail::tvec2<float> const & v
-	)
-	{
-		return detail::format("fvec2(%f, %f)", v.x, v.y);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tvec3<float> const & v
-	)
-	{
-		return detail::format("fvec3(%f, %f, %f)", v.x, v.y, v.z);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tvec4<float> const & v
-	)
-	{
-		return detail::format("fvec4(%f, %f, %f, %f)", v.x, v.y, v.z, v.w);
-	}
-
-	////////////////////////////////
-	// Double vectors
-
-	template <>
-	inline std::string string
-	(
-		detail::tvec2<double> const & v
-	)
-	{
-		return detail::format("dvec2(%f, %f)", v.x, v.y);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tvec3<double> const & v
-	)
-	{
-		return detail::format("dvec3(%f, %f, %f)", v.x, v.y, v.z);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tvec4<double> const & v
-	)
-	{
-		return detail::format("dvec4(%f, %f, %f, %f)", v.x, v.y, v.z, v.w);
-	}
-
-	////////////////////////////////
-	// Int vectors
-
-	template <>
-	inline std::string string
-	(
-		detail::tvec2<int> const & v
-	)
-	{
-		return detail::format("ivec2(%d, %d)", v.x, v.y);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tvec3<int> const & v
-	)
-	{
-		return detail::format("ivec3(%d, %d, %d)", v.x, v.y, v.z);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tvec4<int> const & v
-	)
-	{
-		return detail::format("ivec4(%d, %d, %d, %d)", v.x, v.y, v.z, v.w);
-	}
-
-	////////////////////////////////
-	// Unsigned int vectors
-
-	template <>
-	inline std::string string
-	(
-		detail::tvec2<unsigned int> const & v
-	)
-	{
-		return detail::format("uvec2(%d, %d)", v.x, v.y);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tvec3<unsigned int> const & v
-	)
-	{
-		return detail::format("uvec3(%d, %d, %d)", v.x, v.y, v.z);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tvec4<unsigned int> const & v
-	)
-	{
-		return detail::format("uvec4(%d, %d, %d, %d)", v.x, v.y, v.z, v.w);
-	}
-
-	////////////////////////////////
-	// Half matrices
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat2x2<detail::thalf> const & m
-	)
-	{
-		detail::tmat2x2<float> x(m);
-		return detail::format("hmat2x2((%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat2x3<detail::thalf> const & m
-	)
-	{
-		detail::tmat2x3<float> x(m);
-		return detail::format("hmat2x3((%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], 
-			x[1][0], x[1][1], x[1][2]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat2x4<detail::thalf> const & m
-	)
-	{
-		detail::tmat2x4<float> x(m);
-		return detail::format("hmat2x4((%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3], 
-			x[1][0], x[1][1], x[1][2], x[1][3]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat3x2<detail::thalf> const & m
-	)
-	{
-		detail::tmat3x2<float> x(m);
-		return detail::format("hmat3x2((%f, %f), (%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1], 
-			x[2][0], x[2][1]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat3x3<detail::thalf> const & m
-	)
-	{
-		detail::tmat3x3<float> x(m);
-		return detail::format("hmat3x3((%f, %f, %f), (%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], 
-			x[1][0], x[1][1], x[1][2],
-			x[2][0], x[2][1], x[2][2]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat3x4<detail::thalf> const & m
-	)
-	{
-		detail::tmat3x4<float> x(m);
-		return detail::format("hmat3x4((%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3], 
-			x[1][0], x[1][1], x[1][2], x[1][3], 
-			x[2][0], x[2][1], x[2][2], x[2][3]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat4x2<detail::thalf> const & m
-	)
-	{
-		detail::tmat4x2<float> x(m);
-		return detail::format("hmat4x2((%f, %f), (%f, %f), (%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1], 
-			x[2][0], x[2][1], 
-			x[3][0], x[3][1]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat4x3<detail::thalf> const & m
-	)
-	{
-		detail::tmat4x3<float> x(m);
-		return detail::format("hmat4x3((%f, %f, %f), (%f, %f, %f), (%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2],
-			x[1][0], x[1][1], x[1][2], 
-			x[2][0], x[2][1], x[2][2],
-			x[3][0], x[3][1], x[3][2]);
-	}
-
-	template <>
-	inline std::string string
-	(
-		detail::tmat4x4<detail::thalf> const & m
-	)
-	{
-		detail::tmat4x4<float> x(m);
-		return detail::format("hmat4x4((%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3],
-			x[1][0], x[1][1], x[1][2], x[1][3],
-			x[2][0], x[2][1], x[2][2], x[2][3],
-			x[3][0], x[3][1], x[3][2], x[3][3]);
-	}
-
-	////////////////////////////////
-	// Float matrices
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat2x2<float> const & x
-	)
-	{
-		return detail::format("mat2x2((%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat2x3<float> const & x
-	)
-	{
-		return detail::format("mat2x3((%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], 
-			x[1][0], x[1][1], x[1][2]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat2x4<float> const & x
-	)
-	{
-		return detail::format("mat2x4((%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3], 
-			x[1][0], x[1][1], x[1][2], x[1][3]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat3x2<float> const & x
-	)
-	{
-		return detail::format("mat3x2((%f, %f), (%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1], 
-			x[2][0], x[2][1]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat3x3<float> const & x
-	)
-	{
-		return detail::format("mat3x3((%f, %f, %f), (%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], 
-			x[1][0], x[1][1], x[1][2],
-			x[2][0], x[2][1], x[2][2]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat3x4<float> const & x
-	)
-	{
-		return detail::format("mat3x4((%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3], 
-			x[1][0], x[1][1], x[1][2], x[1][3], 
-			x[2][0], x[2][1], x[2][2], x[2][3]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat4x2<float> const & x
-	)
-	{
-		return detail::format("mat4x2((%f, %f), (%f, %f), (%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1], 
-			x[2][0], x[2][1], 
-			x[3][0], x[3][1]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat4x3<float> const & x
-	)
-	{
-		return detail::format("mat4x3((%f, %f, %f), (%f, %f, %f), (%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2],
-			x[1][0], x[1][1], x[1][2], 
-			x[2][0], x[2][1], x[2][2],
-			x[3][0], x[3][1], x[3][2]);
-	}
-
-	template <>
-	inline std::string string
-	(
-		detail::tmat4x4<float> const & x
-	)
-	{
-		return detail::format("mat4x4((%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3],
-			x[1][0], x[1][1], x[1][2], x[1][3],
-			x[2][0], x[2][1], x[2][2], x[2][3],
-			x[3][0], x[3][1], x[3][2], x[3][3]);
-	}
-
-	////////////////////////////////
-	// Double matrices
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat2x2<double> const & x
-	)
-	{
-		return detail::format("dmat2x2((%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat2x3<double> const & x
-	)
-	{
-		return detail::format("dmat2x3((%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], 
-			x[1][0], x[1][1], x[1][2]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat2x4<double> const & x
-	)
-	{
-		return detail::format("dmat2x4((%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3], 
-			x[1][0], x[1][1], x[1][2], x[1][3]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat3x2<double> const & x
-	)
-	{
-		return detail::format("dmat3x2((%f, %f), (%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1],
-			x[2][0], x[2][1]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat3x3<double> const & x
-	)
-	{
-		return detail::format("dmat3x3((%f, %f, %f), (%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], 
-			x[1][0], x[1][1], x[1][2],
-			x[2][0], x[2][1], x[2][2]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat3x4<double> const & x
-	)
-	{
-		return detail::format("dmat3x4((%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3], 
-			x[1][0], x[1][1], x[1][2], x[1][3],
-			x[2][0], x[2][1], x[2][2], x[2][3]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat4x2<double> const & x
-	)
-	{
-		return detail::format("dmat4x2((%f, %f), (%f, %f), (%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1], 
-			x[2][0], x[2][1], 
-			x[3][0], x[3][1]);
-	}
-
-	template <> 
-	inline std::string string
-	(
-		detail::tmat4x3<double> const & x
-	)
-	{
-		return detail::format("dmat4x3((%f, %f, %f), (%f, %f, %f), (%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], 
-			x[1][0], x[1][1], x[1][2], 
-			x[2][0], x[2][1], x[2][2], 
-			x[3][0], x[3][1], x[3][2]);
-	}
-
-	template <>
-	inline std::string string
-	(
-		detail::tmat4x4<double> const & x
-	)
-	{
-		return detail::format("dmat4x4((%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3],
-			x[1][0], x[1][1], x[1][2], x[1][3],
-			x[2][0], x[2][1], x[2][2], x[2][3],
-			x[3][0], x[3][1], x[3][2], x[3][3]);
-	}
-
-	}//namespace string_cast
-	}//namespace gtx
 }//namespace glm

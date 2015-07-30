@@ -45,13 +45,6 @@ class GLApp
     // Also uploads data to GPU.
     void ProcessScene(std::vector<tinyobj::shape_t>& scene);
 
-    void bindFBO(uint32_t buf);
-    void setTextures();
-
-    void setupQuad(uint32_t prog);
-    void drawMeshes();
-    void drawLight(glm::vec3 pos, float strength, glm::mat4 sc, glm::mat4 vp);
-
     void display();
     void reshape(int, int);
 
