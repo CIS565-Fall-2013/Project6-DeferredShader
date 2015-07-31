@@ -21,19 +21,6 @@ namespace
         SOIL_FLAG_SRGB_TEXTURE = 1024
     };
 
-    void check_for_GL_errors(const char* callingLocation)
-    {
-        /*	check for errors	*/
-        GLenum err_code = glGetError();
-        if (GL_NO_ERROR != err_code)
-        {
-            std::ostringstream errorString;
-            errorString << "GL error at " << callingLocation << " error code: " << err_code << "\n";
-            Utility::LogOutput(errorString.str().c_str());
-            assert(false);
-        }
-    }
-
     bool IsNonPowerOfTwoTextureDimsSupported()
     {
         int32_t numExts;
@@ -248,7 +235,7 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
     /*	how large of a texture can this OpenGL implementation handle?	*/
     /*	texture_check_size_enum will be GL_MAX_TEXTURE_SIZE or SOIL_MAX_CUBE_MAP_TEXTURE_SIZE	*/
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_supported_size);
-    check_for_GL_errors("glGetIntegerv");
+
     /*	do I need to make it a power of 2?	*/
     if (
         (flags & SOIL_FLAG_POWER_OF_TWO) ||	/*	user asked for it	*/
@@ -331,7 +318,7 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
     {
         glGenTextures(1, &tex_id);
     }
-    check_for_GL_errors("glGenTextures");
+
     /* Note: sometimes glGenTextures fails (usually no OpenGL context)	*/
     if (tex_id)
     {
@@ -363,7 +350,6 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
         
         /*  bind an OpenGL texture ID	*/
         glBindTexture(opengl_texture_type, tex_id);
-        check_for_GL_errors("glBindTexture");
 
         /*	does the user want me to, and can I, save as DXT?	*/
         if (flags & SOIL_FLAG_COMPRESS_TO_DXT)
@@ -401,7 +387,6 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
                         opengl_texture_target, 0,
                         internal_texture_format, width, height, 0,
                         DDS_size, DDS_data);
-                    check_for_GL_errors("glCompressedTexImage2D");
                     SOIL_free_image_data(DDS_data);
                     /*	printf( "Internal DXT compressor\n" );	*/
                 }
@@ -412,7 +397,6 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
                         opengl_texture_target, 0,
                         internal_texture_format, width, height, 0,
                         original_texture_format, GL_UNSIGNED_BYTE, img);
-                    check_for_GL_errors("glTexImage2D");
                     /*	printf( "OpenGL DXT compressor\n" );	*/
                 }
             }
@@ -424,7 +408,6 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
                 opengl_texture_target, 0,
                 internal_texture_format, width, height, 0,
                 original_texture_format, GL_UNSIGNED_BYTE, img);
-            check_for_GL_errors("glTexImage2D");
             /*printf( "OpenGL DXT compressor\n" );	*/
         }
         /*	are any MIPmaps desired?	*/
@@ -465,7 +448,6 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
                             opengl_texture_target, MIPlevel,
                             internal_texture_format, MIPwidth, MIPheight, 0,
                             DDS_size, DDS_data);
-                        check_for_GL_errors("glCompressedTexImage2D");
                         SOIL_free_image_data(DDS_data);
                     }
                     else
@@ -475,7 +457,6 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
                             opengl_texture_target, MIPlevel,
                             internal_texture_format, MIPwidth, MIPheight, 0,
                             original_texture_format, GL_UNSIGNED_BYTE, resampled);
-                        check_for_GL_errors("glTexImage2D");
                     }
                 }
                 else
@@ -485,7 +466,6 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
                         opengl_texture_target, MIPlevel,
                         internal_texture_format, MIPwidth, MIPheight, 0,
                         original_texture_format, GL_UNSIGNED_BYTE, resampled);
-                    check_for_GL_errors("glTexImage2D");
                 }
                 /*	prep for the next level	*/
                 ++MIPlevel;
@@ -496,14 +476,12 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
             /*	instruct OpenGL to use the MIPmaps	*/
             glTexParameteri(opengl_texture_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(opengl_texture_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            check_for_GL_errors("GL_TEXTURE_MIN/MAG_FILTER");
         }
         else
         {
             /*	instruct OpenGL _NOT_ to use the MIPmaps	*/
             glTexParameteri(opengl_texture_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(opengl_texture_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            check_for_GL_errors("GL_TEXTURE_MIN/MAG_FILTER");
         }
         /*	does the user want clamping, or wrapping?	*/
         if (flags & SOIL_FLAG_TEXTURE_REPEATS)
@@ -515,7 +493,6 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
                 /*	SOIL_TEXTURE_WRAP_R is invalid if cubemaps aren't supported	*/
                 glTexParameteri(opengl_texture_type, GL_TEXTURE_WRAP_R, GL_REPEAT);
             }
-            check_for_GL_errors("GL_TEXTURE_WRAP_*");
         }
         else
         {
@@ -528,7 +505,6 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
                 /*	SOIL_TEXTURE_WRAP_R is invalid if cubemaps aren't supported	*/
                 glTexParameteri(opengl_texture_type, GL_TEXTURE_WRAP_R, clamp_mode);
             }
-            check_for_GL_errors("GL_TEXTURE_WRAP_*");
         }
     }
     else

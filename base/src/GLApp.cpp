@@ -3,6 +3,7 @@
 #include "Utility.h"
 #include "EventHandlers.h"
 #include "TextureManager.h"
+#include <sstream>
 
 #include "gl/glew.h"
 #include "GLFW/glfw3.h"
@@ -14,20 +15,67 @@ using glm::vec3;
 using glm::vec2;
 using glm::mat4;
 
-GLApp* GLApp::m_singleton = nullptr;
-
-static void CorrectTexcoord(glm::vec2& texcoord)
+namespace
 {
-    if ((texcoord.x < 0.0f) || (texcoord.x > 1.0f))
+    inline char* DebugEnumToString(GLenum debugEnum)
     {
-        texcoord.x -= floor(texcoord.x);
+        switch (debugEnum)
+        {
+        case GL_DEBUG_SOURCE_API:
+            return "API";
+            break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+            return "Window-system API";
+            break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER:
+            return "GLSL Shader compiler";
+            break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:
+            return "third-party application";
+            break;
+        case GL_DEBUG_SOURCE_APPLICATION:
+            return "this application";
+            break;
+        case GL_DEBUG_TYPE_ERROR:
+            return "error";
+            break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        case GL_DEBUG_TYPE_PORTABILITY:
+            return "warning";
+            break;
+        case GL_DEBUG_TYPE_PERFORMANCE:
+            return "performance advisory";
+            break;
+        case GL_DEBUG_SEVERITY_HIGH:
+            return "High";
+            break;
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            return "Medium";
+            break;
+        case GL_DEBUG_SEVERITY_LOW:
+            return "Low";
+            break;
+        default:
+            return "Unknown";
+        }
     }
 
-    if ((texcoord.y < 0.0f) || (texcoord.y > 1.0f))
+    void APIENTRY OnGLError(GLenum msgSource, GLenum msgType, GLuint id, GLenum msgSeverity, GLsizei length, const GLchar* message, const void* userParam)
     {
-        texcoord.y -= floor(texcoord.y);
+        if (msgType == GL_DEBUG_SEVERITY_NOTIFICATION)
+            return;
+
+        bool shouldAssert = (msgType == GL_DEBUG_TYPE_ERROR);
+        std::ostringstream outputMsg;
+
+        outputMsg << DebugEnumToString(msgSeverity) << " severity " << DebugEnumToString(msgType) << " issued by " << DebugEnumToString(msgSource) << ": " << message << "\n";
+        Utility::LogOutput(outputMsg.str().c_str());
+        assert(!shouldAssert);
     }
 }
+
+GLApp* GLApp::m_singleton = nullptr;
 
 GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle, const std::string& modelBasePath)
     : m_startTime(0), 
@@ -193,15 +241,18 @@ int32_t GLApp::Initialize(std::vector<tinyobj::shape_t>& scene)
     glfwSetMouseButtonCallback(m_glfwWindow, EventHandler::OnMouseClick);
     glfwSetCursorPosCallback(m_glfwWindow, EventHandler::OnMouseMove);
 
-    assert(glGetError() == GL_NO_ERROR);
-
     GLenum err = glewInit();
     if (GLEW_OK != err)
     {
         /* Problem: glewInit failed, something is seriously wrong. */
         return 0;
     }
-    glGetError();   // GLEW is brain dead.
+
+    glEnable(GL_DEBUG_OUTPUT);
+#ifdef _DEBUG
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+#endif
+    glDebugMessageCallback(OnGLError, nullptr);
 
     m_renderer = new GLRenderer(m_width, m_height);
     if (m_renderer == nullptr)

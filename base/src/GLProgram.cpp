@@ -76,8 +76,6 @@ void GLProgram::Create(RenderEnums::ProgramType programType, const std::vector<s
         glBindAttribLocation(m_id, itr.second, itr.first.c_str());
     for (const auto& itr : m_outputBindIndicesMap)
         glBindFragDataLocation(m_id, itr.second, itr.first.c_str());
-    GLenum gl_error = glGetError();
-    assert(gl_error == GL_NO_ERROR);
 
     Utility::attachAndLinkProgram(m_id, shaders);
 

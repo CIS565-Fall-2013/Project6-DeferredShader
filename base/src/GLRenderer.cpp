@@ -395,9 +395,6 @@ void GLRenderer::InitFramebuffers()
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    GLenum gl_error = glGetError();
-    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::Initialize(const Camera* renderCamera)
@@ -432,9 +429,6 @@ void GLRenderer::InitNoise()
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    GLenum gl_error = glGetError();
-    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::InitQuad()
@@ -464,9 +458,6 @@ void GLRenderer::InitQuad()
     glEnableVertexAttribArray(quad_attributes::TEXCOORD);
 
     glBindVertexArray(0);
-
-    GLenum gl_error = glGetError();
-    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::InitShaders()
@@ -516,9 +507,6 @@ void GLRenderer::InitShaders()
     shaderSourceAndStagePair.push_back(std::make_pair(post_vert, RenderEnums::VERT));
     shaderSourceAndStagePair.push_back(std::make_pair(post_frag, RenderEnums::FRAG));
     m_postProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
-
-    GLenum gl_error = glGetError();
-    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::InitSphere()
@@ -563,9 +551,6 @@ void GLRenderer::InitSphere()
     glEnableVertexAttribArray(mesh_attributes::TEXCOORD);
 
     glBindVertexArray(0);
-
-    GLenum gl_error = glGetError();
-    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out, const glm::mat4& modelMatrix)
@@ -592,9 +577,6 @@ void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out,
     out.modelMat = modelMatrix;
     out.inverseModelMat = glm::inverse(out.modelMat);
     out.color = model.color;
- 
-    GLenum gl_error = glGetError();
-    assert(gl_error == GL_NO_ERROR);
 }
 
 void GLRenderer::Render()
