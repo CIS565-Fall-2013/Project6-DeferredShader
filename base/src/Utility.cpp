@@ -5,12 +5,13 @@
 #include <sstream>
 #include <string>
 #include <Windows.h>
+#include "gl/glew.h"
 
 using namespace std;
 
 namespace Utility 
 {
-	char* loadFile(const char *fname, GLint &fSize)
+    char* loadFile(const char *fname, GLType_int &fSize)
 	{
 		ifstream::pos_type size;
 		char* memblock;
@@ -50,7 +51,7 @@ namespace Utility
 	// printShaderInfoLog
 	// From OpenGL Shading Language 3rd Edition, p215-216
 	// Display (hopefully) useful error messages if shader fails to compile
-	void printShaderInfoLog(GLint shader)
+    void printShaderInfoLog(GLType_int shader)
 	{
 		int infoLogLen = 0;
 		int charsWritten = 0;
@@ -73,7 +74,7 @@ namespace Utility
 		// should additionally check for OpenGL errors here
 	}
 
-	void printLinkInfoLog(GLint prog) 
+    void printLinkInfoLog(GLType_int prog)
 	{
 		int infoLogLen = 0;
 		int charsWritten = 0;
@@ -134,7 +135,7 @@ namespace Utility
 		return out;
 	}
 
-	void attachAndLinkProgram( GLuint program, shaders_t shaders) 
+    void attachAndLinkProgram(GLType_uint program, shaders_t shaders)
     {
 		glAttachShader(program, shaders.vertex);
 		glAttachShader(program, shaders.fragment);

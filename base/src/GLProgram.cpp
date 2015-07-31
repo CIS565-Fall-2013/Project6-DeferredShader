@@ -1,6 +1,7 @@
 #include "GLProgram.h"
 #include "ShaderConstantManager.h"
 #include "Utility.h"
+#include "gl/glew.h"
 
 static void tokenizer(const std::string& sourceString, std::vector<std::string>& tokenList);
 static ShaderConstantManager::SupportedTypes GLTypeToSupportedType(GLint gltype);
@@ -56,7 +57,7 @@ void GLProgram::Create(RenderEnums::ProgramType programType, const std::vector<s
 
     std::string workingDirectory;
     if (vert_shader.find_last_of('\\') != std::string::npos)
-        workingDirectory = vert_shader.substr(0, vert_shader.find_last_of('\\') + 1);   // Include trailing \\
+        workingDirectory = vert_shader.substr(0, vert_shader.find_last_of('\\') + 1);   // Include trailing "\\"
     else
         workingDirectory = vert_shader.substr(0, vert_shader.find_last_of('/') + 1); // Include trailing /
     PreprocessShaderSource(vertShaderSource, workingDirectory);

@@ -5,28 +5,26 @@
 #include <cstdlib>
 #include <string>
 
-#include "gl/glew.h"
-
 namespace Utility 
 {
 	typedef struct 
     {
-		GLuint vertex;
-		GLuint fragment;
+		GLType_uint vertex;
+        GLType_uint fragment;
 	} shaders_t;
 
     shaders_t createShaders(const std::string& vs_source, const std::string& fs_source);
 
-    void attachAndLinkProgram( GLuint program, shaders_t shaders);
+    void attachAndLinkProgram(GLType_uint program, shaders_t shaders);
 
-    char* loadFile(const char *fname, GLint &fSize);
+    char* loadFile(const char *fname, GLType_int &fSize);
 
     // printShaderInfoLog
     // From OpenGL Shading Language 3rd Edition, p215-216
     // Display (hopefully) useful error messages if shader fails to compile
-    void printShaderInfoLog(GLint shader);
+    void printShaderInfoLog(GLType_int shader);
 
-    void printLinkInfoLog(GLint prog);
+    void printLinkInfoLog(GLType_int prog);
 
     void LogOutput(const char* logMessage);
     void LogFile(const char* logMessage);
