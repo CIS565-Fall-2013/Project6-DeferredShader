@@ -2,10 +2,10 @@
 #define UTILITY_H_
 
 #include "Common.h"
-
-#include <GL/glew.h>
 #include <cstdlib>
 #include <string>
+
+#include "gl/glew.h"
 
 namespace Utility 
 {

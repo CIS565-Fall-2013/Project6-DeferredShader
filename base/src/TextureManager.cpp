@@ -2,12 +2,12 @@
 #include <string>
 #include <sstream>
 #include "GLRenderer.h"
-#include "gl/glew.h"
-#include "SOIL/SOIL.h"
 #include "Utility.h"
+#include "gl/glew.h"
 
 extern "C"
 {
+    #include "SOIL/SOIL.h"
     #include "SOIL/image_DXT.h"
     #include "SOIL/image_helper.h"
 }

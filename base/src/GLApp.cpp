@@ -4,6 +4,7 @@
 #include "EventHandlers.h"
 #include "TextureManager.h"
 
+#include "gl/glew.h"
 #include "GLFW/glfw3.h"
 #include "tiny_obj_loader.h"
 #include <glm/gtc/matrix_transform.hpp>

@@ -2,7 +2,6 @@
 #include "GLProgram.h"
 #include "Utility.h"
 #include "gl/glew.h"
-#include "SOIL/SOIL.h"
 #include "Camera.h"
 #include "ShaderConstantManager.h"
 #include "TextureManager.h"
