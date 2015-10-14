@@ -29,7 +29,7 @@ namespace EventHandler
             dx = (xPos - thisApp->GetLastX()) / thisApp->GetWidth();
             dy = (yPos - thisApp->GetLastY()) / thisApp->GetHeight();
 
-            thisApp->RotateCamera(dx*14.0, dy*14.0);
+            thisApp->RotateCamera(dx/2.0, dy/2.0);
 
             thisApp->SetLastX(xPos);
             thisApp->SetLastY(yPos);

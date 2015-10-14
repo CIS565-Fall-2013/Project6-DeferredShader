@@ -595,8 +595,8 @@ void GLRenderer::Render()
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
     DrawLightList();
-    RenderAmbientLighting();
     glDisable(GL_BLEND);
+    RenderAmbientLighting();
     EndActiveFramebuffer();
 
     // Post Process Pass
@@ -611,17 +611,24 @@ void GLRenderer::Render()
 
 void GLRenderer::RenderAmbientLighting()
 {
-    glm::vec4 dir_light(0.1, 1.0, 1.0, 0.0);
+    glm::vec4 dir_light(0.0, 1.0, 1.0, 0.0);
+    dir_light = glm::normalize(dir_light);
     dir_light = m_pRenderCam->GetView() * dir_light;
     dir_light = glm::normalize(dir_light);
-    dir_light.w = 0.3f;
-    float strength = 0.09f;
+    dir_light.w = 1.0f; // strength
+    float ambient = 0.04f;
 
     SetShaderProgram(m_ambientProg);
     SetTexturesForFullScreenPass();
     m_ambientProg->SetTexture("u_Colortex", m_colorTexture);
     m_ambientProg->SetShaderConstant("uf4Light", dir_light);
-    m_ambientProg->SetShaderConstant("ufLightIl", strength);
+    m_ambientProg->SetShaderConstant("ufLightIl", ambient);
+
+    glDepthMask(GL_FALSE);
+    RenderQuad();
+    glDepthMask(GL_TRUE);
+}
+
 void GLRenderer::RenderFramebuffers()
 {
     SetShaderProgram(m_diagnosticProg);

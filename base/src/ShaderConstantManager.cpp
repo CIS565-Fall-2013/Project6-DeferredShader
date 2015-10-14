@@ -250,7 +250,7 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
             if (constantBuffer->m_dirty)
             {
                 glBindBuffer(GL_UNIFORM_BUFFER, constantBuffer->m_id);
-//                glInvalidateBufferData(constantBuffer->m_id);
+                glInvalidateBufferData(constantBuffer->m_id);
                 glBufferData(GL_UNIFORM_BUFFER, constantBuffer->m_size, constantBuffer->m_data, GL_STATIC_DRAW);
                 constantBuffer->m_dirty = false;
             }
