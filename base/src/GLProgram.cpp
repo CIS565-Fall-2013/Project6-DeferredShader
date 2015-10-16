@@ -166,100 +166,102 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
         }
         else
         {
-            bool stdLayout = false;
-            if (tokenList[i - 1].find("std140") != std::string::npos)
-            {
-                stdLayout = true;
-            }
-
+            // This is a constant buffer.
             constBufferName = tokenList[i + 1];
-
-            uint32_t itr = i+3;
-            ShaderConstantSignature thisSignature;
-            uint32_t stdOffset = 0;
-            while (tokenList[itr].compare("};") != 0)
-            {
-                thisSignature.type = ShaderConstantManager::GetTypeFromString(tokenList[itr++]);
-                thisSignature.name = tokenList[itr++];
-                thisSignature.name.pop_back();  // Get rid of trailing ;
-
-                if (stdLayout)
-                {
-                    // Calculate offset and size using std140 layout rules.
-                    thisSignature.offset = stdOffset;
-                    thisSignature.size = 1; // Currently array uniforms are not supported. uint32_t constantBufferSize;
-                    stdOffset += ShaderConstantManager::GetSizeForType(thisSignature.type);
-                    constBufferSignature.push_back(thisSignature);
-                }
-                else    // Push all the uniforms into an array.
-                    activeUniforms.push_back(thisSignature.name);
-            }
-
-            if (!stdLayout)
-            {
-                // Query sizes and offsets.
-                uint32_t numUniforms = activeUniforms.size();
-                if (numUniforms)
-                {
-                    const char** uniformsList = new const char* [numUniforms];
-                    for (uint32_t j = 0; j < numUniforms; ++j)
-                        uniformsList[j] = activeUniforms[j].c_str();
-
-                    GLuint* uniformIndicesList = new GLuint[numUniforms];
-                    GLint* uniformSizesList = new GLint[numUniforms];
-                    GLint* uniformOffsetsList = new GLint[numUniforms];
-                    GLint* uniformTypesList = new GLint[numUniforms];
-
-                    glGetUniformIndices(m_id, numUniforms, uniformsList, uniformIndicesList);
-                    glGetActiveUniformsiv(m_id, numUniforms, uniformIndicesList, GL_UNIFORM_SIZE, uniformSizesList);
-                    glGetActiveUniformsiv(m_id, numUniforms, uniformIndicesList, GL_UNIFORM_OFFSET, uniformOffsetsList);
-                    glGetActiveUniformsiv(m_id, numUniforms, uniformIndicesList, GL_UNIFORM_TYPE, uniformTypesList);
-
-                    for (uint32_t j = 0; j < numUniforms; ++j)
-                    {
-                        if (uniformIndicesList[j] != GL_INVALID_INDEX)
-                        {
-                            thisSignature.name = activeUniforms[j];
-                            thisSignature.size = uniformSizesList[j];
-                            thisSignature.offset = uniformOffsetsList[j];
-                            thisSignature.type = GLTypeToSupportedType(uniformTypesList[j]);
-
-                            constBufferSignature.push_back(thisSignature);
-                        }
-                    }
-
-                    delete[] uniformsList;
-                    delete[] uniformIndicesList;
-                    delete[] uniformSizesList;
-                    delete[] uniformOffsetsList;
-                    delete[] uniformTypesList;
-                }
-            }
-            
             GLType_uint constBufferIndex = glGetUniformBlockIndex(m_id, constBufferName.c_str());
-            assert(constBufferIndex != GL_INVALID_INDEX);
-            GLType_int constBufferSize = 0;
-            glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &constBufferSize);
-            ShaderConstantManager::GetSingleton()->SetupConstantBuffer(constBufferName, constBufferSize, constBufferSignature);
-
-            for (auto& iterator : activeUniforms)
+            if (constBufferIndex != GL_INVALID_INDEX)   // Check if the constant buffer exists in this program.
             {
-                try
+                bool stdLayout = false;
+                if (tokenList[i - 1].find("std140") != std::string::npos)
                 {
-                    std::string& alreadyMappedConstBuffer = m_shaderConstantToConstantBufferBindingMap.at(Utility::HashCString(iterator.c_str()));
-                    if (alreadyMappedConstBuffer.compare(constBufferName) != 0)
-                        assert(false);  // This constant is already mapped to a different constant buffer.
+                    stdLayout = true;
                 }
-                catch (std::out_of_range&)
-                {
-                    m_shaderConstantToConstantBufferBindingMap[Utility::HashCString(iterator.c_str())] = constBufferName;
-                }
-            }
 
-            GLType_int constBufferBindPoint = -1;
-            glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_BINDING, &constBufferBindPoint);
-            assert(constBufferBindPoint > -1);
-            m_constantBufferBindIndicesMap[constBufferName] = constBufferBindPoint;
+                uint32_t itr = i + 3;
+                ShaderConstantSignature thisSignature;
+                uint32_t stdOffset = 0;
+                while (tokenList[itr].compare("};") != 0)
+                {
+                    thisSignature.type = ShaderConstantManager::GetTypeFromString(tokenList[itr++]);
+                    thisSignature.name = tokenList[itr++];
+                    thisSignature.name.pop_back();  // Get rid of trailing ;
+
+                    if (stdLayout)
+                    {
+                        // Calculate offset and size using std140 layout rules.
+                        thisSignature.offset = stdOffset;
+                        thisSignature.size = 1; // Currently array uniforms are not supported. uint32_t constantBufferSize;
+                        stdOffset += ShaderConstantManager::GetSizeForType(thisSignature.type);
+                        constBufferSignature.push_back(thisSignature);
+                    }
+                    else    // Push all the uniforms into an array.
+                        activeUniforms.push_back(thisSignature.name);
+                }
+
+                if (!stdLayout)
+                {
+                    // Query sizes and offsets.
+                    uint32_t numUniforms = activeUniforms.size();
+                    if (numUniforms)
+                    {
+                        const char** uniformsList = new const char*[numUniforms];
+                        for (uint32_t j = 0; j < numUniforms; ++j)
+                            uniformsList[j] = activeUniforms[j].c_str();
+
+                        GLuint* uniformIndicesList = new GLuint[numUniforms];
+                        GLint* uniformSizesList = new GLint[numUniforms];
+                        GLint* uniformOffsetsList = new GLint[numUniforms];
+                        GLint* uniformTypesList = new GLint[numUniforms];
+
+                        glGetUniformIndices(m_id, numUniforms, uniformsList, uniformIndicesList);
+                        glGetActiveUniformsiv(m_id, numUniforms, uniformIndicesList, GL_UNIFORM_SIZE, uniformSizesList);
+                        glGetActiveUniformsiv(m_id, numUniforms, uniformIndicesList, GL_UNIFORM_OFFSET, uniformOffsetsList);
+                        glGetActiveUniformsiv(m_id, numUniforms, uniformIndicesList, GL_UNIFORM_TYPE, uniformTypesList);
+
+                        for (uint32_t j = 0; j < numUniforms; ++j)
+                        {
+                            if (uniformIndicesList[j] != GL_INVALID_INDEX)
+                            {
+                                thisSignature.name = activeUniforms[j];
+                                thisSignature.size = uniformSizesList[j];
+                                thisSignature.offset = uniformOffsetsList[j];
+                                thisSignature.type = GLTypeToSupportedType(uniformTypesList[j]);
+
+                                constBufferSignature.push_back(thisSignature);
+                            }
+                        }
+
+                        delete[] uniformsList;
+                        delete[] uniformIndicesList;
+                        delete[] uniformSizesList;
+                        delete[] uniformOffsetsList;
+                        delete[] uniformTypesList;
+                    }
+                }
+
+                GLType_int constBufferSize = 0;
+                glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &constBufferSize);
+                ShaderConstantManager::GetSingleton()->SetupConstantBuffer(constBufferName, constBufferSize, constBufferSignature);
+
+                for (auto& iterator : activeUniforms)
+                {
+                    try
+                    {
+                        std::string& alreadyMappedConstBuffer = m_shaderConstantToConstantBufferBindingMap.at(Utility::HashCString(iterator.c_str()));
+                        if (alreadyMappedConstBuffer.compare(constBufferName) != 0)
+                            assert(false);  // This constant is already mapped to a different constant buffer.
+                    }
+                    catch (std::out_of_range&)
+                    {
+                        m_shaderConstantToConstantBufferBindingMap[Utility::HashCString(iterator.c_str())] = constBufferName;
+                    }
+                }
+
+                GLType_int constBufferBindPoint = -1;
+                glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_BINDING, &constBufferBindPoint);
+                assert(constBufferBindPoint > -1);
+                m_constantBufferBindIndicesMap[constBufferName] = constBufferBindPoint;
+            }
         }
 
         activeUniforms.clear();

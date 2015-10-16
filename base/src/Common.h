@@ -43,13 +43,14 @@ namespace RenderEnums
         FRAG
     };
 
-    enum DisplayType
+    enum DisplayType    //Should match #defines in ShaderCommon.glsl
     {
         DISPLAY_DEPTH = 0,
         DISPLAY_NORMAL = 1,
         DISPLAY_POSITION = 2,
         DISPLAY_COLOR = 3,
-        DISPLAY_TOTAL = 4
+        DISPLAY_LIGHTING = 4,
+        DISPLAY_TOTAL = 5
     };
 }
 

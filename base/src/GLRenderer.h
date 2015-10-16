@@ -90,7 +90,7 @@ class GLRenderer
     // Techniques
     GLProgram* m_passProg;
     GLProgram* m_pointProg;
-    GLProgram* m_ambientProg;
+    GLProgram* m_directionalProg;
     GLProgram* m_diagnosticProg;
     GLProgram* m_postProg;
     GLProgram* m_currentProgram;
@@ -125,7 +125,7 @@ class GLRenderer
     void DrawTransparentList();
     void DrawLightList();
 
-    void RenderAmbientLighting();
+    void RenderDirectionalAndAmbientLighting();
     void RenderFramebuffers();
     void RenderPostProcessEffects();
     void ApplyPerFrameShaderConstants();

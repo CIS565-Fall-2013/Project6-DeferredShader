@@ -1,4 +1,5 @@
 #include "ShaderCommon.glsl"
+#include "LightingCommon.glsl"
 
 // Textures
 uniform sampler2D u_Depthtex;
@@ -34,6 +35,9 @@ void main()
             break;
         case DISPLAY_COLOR:
             out_f4Colour = vec4(f3Colour, 1.0);
+            break;
+        case DISPLAY_LIGHTING:
+            out_f4Colour = uf4DirecLightDir;
             break;
         case DISPLAY_TOTAL:
             break;

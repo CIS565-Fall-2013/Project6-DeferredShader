@@ -25,7 +25,7 @@ void main()
 
     if (fLinearDepth < 0.99f) 
     {
-        float fDiffuse = max(0.0, dot(uf4Light.xyz, f3Normal));
+        float fDiffuse = max(0.0, dot(uf4DirecLightDir.xyz, f3Normal));
 		if (ubToonOn)
 		{
 			if (fDiffuse >= 1.0)
@@ -45,10 +45,10 @@ void main()
 			if (dp < 0.1)
 				f4FinalColour = vec4 (0.0, 0.0, 0.0, 1.0);
 			else
-				f4FinalColour = vec4(f3Colour * (uf4Light.w * fDiffuse + ufLightIl), 1.0f);
+				f4FinalColour = vec4(f3Colour * clamp(vec3(uf4DirecLightDir.w * fDiffuse), uf3AmbientContrib, vec3(1.0f)), 1.0f);
 		}
 		else
-			f4FinalColour = vec4(f3Colour * clamp((uf4Light.w * fDiffuse), ufLightIl, 1.0f), 1.0f);
+			f4FinalColour = vec4(f3Colour * clamp(vec3(uf4DirecLightDir.w * fDiffuse), uf3AmbientContrib, vec3(1.0f)), 1.0f);
 		
     }	
 

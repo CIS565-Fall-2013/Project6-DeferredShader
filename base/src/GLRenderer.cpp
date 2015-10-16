@@ -28,7 +28,7 @@ GLRenderer::GLRenderer(uint32_t width, uint32_t height)
     m_postTexture(0),
     m_passProg(0),
     m_pointProg(0),
-    m_ambientProg(0),
+    m_directionalProg(0),
     m_diagnosticProg(0),
     m_postProg(0),
     m_currentProgram(0),
@@ -374,7 +374,7 @@ void GLRenderer::InitFramebuffers()
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    if (!m_ambientProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<GLType_uint&>(color_loc)))
+    if (!m_directionalProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<GLType_uint&>(color_loc)))
         assert(false);
     GLenum draw[1];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
@@ -498,7 +498,7 @@ void GLRenderer::InitShaders()
     m_diagnosticProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
 
     shaderSourceAndStagePair[1] = std::make_pair(ambient_frag, RenderEnums::FRAG);
-    m_ambientProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
+    m_directionalProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
 
     shaderSourceAndStagePair[1] = std::make_pair(point_frag, RenderEnums::FRAG);
     m_pointProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
@@ -596,7 +596,7 @@ void GLRenderer::Render()
     glBlendFunc(GL_ONE, GL_ONE);
     DrawLightList();
     glDisable(GL_BLEND);
-    RenderAmbientLighting();
+    RenderDirectionalAndAmbientLighting();
     EndActiveFramebuffer();
 
     // Post Process Pass
@@ -609,20 +609,19 @@ void GLRenderer::Render()
     glEnable(GL_DEPTH_TEST);
 }
 
-void GLRenderer::RenderAmbientLighting()
+void GLRenderer::RenderDirectionalAndAmbientLighting()
 {
     glm::vec4 dir_light(0.0, 1.0, 1.0, 0.0);
-    dir_light = glm::normalize(dir_light);
     dir_light = m_pRenderCam->GetView() * dir_light;
     dir_light = glm::normalize(dir_light);
     dir_light.w = 1.0f; // strength
-    float ambient = 0.04f;
+    glm::vec3 ambient(0.04f);
 
-    SetShaderProgram(m_ambientProg);
+    SetShaderProgram(m_directionalProg);
     SetTexturesForFullScreenPass();
-    m_ambientProg->SetTexture("u_Colortex", m_colorTexture);
-    m_ambientProg->SetShaderConstant("uf4Light", dir_light);
-    m_ambientProg->SetShaderConstant("ufLightIl", ambient);
+    m_directionalProg->SetTexture("u_Colortex", m_colorTexture);
+    m_directionalProg->SetShaderConstant("uf4DirecLightDir", dir_light);
+    m_directionalProg->SetShaderConstant("uf3AmbientContrib", ambient);
 
     glDepthMask(GL_FALSE);
     RenderQuad();

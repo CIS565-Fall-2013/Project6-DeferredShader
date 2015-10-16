@@ -96,7 +96,7 @@ namespace EventHandler
             break;
         case GLFW_KEY_5:
         case GLFW_KEY_KP_5:
-//            thisApp->SetDisplayType(RenderEnums::DISPLAY_LIGHTS);
+            thisApp->SetDisplayType(RenderEnums::DISPLAY_LIGHTING);
             break;
         case GLFW_KEY_0:
         case GLFW_KEY_KP_0:

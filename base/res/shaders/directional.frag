@@ -17,6 +17,6 @@ void main()
 {
     vec3 f3Normal = SampleTexture(u_Normaltex, vo_f2TexCoord);
     vec3 f3Colour = SampleTexture(u_Colortex, vo_f2TexCoord);
-    float fDiffuse = max(0.0, dot(normalize(uf4Light.xyz), f3Normal));
-    out_f4Colour = vec4(f3Colour * ufLightIl * fDiffuse, 1.0f);
+    float fDiffuse = max(0.0, dot(uf4DirecLightDir.xyz, f3Normal));
+    out_f4Colour = vec4(f3Colour * uf4DirecLightDir.w * fDiffuse, 1.0f);
 }
