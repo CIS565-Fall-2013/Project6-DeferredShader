@@ -182,13 +182,7 @@ void GLRenderer::DrawGeometry(const DrawableGeometry* geom)
 
 void GLRenderer::drawLight(glm::vec3 pos, float strength)
 {
-    float radius = strength;
-    glm::vec4 light = m_pRenderCam->GetView() * glm::vec4(pos, 1.0);
-    if (light.z > m_nearPlane)
-    {
-        return;
-    }
-    light.w = radius;
+    glm::vec4 light(pos, strength);
     m_currentProgram->SetShaderConstant("uf4Light", light);
     m_currentProgram->SetShaderConstant("ufLightIl", strength);
 
@@ -248,7 +242,7 @@ void GLRenderer::DrawOpaqueList()
 
     for (uint32_t i = 0; i < m_opaqueList.size(); ++i)
     {
-        glm::mat4 inverse_transposed = glm::transpose(m_opaqueList[i]->inverseModelMat * inverseView);
+        glm::mat4 inverse_transposed = glm::transpose(m_opaqueList[i]->inverseModelMat);
         m_passProg->SetShaderConstant("um4Model", m_opaqueList[i]->modelMat);
         m_passProg->SetShaderConstant("um4InvTrans", inverse_transposed);
         m_passProg->SetShaderConstant("uf3Color", m_opaqueList[i]->color);
@@ -607,7 +601,6 @@ void GLRenderer::Render()
 void GLRenderer::RenderDirectionalAndAmbientLighting()
 {
     glm::vec4 dir_light(0.0, 1.0, 1.0, 0.0);
-    dir_light = m_pRenderCam->GetView() * dir_light;
     dir_light = glm::normalize(dir_light);
     dir_light.w = 1.0f; // strength
     glm::vec3 ambient(0.04f);
