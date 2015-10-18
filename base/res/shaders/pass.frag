@@ -8,13 +8,12 @@ layout(binding = 1) uniform PerDraw_Object
 };
 
 in vec3 vo_f3Normal;
-in vec4 vo_f3Position;
+in vec4 vo_f4Position;
 in vec2 vo_f2Texcoord;
 
 out vec4 out_f4Normal;
 out vec4 out_f4Position;
 out vec4 out_f4Colour;
-out vec4 out_f4GlowMask;
 
 uniform sampler2D t2DDiffuse;
 uniform sampler2D t2DNormal;
@@ -22,8 +21,7 @@ uniform sampler2D t2DSpecular;
 
 void main()
 {
-    out_f4Normal = vec4(normalize(vo_f3Normal), 0.0f);
-    out_f4Position = vec4(vo_f3Position.xyz, 1.0f); //Tuck position into 0 1 range
+    out_f4Normal = vec4(normalize(vo_f3Normal), ufGlowmask);
+    out_f4Position = vo_f4Position;
     out_f4Colour = texture(t2DDiffuse, vo_f2Texcoord);
-	out_f4GlowMask = ufGlowmask * out_f4Colour;
 }

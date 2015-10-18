@@ -331,16 +331,12 @@ void GLRenderer::InitFramebuffers()
     GLType_int color_loc;
     if (!m_passProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<GLType_uint&>(color_loc)))
         assert(false);
-    GLType_int glowmask_loc;
-    if (!m_passProg->GetOutputBindLocation("out_f4GlowMask", reinterpret_cast<GLType_uint&>(glowmask_loc)))
-        assert(false);
 
-    GLenum draws[4];
+    GLenum draws[3];
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    draws[glowmask_loc] = GL_COLOR_ATTACHMENT3;
-    glDrawBuffers(4, draws);
+    glDrawBuffers(3, draws);
 
     // attach the texture to FBO depth attachment point
     glBindTexture(GL_TEXTURE_2D, m_depthTexture);
@@ -485,7 +481,6 @@ void GLRenderer::InitShaders()
     outputBindIndices["out_f4Colour"] = 0;
     outputBindIndices["out_f4Normal"] = 1;
     outputBindIndices["out_f4Position"] = 2;
-    outputBindIndices["out_f4GlowMask"] = 3;
 
     shaderSourceAndStagePair.clear();
     shaderSourceAndStagePair.push_back(std::make_pair(pass_vert, RenderEnums::VERT));
