@@ -89,7 +89,7 @@ GLType_uint TextureManager::Acquire(const std::string& textureName)
     catch (std::out_of_range&)
     {
         std::pair<GLType_uint, uint32_t> newTextureObject;
-        newTextureObject.first = LoadImageAndCreateTexture(textureName, 0, 0, SOIL_FLAG_TEXTURE_REPEATS);
+        newTextureObject.first = LoadImageAndCreateTexture(textureName, 0, 0, SOIL_FLAG_TEXTURE_REPEATS | SOIL_FLAG_INVERT_Y);
         newTextureObject.second = 1;
         m_textureNameToObjectMap[textureNameHash] = newTextureObject;
 
