@@ -28,7 +28,7 @@ void main()
     vec3 f3Colour = SampleTexture(u_Posttex, vo_f2TexCoord);
 	if (ubToonOn)
 	{
-		float fDotPdt = dot(SampleTexture(u_Normaltex, vo_f2TexCoord).xyz, -(SampleTexture(u_Positiontex, vo_f2TexCoord).xyz));
+		float fDotPdt = dot(SampleFragmentNormal(u_Normaltex, vo_f2TexCoord), -(SampleTexture(u_Positiontex, vo_f2TexCoord).xyz));
 		if (fDotPdt < 0.1)
 			f3Colour = vec3(0.0, 0.0, 0.0);
 	}

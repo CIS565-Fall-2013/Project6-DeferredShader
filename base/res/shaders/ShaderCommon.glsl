@@ -55,3 +55,23 @@ float getRandomScalar(sampler2D randomScalarTex, vec2 texCoord)
     ivec2 sz = textureSize(randomScalarTex,0);
     return texture(randomScalarTex, vec2(texCoord.s*uiScreenWidth/sz.x, texCoord.t*uiScreenHeight/sz.y)).r;
 }
+
+vec3 ScaleAndBiasNormal(vec3 normalizedNormal)    // To take normals from [-1, -1] to [0, 1]
+{
+    return (normalizedNormal + 1.0f) * 0.5f;
+}
+
+vec3 UnscaleAndUnbiasNormal(vec3 scaledAndBiasedNormal)    // To take normals from [0, 1] to [-1, -1]
+{
+    return (scaledAndBiasedNormal * 2.0f) - 1.0f;
+}
+
+vec3 SampleFragmentNormal(sampler2D fragmentNormalTex, vec2 texCoord)
+{
+    return UnscaleAndUnbiasNormal(SampleTexture(fragmentNormalTex, texCoord));
+}
+
+vec3 StoreFragmentNormal(vec3 normal)
+{
+    return ScaleAndBiasNormal(normalize(normal));
+}

@@ -21,7 +21,7 @@ uniform sampler2D t2DSpecular;
 
 void main()
 {
-    out_f4Normal = vec4(normalize(vo_f3Normal), ufGlowmask);
+    out_f4Normal = vec4(StoreFragmentNormal(vo_f3Normal), ufGlowmask);
     out_f4Position = vo_f4Position;
     out_f4Colour = texture(t2DDiffuse, vo_f2Texcoord);
 }

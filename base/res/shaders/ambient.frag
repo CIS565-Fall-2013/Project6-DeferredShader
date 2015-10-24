@@ -18,7 +18,7 @@ void main()
     float fLinearDepth = texture(u_Depthtex, vo_f2TexCoord).r;
     fLinearDepth = linearizeDepth(fLinearDepth);
 
-    vec3 f3Normal = SampleTexture(u_Normaltex, vo_f2TexCoord);
+    vec3 f3Normal = SampleFragmentNormal(u_Normaltex, vo_f2TexCoord);
     vec3 f3Position = SampleTexture(u_Positiontex, vo_f2TexCoord);
     vec3 f3Colour = SampleTexture(u_Colortex, vo_f2TexCoord);
 	vec4 f4FinalColour = vec4(0.0, 0.0, 0.0, 1.0);

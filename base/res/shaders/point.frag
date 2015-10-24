@@ -15,7 +15,7 @@ out vec4 out_f4Colour;
 const float occlusion_strength = 1.5f;
 void main() 
 {
-    vec3 f3Normal = SampleTexture(u_Normaltex, vo_f2TexCoord);
+    vec3 f3Normal = SampleFragmentNormal(u_Normaltex, vo_f2TexCoord);
     vec3 f3Position = SampleTexture(u_Positiontex, vo_f2TexCoord);
     vec3 f3Colour = SampleTexture(u_Colortex, vo_f2TexCoord);
 
