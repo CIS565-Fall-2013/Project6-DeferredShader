@@ -402,6 +402,8 @@ void GLRenderer::Initialize(const Camera* renderCamera)
 
     m_pRenderCam = const_cast<Camera*>(renderCamera);
     glDepthFunc(GL_LEQUAL);
+    glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
 }
 
 void GLRenderer::InitNoise()

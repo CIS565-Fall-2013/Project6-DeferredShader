@@ -96,23 +96,26 @@ uint32_t ShaderConstantManager::GetSizeForType(ShaderConstantManager::SupportedT
 
 void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName, int32_t constantBufferSize, std::vector<ShaderConstantSignature>& constantBufferSignature)
 {
-    try
+    auto& mapItr = m_constantBufferNameToDataMap.find(Utility::HashCString(constantBufferName.c_str()));
+    if (mapItr != m_constantBufferNameToDataMap.end())
     {
-        ConstantBuffer* existingBuffer = m_constantBufferNameToDataMap.at(Utility::HashCString(constantBufferName.c_str()));
+        ConstantBuffer* existingBuffer = mapItr->second;
 
         // Already exists. Check if the signatures match:
         uint32_t i;
+        const auto& mapEnd = existingBuffer->m_signature.end();
         for (i = 0; i < constantBufferSignature.size(); ++i)
         {
-            try
+            const auto& mapItr2 = existingBuffer->m_signature.find(Utility::HashCString(constantBufferSignature[i].name.c_str()));
+            if (mapItr2 != mapEnd)
             {
-                const ShaderConstantSignature& thisSignature = existingBuffer->m_signature.at(Utility::HashCString(constantBufferSignature[i].name.c_str()));
+                const ShaderConstantSignature& thisSignature = mapItr2->second;
                 if ((constantBufferSignature[i].type == thisSignature.type) && (constantBufferSignature[i].size == thisSignature.size) && (constantBufferSignature[i].offset == thisSignature.offset))
                     continue;
                 else
                     break;
             }
-            catch (std::out_of_range&)
+            else
             {
                 break;
             }
@@ -123,24 +126,26 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
         
         // If not, try again with resolver integer appended to buffer name.
         std::ostringstream newConstantBufferName;
-        newConstantBufferName << constantBufferName << resolver++;
-        constantBufferName = std::string(newConstantBufferName.str());
-        m_constantBufferNameToDataMap.at(Utility::HashCString(constantBufferName.c_str()));
-    }
-    catch (std::out_of_range&)
-    {
-        ConstantBuffer* newConstantBuffer = new ConstantBuffer();
-        assert(newConstantBuffer != nullptr);
-        assert(constantBufferSize > 0);
+        do
+        {
+            newConstantBufferName.clear();
+            newConstantBufferName << constantBufferName << resolver++;
+        } while (m_constantBufferNameToDataMap.count(Utility::HashCString(newConstantBufferName.str().c_str())) != 0);
 
-        for (const auto& thisSignature : constantBufferSignature)
-            newConstantBuffer->m_signature[Utility::HashCString(thisSignature.name.c_str())] = thisSignature;
-        newConstantBuffer->m_data = new char[constantBufferSize];
-        newConstantBuffer->m_size = constantBufferSize;
-        memset(newConstantBuffer->m_data, 0, constantBufferSize);
-        glGenBuffers(1, &newConstantBuffer->m_id);
-        m_constantBufferNameToDataMap[Utility::HashCString(constantBufferName.c_str())] = newConstantBuffer;
+        constantBufferName = newConstantBufferName.str();
     }
+
+    ConstantBuffer* newConstantBuffer = new ConstantBuffer();
+    assert(newConstantBuffer != nullptr);
+    assert(constantBufferSize > 0);
+
+    for (const auto& thisSignature : constantBufferSignature)
+        newConstantBuffer->m_signature[Utility::HashCString(thisSignature.name.c_str())] = thisSignature;
+    newConstantBuffer->m_data = new char[constantBufferSize];
+    newConstantBuffer->m_size = constantBufferSize;
+    memset(newConstantBuffer->m_data, 0, constantBufferSize);
+    glGenBuffers(1, &newConstantBuffer->m_id);
+    m_constantBufferNameToDataMap[Utility::HashCString(constantBufferName.c_str())] = newConstantBuffer;
 
     ApplyShaderConstantChanges(constantBufferName);
 }

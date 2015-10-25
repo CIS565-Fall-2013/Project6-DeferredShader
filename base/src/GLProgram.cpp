@@ -243,17 +243,19 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
                 glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &constBufferSize);
                 ShaderConstantManager::GetSingleton()->SetupConstantBuffer(constBufferName, constBufferSize, constBufferSignature);
 
+                const auto& mapEnd = m_shaderConstantToConstantBufferBindingMap.end();
                 for (auto& iterator : activeUniforms)
                 {
-                    try
+                    uint32_t uniformHashValue = Utility::HashCString(iterator.c_str());
+                    const auto& mapItr = m_shaderConstantToConstantBufferBindingMap.find(uniformHashValue);
+                    if (mapItr != mapEnd)
                     {
-                        std::string& alreadyMappedConstBuffer = m_shaderConstantToConstantBufferBindingMap.at(Utility::HashCString(iterator.c_str()));
-                        if (alreadyMappedConstBuffer.compare(constBufferName) != 0)
+                        if (mapItr->second.compare(constBufferName) != 0)
                             assert(false);  // This constant is already mapped to a different constant buffer.
                     }
-                    catch (std::out_of_range&)
+                    else
                     {
-                        m_shaderConstantToConstantBufferBindingMap[Utility::HashCString(iterator.c_str())] = constBufferName;
+                        m_shaderConstantToConstantBufferBindingMap[uniformHashValue] = constBufferName;
                     }
                 }
 
@@ -276,11 +278,7 @@ void GLProgram::SetupTextureBindings(const std::vector<std::string>& textureName
     for (const std::string& i : textureNames)
     {
         uint32_t hashValue = Utility::HashCString(i.c_str());
-        try
-        {
-            m_textureBindIndicesMap.at(hashValue);
-        }
-        catch (std::out_of_range&)
+        if (m_textureBindIndicesMap.count(hashValue) == 0)
         {
             // Add if it doesn't already exist.
             GLType_int constantBindLocation = glGetUniformLocation(m_id, i.c_str());
@@ -297,12 +295,13 @@ void GLProgram::SetupTextureBindings(const std::vector<std::string>& textureName
 void GLProgram::SetTexture(const char* textureName, GLType_uint textureObject)
 {
     assert(textureName != nullptr);
-    try
+    auto& mapItr = m_textureBindIndicesMap.find(Utility::HashCString(textureName));
+    if (mapItr != m_textureBindIndicesMap.end())
     {
-        std::pair<GLType_uint, GLType_uint>& textureBindPoint = m_textureBindIndicesMap.at(Utility::HashCString(textureName));
+        std::pair<GLType_uint, GLType_uint>& textureBindPoint = mapItr->second;
         textureBindPoint.second = textureObject;
     }
-    catch (std::out_of_range&)
+    else
     {
 //        assert(false); // Trying to bind an invalid texture.
     }
@@ -310,11 +309,12 @@ void GLProgram::SetTexture(const char* textureName, GLType_uint textureObject)
 
 bool GLProgram::GetAttributeBindLocation(const std::string& attributeName, GLType_uint& bindLocation) const
 {
-    try
+    const auto& mapItr = m_attributeBindIndicesMap.find(attributeName);
+    if (mapItr != m_attributeBindIndicesMap.end())
     {
-        bindLocation = m_attributeBindIndicesMap.at(attributeName);
+        bindLocation = mapItr->second;
     }
-    catch (std::out_of_range&)
+    else
     {
         return false;   // Invalid attribute name.
     }
@@ -324,11 +324,12 @@ bool GLProgram::GetAttributeBindLocation(const std::string& attributeName, GLTyp
 
 bool GLProgram::GetOutputBindLocation(const std::string& outputName, GLType_uint& bindLocation) const
 {
-    try
+    const auto& mapItr = m_outputBindIndicesMap.find(outputName);
+    if (mapItr != m_outputBindIndicesMap.end())
     {
-        bindLocation = m_outputBindIndicesMap.at(outputName);
+        bindLocation = mapItr->second;
     }
-    catch (std::out_of_range&)
+    else
     {
         return false;   // Invalid output name.
     }
