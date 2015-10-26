@@ -8,12 +8,13 @@
 struct Vertex
 {
     glm::vec3 position;
-    glm::vec3 normal;
+    glm::vec4 normal;   // fourth component stores how many tris share this vertex (required for averaging).
+    glm::vec4 tangent;  // fourth component stores how many tris share this vertex (required for averaging).
     glm::vec2 texcoord;
 
-    Vertex() : position(0, 0, 0), normal(0, 0, 0), texcoord(0, 0) {}
-    Vertex(glm::vec3 inPosition, glm::vec3 inNormal, glm::vec2 inTexCoord) : position(inPosition), normal(inNormal), texcoord(inTexCoord) {}
-    Vertex(const Vertex& inVertex) : position(inVertex.position), normal(inVertex.normal), texcoord(inVertex.texcoord) {}
+    Vertex() : position(0, 0, 0), normal(0, 0, 0, 0), tangent(0, 0, 0, 0), texcoord(0, 0) {}
+    Vertex(glm::vec3 inPosition, glm::vec3 inNormal, glm::vec2 inTexCoord, glm::vec3 inTangent = glm::vec3(0)) : position(inPosition), normal(inNormal, 1), tangent(inTangent, 1), texcoord(inTexCoord) {}
+    Vertex(const Vertex& inVertex) : position(inVertex.position), normal(inVertex.normal), tangent(inVertex.tangent), texcoord(inVertex.texcoord) {}
 };
 
 struct Geometry
@@ -136,7 +137,7 @@ class GLRenderer
     void SetShaderProgram(GLProgram* currentlyUsedProgram);
 
 public:
-    GLRenderer(uint32_t width, uint32_t height);
+    GLRenderer(uint32_t width, uint32_t height, float nearPlaneDistance, float farPlaneDistance);
     ~GLRenderer();
 
     void Initialize(const Camera* renderCamera);

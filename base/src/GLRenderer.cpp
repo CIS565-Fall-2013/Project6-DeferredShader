@@ -14,11 +14,11 @@ namespace Colours
     glm::vec3 blue = glm::vec3(0, 0, 1);
 }
 
-GLRenderer::GLRenderer(uint32_t width, uint32_t height)
+GLRenderer::GLRenderer(uint32_t width, uint32_t height, float nearPlaneDistance, float farPlaneDistance)
     : m_width(width),
     m_height(height),
-    m_farPlane(100.0f),
-    m_nearPlane(0.1f),
+    m_farPlane(farPlaneDistance),
+    m_nearPlane(nearPlaneDistance),
     m_randomNormalTexture(0),
     m_randomScalarTexture(0),
     m_depthTexture(0),

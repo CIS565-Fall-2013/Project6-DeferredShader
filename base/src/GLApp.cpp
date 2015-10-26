@@ -96,11 +96,12 @@ GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle, const std
     m_modelBasePath(modelBasePath)
 {
     vec3 tilt(1.0f, 0.0f, 0.0f);
+    vec3 scale(1.0f);
     mat4 tilt_mat = mat4();
-    mat4 scale_mat = glm::scale(mat4(), vec3(0.01));
+    mat4 scale_mat = glm::scale(mat4(), scale);
     m_world = tilt_mat * scale_mat;
 
-    m_cam = new Camera(vec3(0, 2, 0), glm::normalize(vec3(0, 0, -1)), glm::normalize(vec3(0, 1, 0)));
+    m_cam = new Camera(vec3(0, 0, 0), glm::normalize(vec3(0, 0, -1)), glm::normalize(vec3(0, 1, 0)));
 
     m_invHeight = 1.0f / (m_height - 1);
     m_invWidth = 1.0f / (m_width - 1);
@@ -254,7 +255,9 @@ int32_t GLApp::Initialize(std::vector<tinyobj::shape_t>& scene)
 #endif
     glDebugMessageCallback(OnGLError, nullptr);
 
-    m_renderer = new GLRenderer(m_width, m_height);
+    float nearPlane = 0.1f;
+    float farPlane = 2000.0f;
+    m_renderer = new GLRenderer(m_width, m_height, nearPlane, farPlane);
     if (m_renderer == nullptr)
         return 0;
 

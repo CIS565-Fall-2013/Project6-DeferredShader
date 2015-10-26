@@ -130,7 +130,7 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
         {
             newConstantBufferName.clear();
             newConstantBufferName << constantBufferName << resolver++;
-        } while (m_constantBufferNameToDataMap.count(Utility::HashCString(newConstantBufferName.str().c_str())) != 0);
+        } while (m_constantBufferNameToDataMap.count(Utility::HashCString(newConstantBufferName.str().c_str())) != 0); // Currently, it'd be impossible for count to be != 0 here.
 
         constantBufferName = newConstantBufferName.str();
     }
