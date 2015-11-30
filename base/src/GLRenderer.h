@@ -8,12 +8,12 @@
 struct Vertex
 {
     glm::vec3 position;
-    glm::vec4 normal;   // fourth component stores how many tris share this vertex (required for averaging).
-    glm::vec4 tangent;  // fourth component stores how many tris share this vertex (required for averaging).
+    glm::vec3 normal;
+    glm::vec3 tangent;
     glm::vec2 texcoord;
 
-    Vertex() : position(0, 0, 0), normal(0, 0, 0, 0), tangent(0, 0, 0, 0), texcoord(0, 0) {}
-    Vertex(glm::vec3 inPosition, glm::vec3 inNormal, glm::vec2 inTexCoord, glm::vec3 inTangent = glm::vec3(0)) : position(inPosition), normal(inNormal, 1), tangent(inTangent, 1), texcoord(inTexCoord) {}
+    Vertex() : position(0, 0, 0), normal(0, 0, 0), tangent(0, 0, 0), texcoord(0, 0) {}
+    Vertex(glm::vec3 inPosition, glm::vec3 inNormal, glm::vec2 inTexCoord, glm::vec3 inTangent = glm::vec3(0)) : position(inPosition), normal(inNormal), tangent(inTangent), texcoord(inTexCoord) {}
     Vertex(const Vertex& inVertex) : position(inVertex.position), normal(inVertex.normal), tangent(inVertex.tangent), texcoord(inVertex.texcoord) {}
 };
 

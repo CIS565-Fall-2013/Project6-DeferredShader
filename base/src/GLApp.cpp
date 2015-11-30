@@ -131,19 +131,71 @@ void GLApp::ProcessScene(std::vector<tinyobj::shape_t>& scene)
         uint32_t nIndices = shape.mesh.indices.size();
         uint32_t nVertices = shape.mesh.positions.size() / 3;
         uint32_t nNormals = shape.mesh.normals.size();
-        assert(nNormals != 0);
+        uint32_t nTexCoords = shape.mesh.texcoords.size();
+        assert(nVertices != 0);
+        assert((nIndices % 3) == 0);
+
+        std::vector<vec3> calculatedNormals, calculatedTangents(nVertices, vec3());
+        if (nNormals == 0)
+            calculatedNormals.resize(nVertices, vec3());
 
         Geometry model;
         for (uint32_t i = 0; i < nIndices; ++i)
         {
             model.indices.push_back(shape.mesh.indices[i]);
+
+            if (i % 3 == 0)
+            {
+                // Normal and Tangent calculations.
+                uint32_t thisIndex = shape.mesh.indices[i], nextIndex = shape.mesh.indices[i + 1], nextToNextIndex = shape.mesh.indices[i + 2];
+                vec3 v1 = vec3(shape.mesh.positions[3 * nextIndex] - shape.mesh.positions[3 * thisIndex],
+                                shape.mesh.positions[3 * nextIndex + 1] - shape.mesh.positions[3 * thisIndex + 1],
+                                shape.mesh.positions[3 * nextIndex + 2] - shape.mesh.positions[3 * thisIndex + 2]);
+                vec3 v2 = vec3(shape.mesh.positions[3 * nextToNextIndex] - shape.mesh.positions[3 * thisIndex],
+                                shape.mesh.positions[3 * nextToNextIndex + 1] - shape.mesh.positions[3 * thisIndex + 1],
+                                shape.mesh.positions[3 * nextToNextIndex + 2] - shape.mesh.positions[3 * thisIndex + 2]);
+
+                if (nNormals == 0)
+                {
+                    // Compute normals
+                    vec3 n1 = glm::cross(v1, v2);
+                    calculatedNormals[thisIndex] += n1;
+                    calculatedNormals[nextIndex] += n1;
+                    calculatedNormals[nextToNextIndex] += n1;
+                }
+                if (nTexCoords != 0)
+                {
+                    // Compute tangents
+                    vec2 s1t1 = vec2(shape.mesh.texcoords[2 * nextIndex] - shape.mesh.texcoords[2 * thisIndex],
+                                     shape.mesh.texcoords[2 * nextIndex + 1] - shape.mesh.texcoords[2 * thisIndex + 1]);
+                    vec2 s2t2 = vec2(shape.mesh.texcoords[2 * nextToNextIndex] - shape.mesh.texcoords[2 * thisIndex],
+                                     shape.mesh.texcoords[2 * nextToNextIndex + 1] - shape.mesh.texcoords[2 * thisIndex + 1]);
+
+                    float quotient = (s1t1.x * s2t2.y - s2t2.x * s1t1.y);   // This is the denominator of the actual quotient. We'll set the actual quotient to zero if the denominator is zero. 
+                    quotient = (quotient > 1e-6) ? 1.0f / quotient : 0.0f;
+                    vec3 tangent = vec3(quotient * (s2t2.y * v1.x - s1t1.y * v2.x),
+                                        quotient * (s2t2.y * v1.y - s1t1.y * v2.y),
+                                        quotient * (s2t2.y * v1.z - s1t1.y * v2.z));
+
+                    calculatedTangents[thisIndex] += tangent;
+                    calculatedTangents[nextIndex] += tangent;
+                    calculatedTangents[nextToNextIndex] += tangent;
+                }
+            }
         }
         for (uint32_t i = 0; i < nVertices; ++i)
         {
             Vertex v;
             v.position = vec3(shape.mesh.positions[3 * i], shape.mesh.positions[3 * i + 1], shape.mesh.positions[3 * i + 2]);
-            v.normal = vec3(shape.mesh.normals[3 * i], shape.mesh.normals[3 * i + 1], shape.mesh.normals[3 * i + 2]);
-            v.texcoord = vec2(shape.mesh.texcoords[2 * i], shape.mesh.texcoords[2 * i + 1]);
+            if (nNormals != 0)
+                v.normal = glm::normalize(vec3(shape.mesh.normals[3 * i], shape.mesh.normals[3 * i + 1], shape.mesh.normals[3 * i + 2]));
+            else
+                v.normal = glm::normalize(calculatedNormals[i]);
+            if (nTexCoords != 0)
+            {
+                v.texcoord = vec2(shape.mesh.texcoords[2 * i], shape.mesh.texcoords[2 * i + 1]);
+                v.tangent = (glm::dot(calculatedTangents[i], calculatedTangents[i]) > 1e-6) ? glm::normalize(calculatedTangents[i] - (v.normal * glm::dot(v.normal, calculatedTangents[i]))) : glm::vec3();
+            }
 
             model.vertices.push_back(v);
         }

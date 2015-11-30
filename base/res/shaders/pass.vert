@@ -17,7 +17,7 @@ out vec2 vo_f2Texcoord;
 
 void main() 
 {
-    vo_f3Normal = (um4InvTrans * vec4(normalize(in_f3Normal), 0.0f)).xyz;
+    vo_f3Normal = (um4InvTrans * vec4(in_f3Normal, 0.0f)).xyz;
     vec4 f4Camera = um4View * um4Model * vec4(in_f3Position, 1.0);
     vo_f4Position = f4Camera;
     vo_f2Texcoord = in_f2Texcoord;
