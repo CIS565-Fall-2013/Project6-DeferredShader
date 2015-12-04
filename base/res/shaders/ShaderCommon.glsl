@@ -75,3 +75,11 @@ vec3 StoreFragmentNormal(vec3 normal)
 {
     return ScaleAndBiasNormal(normalize(normal));
 }
+
+vec3 GetNormalMappedNormal(sampler2D normalMap, vec2 texCoord, vec3 tangent, vec3 bitangent, vec3 vertexNormal)
+{
+    vec3 normal = SampleTexture(normalMap, texCoord);
+    normal = dot(normal, normal) > 1e-6 ? SampleFragmentNormal(normalMap, texCoord) : vec3(0, 0, 1);
+    mat3 tangentSpaceToModelSpaceTransform = mat3(tangent, bitangent, vertexNormal);
+    return tangentSpaceToModelSpaceTransform * normal;
+}

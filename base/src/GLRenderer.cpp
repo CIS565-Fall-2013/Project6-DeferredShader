@@ -475,6 +475,7 @@ void GLRenderer::InitShaders()
     meshAttributeBindIndices["in_f3Position"] = mesh_attributes::POSITION;
     meshAttributeBindIndices["in_f3Normal"] = mesh_attributes::NORMAL;
     meshAttributeBindIndices["in_f2Texcoord"] = mesh_attributes::TEXCOORD;
+    meshAttributeBindIndices["in_f3Tangent"] = mesh_attributes::TANGENT;
 
     quadAttributeBindIndices["in_f3Position"] = quad_attributes::POSITION;
     quadAttributeBindIndices["in_f2Texcoord"] = quad_attributes::TEXCOORD;
@@ -559,9 +560,11 @@ void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out,
     glVertexAttribPointer(mesh_attributes::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
     glVertexAttribPointer(mesh_attributes::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, normal)));
     glVertexAttribPointer(mesh_attributes::TEXCOORD, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, texcoord)));
+    glVertexAttribPointer(mesh_attributes::TANGENT, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, tangent)));
     glEnableVertexAttribArray(mesh_attributes::POSITION);
     glEnableVertexAttribArray(mesh_attributes::NORMAL);
     glEnableVertexAttribArray(mesh_attributes::TEXCOORD);
+    glEnableVertexAttribArray(mesh_attributes::TANGENT);
 
     // Unplug Vertex Array
     glBindVertexArray(0);

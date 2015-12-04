@@ -188,13 +188,13 @@ void GLApp::ProcessScene(std::vector<tinyobj::shape_t>& scene)
             Vertex v;
             v.position = vec3(shape.mesh.positions[3 * i], shape.mesh.positions[3 * i + 1], shape.mesh.positions[3 * i + 2]);
             if (nNormals != 0)
-                v.normal = glm::normalize(vec3(shape.mesh.normals[3 * i], shape.mesh.normals[3 * i + 1], shape.mesh.normals[3 * i + 2]));
+                v.normal = vec3(shape.mesh.normals[3 * i], shape.mesh.normals[3 * i + 1], shape.mesh.normals[3 * i + 2]);
             else
-                v.normal = glm::normalize(calculatedNormals[i]);
+                v.normal = calculatedNormals[i];
             if (nTexCoords != 0)
             {
                 v.texcoord = vec2(shape.mesh.texcoords[2 * i], shape.mesh.texcoords[2 * i + 1]);
-                v.tangent = (glm::dot(calculatedTangents[i], calculatedTangents[i]) > 1e-6) ? glm::normalize(calculatedTangents[i] - (v.normal * glm::dot(v.normal, calculatedTangents[i]))) : glm::vec3();
+                v.tangent = (glm::dot(calculatedTangents[i], calculatedTangents[i]) > 1e-6) ? calculatedTangents[i] - (v.normal * glm::dot(v.normal, calculatedTangents[i])) : glm::vec3();
             }
 
             model.vertices.push_back(v);
@@ -204,7 +204,7 @@ void GLApp::ProcessScene(std::vector<tinyobj::shape_t>& scene)
         model.diffuse_texpath = m_modelBasePath;
         model.diffuse_texpath.append(shape.material.diffuse_texname);
         model.normal_texpath = m_modelBasePath;
-        model.normal_texpath.append(shape.material.normal_texname);
+        model.normal_texpath.append(shape.material.unknown_parameter["map_bump"]);
         model.specular_texpath = m_modelBasePath;
         model.specular_texpath.append(shape.material.specular_texname);
 

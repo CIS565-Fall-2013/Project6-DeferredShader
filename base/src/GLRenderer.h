@@ -52,7 +52,8 @@ namespace mesh_attributes
     {
         POSITION,
         NORMAL,
-        TEXCOORD
+        TEXCOORD,
+        TANGENT
     };
 }
 namespace quad_attributes
