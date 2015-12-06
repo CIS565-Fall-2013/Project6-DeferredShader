@@ -1,8 +1,8 @@
 #pragma once
 
 #include "GLRenderer.h"
-#include "tiny_obj_loader.h"
 #include <memory>
+#include <map>
 
 class Camera;
 struct GLFWwindow;
@@ -39,26 +39,27 @@ class GLApp
     std::vector<std::unique_ptr<DrawableGeometry>> m_drawableModels;
 
     std::string m_windowTitle;
-    std::string m_modelBasePath;
 
     // Loops through each model in the scene and creates Vertex/Index buffers for each.
     // Also uploads data to GPU.
-    void ProcessScene(std::vector<tinyobj::shape_t>& scene);
+    bool ProcessScene(const std::string& sceneFile);
 
     void display();
     void reshape(int, int);
 
-    GLApp(uint32_t width, uint32_t height, std::string windowTitle, const std::string& modelBasePath);
+    GLApp(uint32_t width, uint32_t height, std::string windowTitle);
 public:
     ~GLApp();
-    int32_t Initialize(std::vector<tinyobj::shape_t>& shapes);
+
+    bool Initialize(const std::map<std::string, std::string>& argumentList);
     int32_t Run();
-    static GLApp* Create(uint32_t width, uint32_t height, std::string windowTitle, const std::string& modelBasePath)
+
+    static GLApp* Create(uint32_t width, uint32_t height, std::string windowTitle)
     { 
         if (m_singleton)
             delete m_singleton;
         
-        m_singleton = new GLApp(width, height, windowTitle, modelBasePath);
+        m_singleton = new GLApp(width, height, windowTitle);
         return m_singleton;
     }
     static GLApp* Get() { return m_singleton; }
@@ -97,6 +98,8 @@ public:
     void RotateCamera(float xAngle, float yAngle);
 
     void ReloadShaders();
+
+    static const std::string c_meshArgumentString;
 };
 
 #define RENDERER m_renderer

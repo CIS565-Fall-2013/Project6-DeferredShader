@@ -1,7 +1,6 @@
 #include <Windows.h>
 #include "GLApp.h"
 #include "Camera.h"
-#include "tiny_obj_loader.h"
 #include "Utility.h"
 
 #include "glm/gtc/matrix_transform.hpp"
@@ -10,7 +9,6 @@
 #include <string>
 #include <sstream>
 
-using namespace std;
 using namespace glm;
 
 Camera::Camera(glm::vec3 start_pos, glm::vec3 start_dir, glm::vec3 up) 
@@ -85,39 +83,54 @@ mat4 Camera::GetInversePerspective() const
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    bool loadedScene = false;
-    string header; string data;
-    istringstream liness(lpCmdLine);
-    getline(liness, header, '='); 
-    getline(liness, data, '=');
+    std::map<std::string, std::string> argumentList;
 
-    std::vector<tinyobj::shape_t> scene;
-    string path;
-    if (strcmp(header.c_str(), "mesh") == 0)
-    {
-        int found = data.find_last_of("/\\");
-        path = data.substr(0,found+1);
-        Utility::LogOutput("Loading: ");
-        Utility::LogOutput(data.c_str());
-        Utility::LogOutput("\n");
-        string err = tinyobj::LoadObj(scene, data.c_str(), path.c_str());
-        if(!err.empty())
+    {   // We'll leak two strings and an istringstream otherwise.
+        std::string argument, value;
+        std::istringstream liness(lpCmdLine);
+        while (1)
         {
-            Utility::LogOutput(err.c_str());
-            Utility::LogOutput("\n"); 
-            return -1;
+            if (liness.peek() == EOF)
+                break;
+
+            std::getline(liness, argument, '=');
+            std::getline(liness, value, ' ');
+            if ((value.find_first_of('\"') != std::string::npos) && (value.find_first_of('\"') == value.find_last_of('\"')))
+            {
+                // There's an unclosed quote in this string and spaces are okay within quotes. Fetch till we find the end quote and keep appending.
+                std::string _value;
+                do
+                {
+                    value.append(" ");
+                    std::getline(liness, _value, ' ');
+                    value.append(_value);
+                } while (value.back() != '\"');
+            }
+
+            // Clean strings enclosed within quotes to remove them.
+            if ((value.front() == '\"') && (value.back() == '\"'))
+            {
+                std::string _value(value);
+                value = _value.substr(1, _value.length() - 2);
+            }
+
+            argumentList[argument] = value;
         }
-        loadedScene = true;
     }
 
-    if(!loadedScene)
-    {
-        Utility::LogOutput("Usage: mesh=[obj file]\n");
-        return EXIT_SUCCESS;
+    {   // We'll leak an std::map::iterator otherwise
+        auto mapItr = argumentList.find(GLApp::c_meshArgumentString);
+        if (mapItr == argumentList.end())
+        {
+            Utility::LogOutput("Usage: ");
+            Utility::LogOutput(GLApp::c_meshArgumentString.c_str());
+            Utility::LogOutputAndEndLine("=\"obj file\"");
+            return EXIT_SUCCESS;
+        }
     }
 
-    GLApp* app = GLApp::Create(1280, 720, "P6", path);
-    if (!app || !app->Initialize(scene))
+    GLApp* app = GLApp::Create(1280, 720, "P6");
+    if (!app || !app->Initialize(argumentList))
     {
         delete app;
         return EXIT_FAILURE;

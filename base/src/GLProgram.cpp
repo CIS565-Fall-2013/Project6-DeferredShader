@@ -351,13 +351,10 @@ void GLProgram::CommitTextureBindings() const
     uint32_t i = 0;
     for (const auto& itr : m_textureBindIndicesMap)
     {
-        if (itr.second.second > 0)
-        {
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, itr.second.second);
-            glUniform1i(itr.second.first, i);
-            ++i;
-        }
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, itr.second.second);
+        glUniform1i(itr.second.first, i);
+        ++i;
     }
 }
 

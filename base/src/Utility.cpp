@@ -151,8 +151,14 @@ namespace Utility
 		}
 	}
 
-    void LogHelper(const char* message, const char* filename = nullptr)
+    void LogHelper(const char* inMessage, const char* filename = nullptr, bool endLine = false)
     {
+        std::string message(inMessage);
+        if (endLine)
+        {
+            message.append("\n");
+        }
+
         if (filename)
         {
             std::ofstream fileOutStream;
@@ -165,7 +171,7 @@ namespace Utility
         }
         else
         {
-            OutputDebugStringA(message);
+            OutputDebugStringA(message.c_str());
         }
     }
 
@@ -177,6 +183,16 @@ namespace Utility
     void LogOutput(const char* message)
     {
         LogHelper(message);
+    }
+
+    void LogFileAndEndLine(const char* message)
+    {
+        LogHelper(message, ".\\logfile.txt", true);
+    }
+
+    void LogOutputAndEndLine(const char* message)
+    {
+        LogHelper(message, nullptr, true);
     }
 
     uint32_t HashCString(const char* cString)

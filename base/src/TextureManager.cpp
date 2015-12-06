@@ -79,22 +79,25 @@ GLType_uint TextureManager::Acquire(const std::string& textureName)
     uint32_t textureNameHash = Utility::HashCString(textureName.c_str());
     GLType_uint acquiredTextureObject = 0;
 
-    auto& mapItr = m_textureNameToObjectMap.find(textureNameHash);
-    if (mapItr != m_textureNameToObjectMap.end())
+    if (textureName.length())
     {
-        std::pair<GLType_uint, uint32_t>& textureObject = mapItr->second;
-        ++textureObject.second;
+        auto mapItr = m_textureNameToObjectMap.find(textureNameHash);
+        if (mapItr != m_textureNameToObjectMap.end())
+        {
+            std::pair<GLType_uint, uint32_t>& textureObject = mapItr->second;
+            ++textureObject.second;
 
-        acquiredTextureObject = textureObject.first;
-    }
-    else
-    {
-        std::pair<GLType_uint, uint32_t> newTextureObject;
-        newTextureObject.first = LoadImageAndCreateTexture(textureName, 0, 0, SOIL_FLAG_TEXTURE_REPEATS | SOIL_FLAG_INVERT_Y);
-        newTextureObject.second = 1;
-        m_textureNameToObjectMap[textureNameHash] = newTextureObject;
+            acquiredTextureObject = textureObject.first;
+        }
+        else
+        {
+            std::pair<GLType_uint, uint32_t> newTextureObject;
+            newTextureObject.first = LoadImageAndCreateTexture(textureName, 0, 0, SOIL_FLAG_TEXTURE_REPEATS | SOIL_FLAG_INVERT_Y);
+            newTextureObject.second = 1;
+            m_textureNameToObjectMap[textureNameHash] = newTextureObject;
 
-        acquiredTextureObject = newTextureObject.first;
+            acquiredTextureObject = newTextureObject.first;
+        }
     }
 
     return acquiredTextureObject;
@@ -145,7 +148,9 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
     if (NULL == img)
     {
         /*	image loading failed	*/
-        Utility::LogOutput("File doesn't exist.\n");
+        Utility::LogOutput("Texture file: ");  
+        Utility::LogOutput(textureName.c_str());
+        Utility::LogOutputAndEndLine(" doesn't exist.");
         return 0;
     }
 

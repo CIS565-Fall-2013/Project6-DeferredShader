@@ -7,13 +7,18 @@
 
 #include "gl/glew.h"
 #include "GLFW/glfw3.h"
-#include "tiny_obj_loader.h"
 #include <glm/gtc/matrix_transform.hpp>
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
+#undef TINYOBJLOADER_IMPLEMENTATION
 
 using glm::vec4;
 using glm::vec3;
 using glm::vec2;
 using glm::mat4;
+
+const std::string GLApp::c_meshArgumentString = "mesh";
 
 namespace
 {
@@ -70,14 +75,14 @@ namespace
         std::ostringstream outputMsg;
 
         outputMsg << DebugEnumToString(msgSeverity) << " severity " << DebugEnumToString(msgType) << " issued by " << DebugEnumToString(msgSource) << ": " << message << "\n";
-        Utility::LogOutput(outputMsg.str().c_str());
+        Utility::LogOutputAndEndLine(outputMsg.str().c_str());
         assert(!shouldAssert);
     }
 }
 
 GLApp* GLApp::m_singleton = nullptr;
 
-GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle, const std::string& modelBasePath)
+GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle)
     : m_startTime(0), 
     m_currentTime(0),
     m_currentFrame(0),
@@ -92,8 +97,7 @@ GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle, const std
     m_mouseCaptured(true),
     mouse_dof_x(0),
     mouse_dof_y(0),
-    m_windowTitle(windowTitle), 
-    m_modelBasePath(modelBasePath)
+    m_windowTitle(windowTitle) 
 {
     vec3 tilt(1.0f, 0.0f, 0.0f);
     vec3 scale(1.0f);
@@ -123,9 +127,22 @@ GLApp::~GLApp()
     TextureManager::Destroy();
 }
 
-void GLApp::ProcessScene(std::vector<tinyobj::shape_t>& scene)
+bool GLApp::ProcessScene(const std::string& sceneFile)
 {
-    for (auto it = scene.begin(); it != scene.end(); ++it)
+    std::vector<tinyobj::shape_t> sceneObjects;
+    std::vector<tinyobj::material_t> materialList;
+    
+    std::string sceneFileDir = sceneFile.substr(0, sceneFile.find_last_of("/\\") + 1);
+    Utility::LogOutput("Loading: ");
+    Utility::LogOutputAndEndLine(sceneFile.c_str());
+    std::string loadError;
+    if (!tinyobj::LoadObj(sceneObjects, materialList, loadError, sceneFile.c_str(), sceneFileDir.c_str()))
+    {
+        Utility::LogOutputAndEndLine(loadError.c_str());
+        return false;
+    }
+
+    for (auto it = sceneObjects.begin(); it != sceneObjects.end(); ++it)
     {
         tinyobj::shape_t shape = *it;
         uint32_t nIndices = shape.mesh.indices.size();
@@ -200,18 +217,33 @@ void GLApp::ProcessScene(std::vector<tinyobj::shape_t>& scene)
             model.vertices.push_back(v);
         }
 
-        model.color = vec3(shape.material.diffuse[0], shape.material.diffuse[1], shape.material.diffuse[2]);
-        model.diffuse_texpath = m_modelBasePath;
-        model.diffuse_texpath.append(shape.material.diffuse_texname);
-        model.normal_texpath = m_modelBasePath;
-        model.normal_texpath.append(shape.material.unknown_parameter["map_bump"]);
-        model.specular_texpath = m_modelBasePath;
-        model.specular_texpath.append(shape.material.specular_texname);
+        if (shape.mesh.material_ids.size() > 0)
+        {
+            tinyobj::material_t& modelMaterial = materialList[shape.mesh.material_ids[0]];
+            if (modelMaterial.diffuse_texname.length() > 0)
+            {
+                model.diffuse_texpath = sceneFileDir;
+                model.diffuse_texpath.append(modelMaterial.diffuse_texname);
+            }
+            if (modelMaterial.bump_texname.length() > 0)
+            {
+                model.normal_texpath = sceneFileDir;
+                model.normal_texpath.append(modelMaterial.bump_texname);
+            }
+            if (modelMaterial.specular_texname.length() > 0)
+            {
+                model.specular_texpath = sceneFileDir;
+                model.specular_texpath.append(modelMaterial.specular_texname);
+            }
+        }
 
         std::unique_ptr<DrawableGeometry> drawableModel = std::make_unique<DrawableGeometry>();
         m_renderer->MakeDrawableModel(model, *drawableModel, m_world);
         m_drawableModels.push_back(std::move(drawableModel));
     }
+
+    Utility::LogOutputAndEndLine("Scene loading complete.");
+    return true;
 }
 
 void GLApp::display()
@@ -269,10 +301,13 @@ void GLApp::ReloadShaders()
 //    m_renderer->InitShaders();
 }
 
-int32_t GLApp::Initialize(std::vector<tinyobj::shape_t>& scene)
+bool GLApp::Initialize(const std::map<std::string, std::string>& argumentList)
 {
     if (!glfwInit())
-        return 0;
+    {
+        Utility::LogOutputAndEndLine("Failed to initialize GLFW.");
+        return false;
+    }
 
     /* Create a windowed mode window and its OpenGL context */
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -284,8 +319,9 @@ int32_t GLApp::Initialize(std::vector<tinyobj::shape_t>& scene)
     m_glfwWindow = glfwCreateWindow(m_width, m_height, m_windowTitle.c_str(), NULL, NULL);
     if (!m_glfwWindow)
     {
+        Utility::LogOutputAndEndLine("Failed to create GLFW window.");
         glfwTerminate();
-        return 0;
+        return false;
     }
     glfwMakeContextCurrent(m_glfwWindow);
 
@@ -298,7 +334,8 @@ int32_t GLApp::Initialize(std::vector<tinyobj::shape_t>& scene)
     if (GLEW_OK != err)
     {
         /* Problem: glewInit failed, something is seriously wrong. */
-        return 0;
+        Utility::LogOutputAndEndLine("Failed to initialize glew.");
+        return false;
     }
 
     glEnable(GL_DEBUG_OUTPUT);
@@ -311,12 +348,14 @@ int32_t GLApp::Initialize(std::vector<tinyobj::shape_t>& scene)
     float farPlane = 2000.0f;
     m_renderer = new GLRenderer(m_width, m_height, nearPlane, farPlane);
     if (m_renderer == nullptr)
-        return 0;
+    {
+        Utility::LogOutputAndEndLine("Failed to create the renderer.");
+        return false;
+    }
 
     m_renderer->Initialize(m_cam);
-    ProcessScene(scene);
 
-    return 1;
+    return ProcessScene(argumentList.at(c_meshArgumentString));
 }
 
 int32_t GLApp::Run()
