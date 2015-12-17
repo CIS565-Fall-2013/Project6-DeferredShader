@@ -38,9 +38,8 @@ namespace EventHandler
 
     void OnKeyPress(GLFWwindow* someWindow, int32_t pressedKey, int32_t pressedKeyScancode, int32_t action, int32_t modifiers)
     {
-        float tx = 0;
-        float ty = 0;
-        float tz = 0;
+        float translateRate = 0.3f;  // rate of change is 0.4 units per frame.
+        glm::vec3 absoluteTranslation(0);
 
         if (action == GLFW_RELEASE)
             return;
@@ -61,22 +60,22 @@ namespace EventHandler
                 glfwSetWindowShouldClose(someWindow, GL_TRUE);
             break;
         case GLFW_KEY_W:
-            tz = -0.1f;
+            absoluteTranslation.z = -1.0f;
             break;
         case GLFW_KEY_S:
-            tz = 0.1f;
+            absoluteTranslation.z = 1.0f;
             break;
         case GLFW_KEY_D:
-            tx = 0.1f;
+            absoluteTranslation.x = 1.0f;
             break;
         case GLFW_KEY_A:
-            tx = -0.1f;
+            absoluteTranslation.x = -1.0f;
             break;
         case GLFW_KEY_Q:
-            ty = 0.1f;
+            absoluteTranslation.y = 1.0f;
             break;
         case GLFW_KEY_Z:
-            ty = -0.1f;
+            absoluteTranslation.y = -1.0f;
             break;
         case GLFW_KEY_1:
         case GLFW_KEY_KP_1:
@@ -122,9 +121,10 @@ namespace EventHandler
             break;
         }
 
-        if (abs(tx) > 0 || abs(tz) > 0 || abs(ty) > 0)
+        absoluteTranslation *= translateRate;
+        if ((abs(absoluteTranslation.x) > 0.0f) || (abs(absoluteTranslation.y) > 0.0f) || (abs(absoluteTranslation.z) > 0.0f))
         {
-            thisApp->AdjustCamera(tx, ty, tz);
+            thisApp->AdjustCamera(absoluteTranslation.x, absoluteTranslation.y, absoluteTranslation.z);
         }
     }
 }

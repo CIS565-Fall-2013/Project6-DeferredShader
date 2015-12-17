@@ -99,11 +99,7 @@ GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle)
     mouse_dof_y(0),
     m_windowTitle(windowTitle) 
 {
-    vec3 tilt(1.0f, 0.0f, 0.0f);
-    vec3 scale(1.0f);
-    mat4 tilt_mat = mat4();
-    mat4 scale_mat = glm::scale(mat4(), scale);
-    m_world = tilt_mat * scale_mat;
+    m_world = glm::mat4();
 
     m_cam = new Camera(vec3(0, 0, 0), glm::normalize(vec3(0, 0, -1)), glm::normalize(vec3(0, 1, 0)));
 
@@ -142,6 +138,7 @@ bool GLApp::ProcessScene(const std::string& sceneFile)
         return false;
     }
 
+    float maxExtent = -1e6, minExtent = 1e6;
     for (auto it = sceneObjects.begin(); it != sceneObjects.end(); ++it)
     {
         tinyobj::shape_t shape = *it;
@@ -215,6 +212,11 @@ bool GLApp::ProcessScene(const std::string& sceneFile)
             }
 
             model.vertices.push_back(v);
+
+            float toCompareGreater = (v.position.x > v.position.y) ? ((v.position.x > v.position.z) ? v.position.x : v.position.z) : ((v.position.y > v.position.z) ? v.position.y : v.position.z);
+            float toCompareLesser = (v.position.x < v.position.y) ? ((v.position.x < v.position.z) ? v.position.x : v.position.z) : ((v.position.y < v.position.z) ? v.position.y : v.position.z);
+            maxExtent = (maxExtent > toCompareGreater) ? maxExtent : toCompareGreater;
+            minExtent = (minExtent < toCompareLesser) ? minExtent : toCompareLesser;
         }
 
         if (shape.mesh.material_ids.size() > 0)
@@ -240,6 +242,17 @@ bool GLApp::ProcessScene(const std::string& sceneFile)
         std::unique_ptr<DrawableGeometry> drawableModel = std::make_unique<DrawableGeometry>();
         m_renderer->MakeDrawableModel(model, *drawableModel, m_world);
         m_drawableModels.push_back(std::move(drawableModel));
+    }
+
+    // Apply scene adaptive scaling. This ensures that our vertices will always be in the range [-100, 100] in all axes.
+    float scale = (maxExtent < std::abs(minExtent) ? std::abs(minExtent) : maxExtent) / 100.0f;
+    glm::mat4 sceneAdaptiveScaleInverse = glm::scale(glm::mat4(), glm::vec3(scale));
+    scale = 1.0f / scale;
+    glm::mat4 sceneAdaptiveScale = glm::scale(glm::mat4(), glm::vec3(scale));
+    for (std::unique_ptr<DrawableGeometry>& i : m_drawableModels)
+    {
+        i->modelMat *= sceneAdaptiveScale;
+        i->inverseModelMat = sceneAdaptiveScaleInverse * i->inverseModelMat;
     }
 
     Utility::LogOutputAndEndLine("Scene loading complete.");

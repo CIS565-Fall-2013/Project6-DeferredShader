@@ -52,7 +52,16 @@ void Camera::adjust(float dx, // look left right
 
 void Camera::CalculateViewProjection(float fov, float width, float height, float nearPlane, float farPlane)
 {
+    // Note on glm transform functions:
+    // When a transform is provided as input, these always post-multiply the transform with the transformation matrix given by the operation.
+    // That is, the result of glm::rotate(someTransform, someAngle, someAxis) is someTransform * rotationMatrixOfSomeAngleAboutSomeAxis.
+    // So, in order to build our transforms correctly, we need to reverse the order of operations. Hence:
+    //    1. Translate with respect to identity.
+    //    2. Provide the resultant transform as input to any rotations. (When multiple rotations are involved, remember that the order of rotations is reversed here also).
+    //    3. Provide the resultant transform as input to any scaling operations.
+    // to get the transform correctly built out as T * R * S. 
     m_transform = glm::translate(glm::mat4(), pos);
+    // Z-X-Y rotation:
     m_transform = glm::rotate(m_transform, rx, glm::vec3(0.0f, 1.0f, 0.0f));
     m_transform = glm::rotate(m_transform, ry, glm::vec3(1.0f, 0.0f, 0.0f));
     m_perspective = glm::perspective(fov, width / height, nearPlane, farPlane);
