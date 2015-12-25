@@ -37,6 +37,7 @@ public:
     static ShaderConstantManager* GetSingleton() { return singleton; }
     static SupportedTypes GetTypeFromString(const std::string& typeString);
     static uint32_t GetSizeForType(ShaderConstantManager::SupportedTypes type);
+    static uint32_t GetAlignmentForType(ShaderConstantManager::SupportedTypes type);
 };
 
 struct ShaderConstantSignature

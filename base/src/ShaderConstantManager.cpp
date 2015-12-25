@@ -66,7 +66,8 @@ ShaderConstantManager::SupportedTypes ShaderConstantManager::GetTypeFromString(c
         return INT;
     else if (typeString.compare("bool") == 0)
         return BOOL;
-    else if (typeString.find("mat4") != std::string::npos)
+    else if ((typeString.find("mat4") != std::string::npos) &&
+        ((typeString.compare("mat4") == 0) || (typeString.compare("mat4x4") == 0)))
         return MAT4;
     else if (typeString.compare("vec3") == 0)
         return VEC3;
@@ -74,6 +75,30 @@ ShaderConstantManager::SupportedTypes ShaderConstantManager::GetTypeFromString(c
         return VEC4;
     else
         assert(false);
+    
+    return VEC4;
+}
+
+uint32_t ShaderConstantManager::GetAlignmentForType(ShaderConstantManager::SupportedTypes type)
+{
+    switch (type)
+    {
+    case BOOL:
+    case INT:
+    case FLOAT:
+        return 4;  // If the member is a scalar consuming N basic machine units, the base alignment is N. (Rule 1)
+    default:
+        assert(false); // Unknown/Unsupported type. Fall through to vec4.
+    case VEC4: // If the member is a four-component vector with components consuming N (4) basic machine units, the base alignment is 4N. (Rule 2)
+    case VEC3: // If the member is a three-component vector with components consuming N (4) basic machine units, the base alignment is 4N. (Rule 3)
+    case MAT4:
+        // If the member is an array of scalars or vectors, the base alignment and array stride are set to match the base alignment of a single array element, according to rules 1, 2, and 3, and 
+        // rounded up to the base alignment of a vec4. (Rule 4)
+        // If the member is a column-major matrix with C (4) columns and R (4) rows, the matrix is stored identically to an array of C column vectors with R components each, according to rule 4. (Rule 5)
+        return 16;
+//    case VEC2:
+//        return 8;
+    }
 }
 
 uint32_t ShaderConstantManager::GetSizeForType(ShaderConstantManager::SupportedTypes type)
@@ -83,14 +108,17 @@ uint32_t ShaderConstantManager::GetSizeForType(ShaderConstantManager::SupportedT
     case MAT4:
         return 64;
     case VEC3:
-    case VEC4:
-        return 16;
+        return 12;  
+//    case VEC2:
+//        return 8;
     case BOOL:
     case INT:
     case FLOAT:
         return 4;
     default:
-        assert(false);
+        assert(false); // Unknown/Unsupported type. Fall through to vec4.
+    case VEC4:
+        return 16;
     }
 }
 
@@ -166,7 +194,7 @@ void ShaderConstantManager::SetShaderConstant(const char* constantName, const st
         {
             case MAT4:
             {
-                glm::mat4& constantData = reinterpret_cast<glm::mat4&>(*data);
+                glm::mat4& constantData = reinterpret_cast<glm::mat4&>(*data); // This is safe, because mat4s are an array of 4 vec4s, and each element of all types of arrays have vec4 alignment.
                 const glm::mat4& value = reinterpret_cast<const glm::mat4&>(*value_in_bytePtr);
                 if (!AreMat4sEqual(constantData, value))
                 {
@@ -177,8 +205,8 @@ void ShaderConstantManager::SetShaderConstant(const char* constantName, const st
             }
             case VEC3:
             {
-                glm::vec3& constantData = reinterpret_cast<glm::vec3&>(*data);
-                const glm::vec3& value = reinterpret_cast<const glm::vec3&>(*value_in_bytePtr);
+                glm::vec3& constantData = reinterpret_cast<glm::vec3&>(*data); // This is safe, because even though vec3s have vec4 alignment, they only use the first 12 bytes from their start pos.
+                const glm::vec3& value = reinterpret_cast<const glm::vec3&>(*value_in_bytePtr); 
                 if (!AreVec3sEqual(constantData, value))
                 {
                     constantData = value;
@@ -278,6 +306,7 @@ GLType_uint ShaderConstantManager::GetConstantBufferObject(const std::string& co
     catch (std::out_of_range&)
     {
         assert(false);  // No such constant buffer.
+        return UINT32_MAX;
     }
 }
 

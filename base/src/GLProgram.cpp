@@ -172,14 +172,25 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
             if (constBufferIndex != GL_INVALID_INDEX)   // Check if the constant buffer exists in this program.
             {
                 bool stdLayout = false;
-                if (tokenList[i - 1].find("std140") != std::string::npos)
+                for (uint32_t previous = i - 1; previous >= 0; --previous)
                 {
-                    stdLayout = true;
+                    // Scoot back and see if std140 was declared.
+                    if (tokenList[previous].find("std140") != std::string::npos)
+                    {
+                        stdLayout = true;
+                        break;
+                    }
+                    else if (tokenList[previous].find(";") != std::string::npos)
+                    {   
+                        // We only need to run until we see the token corresponding to the previous statement.
+                        break;
+                    }
                 }
 
                 uint32_t itr = i + 3;
                 ShaderConstantSignature thisSignature;
                 uint32_t stdOffset = 0;
+                bool verifyHandGeneratedBufferOffsets = false;
                 while (tokenList[itr].compare("};") != 0)
                 {
                     thisSignature.type = ShaderConstantManager::GetTypeFromString(tokenList[itr++]);
@@ -189,16 +200,21 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
                     if (stdLayout)
                     {
                         // Calculate offset and size using std140 layout rules.
-                        thisSignature.offset = stdOffset;
                         thisSignature.size = 1; // Currently array uniforms are not supported. uint32_t constantBufferSize;
+                        uint32_t requiredAlignmentForThisMember = ShaderConstantManager::GetAlignmentForType(thisSignature.type);
+                        uint32_t padding = requiredAlignmentForThisMember - (stdOffset % requiredAlignmentForThisMember);
+                        if (padding != requiredAlignmentForThisMember) // if padding == requiredAlignmentForThisMember, then (stdOffset % requiredAlignmentForThisMember) = 0, and so, no padding is required.
+                            stdOffset += padding;
+                        thisSignature.offset = stdOffset;
                         stdOffset += ShaderConstantManager::GetSizeForType(thisSignature.type);
                         constBufferSignature.push_back(thisSignature);
                     }
-                    else    // Push all the uniforms into an array.
-                        activeUniforms.push_back(thisSignature.name);
+                    
+                    // Push all the uniforms into an array.
+                    activeUniforms.push_back(thisSignature.name);
                 }
 
-                if (!stdLayout)
+                if (!stdLayout || verifyHandGeneratedBufferOffsets)
                 {
                     // Query sizes and offsets.
                     uint32_t numUniforms = activeUniforms.size();
@@ -218,16 +234,29 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
                         glGetActiveUniformsiv(m_id, numUniforms, uniformIndicesList, GL_UNIFORM_OFFSET, uniformOffsetsList);
                         glGetActiveUniformsiv(m_id, numUniforms, uniformIndicesList, GL_UNIFORM_TYPE, uniformTypesList);
 
-                        for (uint32_t j = 0; j < numUniforms; ++j)
+                        if (verifyHandGeneratedBufferOffsets)
                         {
-                            if (uniformIndicesList[j] != GL_INVALID_INDEX)
+                            assert(constBufferSignature.size() == numUniforms);
+                            uint32_t podArrayItr = 0;
+                            for (const auto& itr : constBufferSignature)
                             {
-                                thisSignature.name = activeUniforms[j];
-                                thisSignature.size = uniformSizesList[j];
-                                thisSignature.offset = uniformOffsetsList[j];
-                                thisSignature.type = GLTypeToSupportedType(uniformTypesList[j]);
+                                assert(itr.offset == uniformOffsetsList[podArrayItr]);
+                                ++podArrayItr;
+                            }
+                        }
+                        else
+                        {
+                            for (uint32_t j = 0; j < numUniforms; ++j)
+                            {
+                                if (uniformIndicesList[j] != GL_INVALID_INDEX)
+                                {
+                                    thisSignature.name = activeUniforms[j];
+                                    thisSignature.size = uniformSizesList[j];
+                                    thisSignature.offset = uniformOffsetsList[j];
+                                    thisSignature.type = GLTypeToSupportedType(uniformTypesList[j]);
 
-                                constBufferSignature.push_back(thisSignature);
+                                    constBufferSignature.push_back(thisSignature);
+                                }
                             }
                         }
 
@@ -237,10 +266,13 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
                         delete[] uniformOffsetsList;
                         delete[] uniformTypesList;
                     }
+                    else if (verifyHandGeneratedBufferOffsets)
+                        assert(false); // So, the driver culled out constants in an std140 layout? WHAT?!
                 }
 
                 GLType_int constBufferSize = 0;
                 glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &constBufferSize);
+                assert(static_cast<uint32_t>(constBufferSize) >= stdOffset);
                 ShaderConstantManager::GetSingleton()->SetupConstantBuffer(constBufferName, constBufferSize, constBufferSignature);
 
                 const auto& mapEnd = m_shaderConstantToConstantBufferBindingMap.end();
@@ -389,11 +421,11 @@ ShaderConstantManager::SupportedTypes GLTypeToSupportedType(GLint gltype)
         return ShaderConstantManager::INT;
     case GL_FLOAT_MAT4:
         return ShaderConstantManager::MAT4;
-    case GL_FLOAT_VEC4:
-        return ShaderConstantManager::VEC4;
     case GL_FLOAT_VEC3:
         return ShaderConstantManager::VEC3;
     default:
-        assert(false);  // GL type unsupported.
+        assert(false);  // GL type unsupported. Fall through/default to vec4.
+    case GL_FLOAT_VEC4:
+        return ShaderConstantManager::VEC4;
     }
 }
