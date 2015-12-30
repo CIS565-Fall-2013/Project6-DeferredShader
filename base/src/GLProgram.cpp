@@ -172,7 +172,7 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
             if (constBufferIndex != GL_INVALID_INDEX)   // Check if the constant buffer exists in this program.
             {
                 bool stdLayout = false;
-                for (uint32_t previous = i - 1; previous >= 0; --previous)
+                for (int32_t previous = i - 1; previous >= 0; --previous)
                 {
                     // Scoot back and see if std140 was declared.
                     if (tokenList[previous].find("std140") != std::string::npos)
