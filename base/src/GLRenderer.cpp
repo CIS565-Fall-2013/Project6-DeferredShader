@@ -173,7 +173,7 @@ void GLRenderer::DrawGeometry(const DrawableGeometry* geom)
 {
     assert(m_currentProgram != nullptr);
     m_currentProgram->CommitTextureBindings();
-    m_currentProgram->CommitConstantBufferBindings();
+    m_currentProgram->CommitConstantBufferChanges();
 
     glBindVertexArray(geom->vertex_array);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buffer);

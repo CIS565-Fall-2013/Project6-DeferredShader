@@ -88,6 +88,11 @@ void GLProgram::SetActive() const
     glUseProgram(m_id);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    for (const auto& itr : m_constantBufferBindIndicesMap) // Bind constant buffers to buffer slots/bind points.
+    {
+        glBindBufferBase(GL_UNIFORM_BUFFER, itr.second, ShaderConstantManager::GetSingleton()->GetConstantBufferObject(itr.first));
+    }
 }
 
 void GLProgram::SetShaderConstant(const char* constantName, const void* value_in) const
@@ -369,12 +374,11 @@ bool GLProgram::GetOutputBindLocation(const std::string& outputName, GLType_uint
     return true;
 }
 
-void GLProgram::CommitConstantBufferBindings() const
+void GLProgram::CommitConstantBufferChanges() const
 {
     for (const auto& itr : m_constantBufferBindIndicesMap)
     {
         ShaderConstantManager::GetSingleton()->ApplyShaderConstantChanges(itr.first);
-        glBindBufferBase(GL_UNIFORM_BUFFER, itr.second, ShaderConstantManager::GetSingleton()->GetConstantBufferObject(itr.first));
     }
 }
 

@@ -43,7 +43,7 @@ public:
     bool GetAttributeBindLocation(const std::string& attributeName, GLType_uint& bindLocation) const;
     bool GetOutputBindLocation(const std::string& outputName, GLType_uint& bindLocation) const;
 
-    void CommitConstantBufferBindings() const;
+    void CommitConstantBufferChanges() const;
     void CommitTextureBindings() const;
 };
 
