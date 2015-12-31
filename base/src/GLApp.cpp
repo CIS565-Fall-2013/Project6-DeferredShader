@@ -186,7 +186,7 @@ bool GLApp::ProcessScene(const std::string& sceneFile)
                                      shape.mesh.texcoords[2 * nextToNextIndex + 1] - shape.mesh.texcoords[2 * thisIndex + 1]);
 
                     float quotient = (s1t1.x * s2t2.y - s2t2.x * s1t1.y);   // This is the denominator of the actual quotient. We'll set the actual quotient to zero if the denominator is zero. 
-                    quotient = (quotient > 1e-6) ? 1.0f / quotient : 0.0f;
+                    quotient = (abs(quotient) > 1e-6) ? 1.0f / quotient : 0.0f;
                     vec3 tangent = vec3(quotient * (s2t2.y * v1.x - s1t1.y * v2.x),
                                         quotient * (s2t2.y * v1.y - s1t1.y * v2.y),
                                         quotient * (s2t2.y * v1.z - s1t1.y * v2.z));
@@ -208,7 +208,7 @@ bool GLApp::ProcessScene(const std::string& sceneFile)
             if (nTexCoords != 0)
             {
                 v.texcoord = vec2(shape.mesh.texcoords[2 * i], shape.mesh.texcoords[2 * i + 1]);
-                v.tangent = (glm::dot(calculatedTangents[i], calculatedTangents[i]) > 1e-6) ? calculatedTangents[i] - (v.normal * glm::dot(v.normal, calculatedTangents[i])) : glm::vec3();
+                v.tangent = calculatedTangents[i] - (v.normal * glm::dot(v.normal, calculatedTangents[i]));
             }
 
             model.vertices.push_back(v);
