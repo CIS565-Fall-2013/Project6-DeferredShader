@@ -351,10 +351,7 @@ bool GLApp::Initialize(const std::map<std::string, std::string>& argumentList)
         return false;
     }
 
-    glEnable(GL_DEBUG_OUTPUT);
-#ifdef _DEBUG
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-#endif
     glDebugMessageCallback(OnGLError, nullptr);
 
     float nearPlane = 0.1f;
