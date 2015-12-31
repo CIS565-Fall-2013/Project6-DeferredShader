@@ -27,7 +27,7 @@ namespace Utility
 			memblock = new char [bufferSize + 1];
             if (!memblock)
             {
-                LogOutput("Not enough memory to load file!\n");
+                LogMessage("Not enough memory to load file!\n");
                 assert(false);
             }
             
@@ -37,12 +37,12 @@ namespace Utility
             memblock[bufferSize] = '\0';
 
 			debugOutput << "File " << fname << " loaded." << endl;
-            LogOutput(debugOutput.str().c_str());
+            LogMessage(debugOutput.str().c_str());
 		}
 		else
 		{
             debugOutput << "Unable to open file " << fname << endl;
-            LogOutput(debugOutput.str().c_str());
+            LogMessage(debugOutput.str().c_str());
 			assert(false);
 		}
 		return memblock;
@@ -68,7 +68,7 @@ namespace Utility
 			glGetShaderInfoLog(shader,infoLogLen, &charsWritten, infoLog);
             debugOutput << "InfoLog:" << endl << infoLog << endl;
             delete[] infoLog;
-            LogOutput(debugOutput.str().c_str());
+            LogMessage(debugOutput.str().c_str());
         }
 
 		// should additionally check for OpenGL errors here
@@ -91,7 +91,7 @@ namespace Utility
 			glGetProgramInfoLog(prog,infoLogLen, &charsWritten, infoLog);
             debugOutput << "InfoLog:" << endl << infoLog << endl;
 			delete[] infoLog;
-            LogOutput(debugOutput.str().c_str());
+            LogMessage(debugOutput.str().c_str());
 		}
 	}
 
@@ -117,7 +117,7 @@ namespace Utility
 		glGetShaderiv(v, GL_COMPILE_STATUS, &compiled);
 		if (!compiled)
 		{
-            LogOutput("Vertex shader not compiled.\n");
+            LogMessage("Vertex shader not compiled.\n");
 			printShaderInfoLog(v);
             assert(false);
 		} 
@@ -126,7 +126,7 @@ namespace Utility
 		glGetShaderiv(f, GL_COMPILE_STATUS, &compiled);
 		if (!compiled)
 		{
-            LogOutput("Fragment shader not compiled.\n"); 
+            LogMessage("Fragment shader not compiled.\n"); 
             printShaderInfoLog(f);
             assert(false);
 		} 
@@ -145,7 +145,7 @@ namespace Utility
 		glGetProgramiv(program,GL_LINK_STATUS, &linked);
 		if (!linked) 
 		{
-            LogOutput("Program did not link.\n");
+            LogMessage("Program did not link.\n");
 			printLinkInfoLog(program);
             assert(false);
 		}
@@ -162,7 +162,7 @@ namespace Utility
         if (filename)
         {
             std::ofstream fileOutStream;
-            fileOutStream.open(filename, ios::app);
+            fileOutStream.open(filename, ios::out);
             if (fileOutStream.is_open())
             {
                 fileOutStream << message;
@@ -193,6 +193,22 @@ namespace Utility
     void LogOutputAndEndLine(const char* message)
     {
         LogHelper(message, nullptr, true);
+    }
+
+    void LogMessage(const char* message)
+    {
+        if (IsDebuggerPresent())
+            LogOutput(message);
+        else
+            LogFile(message);
+    }
+
+    void LogMessageAndEndLine(const char* message)
+    {
+        if (IsDebuggerPresent())
+            LogOutputAndEndLine(message);
+        else
+            LogFileAndEndLine(message);
     }
 
     uint32_t HashCString(const char* cString)

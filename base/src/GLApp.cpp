@@ -75,7 +75,7 @@ namespace
         std::ostringstream outputMsg;
 
         outputMsg << DebugEnumToString(msgSeverity) << " severity " << DebugEnumToString(msgType) << " issued by " << DebugEnumToString(msgSource) << ": " << message << "\n";
-        Utility::LogOutputAndEndLine(outputMsg.str().c_str());
+        Utility::LogMessageAndEndLine(outputMsg.str().c_str());
         assert(!shouldAssert);
     }
 }
@@ -129,12 +129,12 @@ bool GLApp::ProcessScene(const std::string& sceneFile)
     std::vector<tinyobj::material_t> materialList;
     
     std::string sceneFileDir = sceneFile.substr(0, sceneFile.find_last_of("/\\") + 1);
-    Utility::LogOutput("Loading: ");
-    Utility::LogOutputAndEndLine(sceneFile.c_str());
+    Utility::LogMessage("Loading: ");
+    Utility::LogMessageAndEndLine(sceneFile.c_str());
     std::string loadError;
     if (!tinyobj::LoadObj(sceneObjects, materialList, loadError, sceneFile.c_str(), sceneFileDir.c_str()))
     {
-        Utility::LogOutputAndEndLine(loadError.c_str());
+        Utility::LogMessageAndEndLine(loadError.c_str());
         return false;
     }
 
@@ -255,7 +255,7 @@ bool GLApp::ProcessScene(const std::string& sceneFile)
         i->inverseModelMat = sceneAdaptiveScaleInverse * i->inverseModelMat;
     }
 
-    Utility::LogOutputAndEndLine("Scene loading complete.");
+    Utility::LogMessageAndEndLine("Scene loading complete.");
     return true;
 }
 
@@ -318,7 +318,7 @@ bool GLApp::Initialize(const std::map<std::string, std::string>& argumentList)
 {
     if (!glfwInit())
     {
-        Utility::LogOutputAndEndLine("Failed to initialize GLFW.");
+        Utility::LogMessageAndEndLine("Failed to initialize GLFW.");
         return false;
     }
 
@@ -332,7 +332,7 @@ bool GLApp::Initialize(const std::map<std::string, std::string>& argumentList)
     m_glfwWindow = glfwCreateWindow(m_width, m_height, m_windowTitle.c_str(), NULL, NULL);
     if (!m_glfwWindow)
     {
-        Utility::LogOutputAndEndLine("Failed to create GLFW window.");
+        Utility::LogMessageAndEndLine("Failed to create GLFW window.");
         glfwTerminate();
         return false;
     }
@@ -347,7 +347,7 @@ bool GLApp::Initialize(const std::map<std::string, std::string>& argumentList)
     if (GLEW_OK != err)
     {
         /* Problem: glewInit failed, something is seriously wrong. */
-        Utility::LogOutputAndEndLine("Failed to initialize glew.");
+        Utility::LogMessageAndEndLine("Failed to initialize glew.");
         return false;
     }
 
@@ -359,7 +359,7 @@ bool GLApp::Initialize(const std::map<std::string, std::string>& argumentList)
     m_renderer = new GLRenderer(m_width, m_height, nearPlane, farPlane);
     if (m_renderer == nullptr)
     {
-        Utility::LogOutputAndEndLine("Failed to create the renderer.");
+        Utility::LogMessageAndEndLine("Failed to create the renderer.");
         return false;
     }
 

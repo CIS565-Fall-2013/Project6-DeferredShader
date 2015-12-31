@@ -131,9 +131,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         auto mapItr = argumentList.find(GLApp::c_meshArgumentString);
         if (mapItr == argumentList.end())
         {
-            Utility::LogOutput("Usage: ");
-            Utility::LogOutput(GLApp::c_meshArgumentString.c_str());
-            Utility::LogOutputAndEndLine("=\"obj file\"");
+            Utility::LogMessage("Usage: ");
+            Utility::LogMessage(GLApp::c_meshArgumentString.c_str());
+            Utility::LogMessageAndEndLine("=\"obj file\"");
             return EXIT_SUCCESS;
         }
     }

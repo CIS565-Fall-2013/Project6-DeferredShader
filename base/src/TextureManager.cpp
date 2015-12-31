@@ -148,9 +148,9 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
     if (NULL == img)
     {
         /*	image loading failed	*/
-        Utility::LogOutput("Texture file: ");  
-        Utility::LogOutput(textureName.c_str());
-        Utility::LogOutputAndEndLine(" doesn't exist.");
+        Utility::LogMessage("Texture file: ");  
+        Utility::LogMessage(textureName.c_str());
+        Utility::LogMessageAndEndLine(" doesn't exist.");
         return 0;
     }
 

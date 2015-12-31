@@ -31,6 +31,9 @@ namespace Utility
     void LogOutputAndEndLine(const char* logMessage);
     void LogFileAndEndLine(const char* logMessage);
 
+    void LogMessage(const char* logMessage); 
+    void LogMessageAndEndLine(const char* logMessage);
+
     uint32_t HashCString(const char* cString);
 }
  
