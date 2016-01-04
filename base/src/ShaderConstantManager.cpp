@@ -170,12 +170,14 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
     for (const auto& thisSignature : constantBufferSignature)
         newConstantBuffer->m_signature[Utility::HashCString(thisSignature.name.c_str())] = thisSignature;
     newConstantBuffer->m_data = new char[constantBufferSize];
+    assert(newConstantBuffer->m_data != nullptr);
     newConstantBuffer->m_size = constantBufferSize;
     memset(newConstantBuffer->m_data, 0, constantBufferSize);
-    glGenBuffers(1, &newConstantBuffer->m_id);
     m_constantBufferNameToDataMap[Utility::HashCString(constantBufferName.c_str())] = newConstantBuffer;
 
-    ApplyShaderConstantChanges(constantBufferName);
+    glGenBuffers(1, &newConstantBuffer->m_id);
+    glBindBuffer(GL_UNIFORM_BUFFER, newConstantBuffer->m_id);
+    glBufferData(GL_UNIFORM_BUFFER, newConstantBuffer->m_size, newConstantBuffer->m_data, GL_STREAM_DRAW);
 }
 
 void ShaderConstantManager::SetShaderConstant(const char* constantName, const std::string& constantBufferName, const void* value_in)
@@ -268,9 +270,8 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
             if (itr.second->m_dirty)
             {
                 glBindBuffer(GL_UNIFORM_BUFFER, itr.second->m_id);
-                glBufferData(GL_UNIFORM_BUFFER, itr.second->m_size, itr.second->m_data, GL_STATIC_DRAW);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
+                glInvalidateBufferData(itr.second->m_id);
+                glBufferSubData(GL_UNIFORM_BUFFER, 0, itr.second->m_size, itr.second->m_data);
                 itr.second->m_dirty = false;
             }
         }
@@ -284,7 +285,7 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
             {
                 glBindBuffer(GL_UNIFORM_BUFFER, constantBuffer->m_id);
                 glInvalidateBufferData(constantBuffer->m_id);
-                glBufferData(GL_UNIFORM_BUFFER, constantBuffer->m_size, constantBuffer->m_data, GL_STATIC_DRAW);
+                glBufferSubData(GL_UNIFORM_BUFFER, 0, constantBuffer->m_size, constantBuffer->m_data);
                 constantBuffer->m_dirty = false;
             }
         }
