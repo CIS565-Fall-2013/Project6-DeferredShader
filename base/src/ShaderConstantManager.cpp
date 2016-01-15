@@ -270,8 +270,9 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
             if (itr.second->m_dirty)
             {
                 glBindBuffer(GL_UNIFORM_BUFFER, itr.second->m_id);
-                glInvalidateBufferData(itr.second->m_id);
-                glBufferSubData(GL_UNIFORM_BUFFER, 0, itr.second->m_size, itr.second->m_data);
+                void* pDataStore = glMapBufferRange(GL_UNIFORM_BUFFER, 0, itr.second->m_size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+                memcpy(pDataStore, itr.second->m_data, itr.second->m_size);
+                glUnmapBuffer(GL_UNIFORM_BUFFER); 
                 itr.second->m_dirty = false;
             }
         }
@@ -284,8 +285,9 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
             if (constantBuffer->m_dirty)
             {
                 glBindBuffer(GL_UNIFORM_BUFFER, constantBuffer->m_id);
-                glInvalidateBufferData(constantBuffer->m_id);
-                glBufferSubData(GL_UNIFORM_BUFFER, 0, constantBuffer->m_size, constantBuffer->m_data);
+                void* pDataStore = glMapBufferRange(GL_UNIFORM_BUFFER, 0, constantBuffer->m_size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+                memcpy(pDataStore, constantBuffer->m_data, constantBuffer->m_size);
+                glUnmapBuffer(GL_UNIFORM_BUFFER);
                 constantBuffer->m_dirty = false;
             }
         }
