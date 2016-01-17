@@ -175,9 +175,8 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
     memset(newConstantBuffer->m_data, 0, constantBufferSize);
     m_constantBufferNameToDataMap[Utility::HashCString(constantBufferName.c_str())] = newConstantBuffer;
 
-    glGenBuffers(1, &newConstantBuffer->m_id);
-    glBindBuffer(GL_UNIFORM_BUFFER, newConstantBuffer->m_id);
-    glBufferData(GL_UNIFORM_BUFFER, newConstantBuffer->m_size, newConstantBuffer->m_data, GL_STREAM_DRAW);
+    glCreateBuffers(1, &newConstantBuffer->m_id);
+    glNamedBufferStorage(newConstantBuffer->m_id, newConstantBuffer->m_size, newConstantBuffer->m_data, GL_MAP_WRITE_BIT); // We'll use unsynchronized MapBufferRange to modify the data in its data store.
 }
 
 void ShaderConstantManager::SetShaderConstant(const char* constantName, const std::string& constantBufferName, const void* value_in)
@@ -269,10 +268,9 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
         {
             if (itr.second->m_dirty)
             {
-                glBindBuffer(GL_UNIFORM_BUFFER, itr.second->m_id);
-                void* pDataStore = glMapBufferRange(GL_UNIFORM_BUFFER, 0, itr.second->m_size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+                void* pDataStore = glMapNamedBufferRange(itr.second->m_id, 0, itr.second->m_size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
                 memcpy(pDataStore, itr.second->m_data, itr.second->m_size);
-                glUnmapBuffer(GL_UNIFORM_BUFFER); 
+                glUnmapNamedBuffer(itr.second->m_id);
                 itr.second->m_dirty = false;
             }
         }
@@ -284,10 +282,9 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
             ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(Utility::HashCString(constantBufferName.c_str()));
             if (constantBuffer->m_dirty)
             {
-                glBindBuffer(GL_UNIFORM_BUFFER, constantBuffer->m_id);
-                void* pDataStore = glMapBufferRange(GL_UNIFORM_BUFFER, 0, constantBuffer->m_size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+                void* pDataStore = glMapNamedBufferRange(constantBuffer->m_id, 0, constantBuffer->m_size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
                 memcpy(pDataStore, constantBuffer->m_data, constantBuffer->m_size);
-                glUnmapBuffer(GL_UNIFORM_BUFFER);
+                glUnmapNamedBuffer(constantBuffer->m_id);
                 constantBuffer->m_dirty = false;
             }
         }
