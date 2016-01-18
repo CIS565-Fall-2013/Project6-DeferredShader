@@ -86,9 +86,6 @@ void GLProgram::Create(RenderEnums::ProgramType programType, const std::vector<s
 void GLProgram::SetActive() const
 {
     glUseProgram(m_id);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
     for (const auto& itr : m_constantBufferBindIndicesMap) // Bind constant buffers to buffer slots/bind points.
     {
         glBindBufferBase(GL_UNIFORM_BUFFER, itr.second, ShaderConstantManager::GetSingleton()->GetConstantBufferObject(itr.first));

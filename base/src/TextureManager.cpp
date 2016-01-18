@@ -1,4 +1,5 @@
 #include "TextureManager.h"
+#include <algorithm>
 #include <string>
 #include <sstream>
 #include "GLRenderer.h"
@@ -159,7 +160,7 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
 
     /*	variables	*/
     unsigned int tex_id;
-    unsigned int internal_texture_format = 0, original_texture_format = 0;
+    unsigned int internalFormat = 0, pixelFormat = 0;
     int max_supported_size;
     /*	If the user wants to use the texture rectangle I kill a few flags	*/
     if (flags & SOIL_FLAG_TEXTURE_RECTANGLE)
@@ -322,7 +323,7 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
     tex_id = reuseTextureName;
     if (tex_id == 0)
     {
-        glGenTextures(1, &tex_id);
+        glCreateTextures(opengl_texture_type, 1, &tex_id);
     }
 
     /* Note: sometimes glGenTextures fails (usually no OpenGL context)	*/
@@ -333,47 +334,57 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
         switch (channels)
         {
         case 1:
-            original_texture_format = GL_LUMINANCE;
+            pixelFormat = GL_RED;
+            internalFormat = (isS3TCSupported && (flags & SOIL_FLAG_COMPRESS_TO_DXT)) ? GL_COMPRESSED_RGB_S3TC_DXT1_EXT : GL_R8;
             break;
         case 2:
-            original_texture_format = GL_LUMINANCE_ALPHA;
+            pixelFormat = GL_RG;
+            internalFormat = (isS3TCSupported && (flags & SOIL_FLAG_COMPRESS_TO_DXT)) ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_RG8;
             break;
         case 3:
-            original_texture_format = GL_RGB;
+            pixelFormat = GL_RGB;
+            internalFormat = (isS3TCSupported && (flags & SOIL_FLAG_COMPRESS_TO_DXT)) ? GL_COMPRESSED_RGB_S3TC_DXT1_EXT : GL_RGB8;
             break;
         case 4:
-            original_texture_format = GL_RGBA;
+            pixelFormat = GL_RGBA;
+            internalFormat = (isS3TCSupported && (flags & SOIL_FLAG_COMPRESS_TO_DXT)) ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_RGBA8;
             break;
         }
-        internal_texture_format = original_texture_format;
         if (flags & SOIL_FLAG_SRGB_TEXTURE)
         {
-            if (internal_texture_format == GL_RGB)
-                internal_texture_format = GL_SRGB8;
-            else if (internal_texture_format == GL_RGBA)
-                internal_texture_format = GL_SRGB8_ALPHA8;
+            if (internalFormat == GL_RGB8)
+                internalFormat = GL_SRGB8;
+            else if (internalFormat == GL_RGBA8)
+                internalFormat = GL_SRGB8_ALPHA8;
+            else if (internalFormat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT)
+                internalFormat = GL_COMPRESSED_SRGB_S3TC_DXT1_EXT;
+            else if (internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+                internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
         }
-        
-        /*  bind an OpenGL texture ID	*/
-        glBindTexture(opengl_texture_type, tex_id);
 
+        uint32_t numMipLevels = 0; // Mip levels ABOVE base level of 0.
+        if (flags & SOIL_FLAG_MIPMAPS)
+        {
+            uint32_t mipWidth = width;
+            uint32_t mipHeight = height;
+            while ((mipWidth > 1) || (mipHeight > 1))
+            {
+                mipWidth = std::max<uint32_t>(mipWidth >> 1, 1);
+                mipHeight = std::max<uint32_t>(mipHeight >> 1, 1);
+
+                ++numMipLevels;
+            }
+        }
+
+        // Create the immutable storage for the texture.
+        glTextureStorage2D(tex_id, numMipLevels + 1, internalFormat, width, height);
+        
         /*	does the user want me to, and can I, save as DXT?	*/
         if (flags & SOIL_FLAG_COMPRESS_TO_DXT)
         {
             if (isS3TCSupported)
             {
                 /*	I can use DXT, whether I compress it or OpenGL does	*/
-                if ((channels & 1) == 1)
-                {
-                    /*	1 or 3 channels = DXT1	*/
-                    internal_texture_format = (flags & SOIL_FLAG_SRGB_TEXTURE) ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-                }
-                else
-                {
-                    /*	2 or 4 channels = DXT5	*/
-                    internal_texture_format = (flags & SOIL_FLAG_SRGB_TEXTURE) ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-                }
-
                 /*	user wants me to do the DXT conversion!	*/
                 int DDS_size;
                 unsigned char *DDS_data = NULL;
@@ -389,20 +400,14 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
                 }
                 if (DDS_data)
                 {
-                    glCompressedTexImage2D(
-                        opengl_texture_target, 0,
-                        internal_texture_format, width, height, 0,
-                        DDS_size, DDS_data);
+                    glCompressedTextureSubImage2D(tex_id, 0, 0, 0, width, height, internalFormat, DDS_size, DDS_data);
                     SOIL_free_image_data(DDS_data);
                     /*	printf( "Internal DXT compressor\n" );	*/
                 }
                 else
                 {
                     /*	my compression failed, try the OpenGL driver's version	*/
-                    glTexImage2D(
-                        opengl_texture_target, 0,
-                        internal_texture_format, width, height, 0,
-                        original_texture_format, GL_UNSIGNED_BYTE, img);
+                    glTextureSubImage2D(tex_id, 0, 0, 0, width, height, pixelFormat, GL_UNSIGNED_BYTE, img);
                     /*	printf( "OpenGL DXT compressor\n" );	*/
                 }
             }
@@ -410,20 +415,16 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
         else
         {
             /*  upload the main image without compression */
-            glTexImage2D(
-                opengl_texture_target, 0,
-                internal_texture_format, width, height, 0,
-                original_texture_format, GL_UNSIGNED_BYTE, img);
+            glTextureSubImage2D(tex_id, 0, 0, 0, width, height, pixelFormat, GL_UNSIGNED_BYTE, img);
             /*printf( "OpenGL DXT compressor\n" );	*/
         }
         /*	are any MIPmaps desired?	*/
-        if (flags & SOIL_FLAG_MIPMAPS)
+        if (numMipLevels > 0)
         {
-            int MIPlevel = 1;
-            int MIPwidth = (width + 1) / 2;
-            int MIPheight = (height + 1) / 2;
+            uint32_t MIPwidth = (width + 1) / 2, MIPheight = (height + 1) / 2;
             unsigned char *resampled = (unsigned char*)malloc(channels*MIPwidth*MIPheight);
-            while (((1 << MIPlevel) <= width) || ((1 << MIPlevel) <= height))
+           
+            for (uint32_t MIPlevel = 1; MIPlevel <= numMipLevels; ++MIPlevel)
             {
                 /*	do this MIPmap level	*/
                 mipmap_image(
@@ -450,66 +451,58 @@ GLType_uint TextureManager::LoadImageAndCreateTexture(const std::string& texture
                     }
                     if (DDS_data)
                     {
-                        glCompressedTexImage2D(
-                            opengl_texture_target, MIPlevel,
-                            internal_texture_format, MIPwidth, MIPheight, 0,
-                            DDS_size, DDS_data);
+                        glCompressedTextureSubImage2D(tex_id, MIPlevel, 0, 0, MIPwidth, MIPheight, internalFormat, DDS_size, DDS_data);
                         SOIL_free_image_data(DDS_data);
                     }
                     else
                     {
                         /*	my compression failed, try the OpenGL driver's version	*/
-                        glTexImage2D(
-                            opengl_texture_target, MIPlevel,
-                            internal_texture_format, MIPwidth, MIPheight, 0,
-                            original_texture_format, GL_UNSIGNED_BYTE, resampled);
+                        glTextureSubImage2D(tex_id, MIPlevel, 0, 0, MIPwidth, MIPheight, pixelFormat, GL_UNSIGNED_BYTE, resampled);
                     }
                 }
                 else
                 {
                     /*	user want OpenGL to do all the work!	*/
-                    glTexImage2D(
-                        opengl_texture_target, MIPlevel,
-                        internal_texture_format, MIPwidth, MIPheight, 0,
-                        original_texture_format, GL_UNSIGNED_BYTE, resampled);
+                    glTextureSubImage2D(tex_id, MIPlevel, 0, 0, MIPwidth, MIPheight, pixelFormat, GL_UNSIGNED_BYTE, resampled);
                 }
-                /*	prep for the next level	*/
-                ++MIPlevel;
-                MIPwidth = (MIPwidth + 1) / 2;
-                MIPheight = (MIPheight + 1) / 2;
+
+                MIPwidth = (width + 1) / 2;
+                MIPheight = (height + 1) / 2;
             }
-            SOIL_free_image_data(resampled);
+            free(resampled);
             /*	instruct OpenGL to use the MIPmaps	*/
-            glTexParameteri(opengl_texture_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(opengl_texture_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTextureParameteri(tex_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTextureParameteri(tex_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTextureParameteri(tex_id, GL_TEXTURE_MAX_LEVEL, numMipLevels);
         }
         else
         {
             /*	instruct OpenGL _NOT_ to use the MIPmaps	*/
-            glTexParameteri(opengl_texture_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(opengl_texture_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTextureParameteri(tex_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTextureParameteri(tex_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTextureParameteri(tex_id, GL_TEXTURE_MAX_LEVEL, 0);
         }
         /*	does the user want clamping, or wrapping?	*/
         if (flags & SOIL_FLAG_TEXTURE_REPEATS)
         {
-            glTexParameteri(opengl_texture_type, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(opengl_texture_type, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTextureParameteri(tex_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTextureParameteri(tex_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
             if (opengl_texture_type == GL_TEXTURE_CUBE_MAP)
             {
                 /*	SOIL_TEXTURE_WRAP_R is invalid if cubemaps aren't supported	*/
-                glTexParameteri(opengl_texture_type, GL_TEXTURE_WRAP_R, GL_REPEAT);
+                glTextureParameteri(tex_id, GL_TEXTURE_WRAP_R, GL_REPEAT);
             }
         }
         else
         {
             /*	unsigned int clamp_mode = SOIL_CLAMP_TO_EDGE;	*/
-            unsigned int clamp_mode = GL_CLAMP;
-            glTexParameteri(opengl_texture_type, GL_TEXTURE_WRAP_S, clamp_mode);
-            glTexParameteri(opengl_texture_type, GL_TEXTURE_WRAP_T, clamp_mode);
+            unsigned int clamp_mode = GL_CLAMP_TO_EDGE;
+            glTextureParameteri(tex_id, GL_TEXTURE_WRAP_S, clamp_mode);
+            glTextureParameteri(tex_id, GL_TEXTURE_WRAP_T, clamp_mode);
             if (opengl_texture_type == GL_TEXTURE_CUBE_MAP)
             {
                 /*	SOIL_TEXTURE_WRAP_R is invalid if cubemaps aren't supported	*/
-                glTexParameteri(opengl_texture_type, GL_TEXTURE_WRAP_R, clamp_mode);
+                glTextureParameteri(tex_id, GL_TEXTURE_WRAP_R, clamp_mode);
             }
         }
     }

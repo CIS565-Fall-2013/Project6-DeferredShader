@@ -5,6 +5,7 @@
 #include "Camera.h"
 #include "ShaderConstantManager.h"
 #include "TextureManager.h"
+#include "VertexSpecification.h"
 
 namespace Colours
 {
@@ -46,8 +47,7 @@ GLRenderer::~GLRenderer()
 }
 
 DrawableGeometry::DrawableGeometry()
-    : vertex_array(),
-    vertex_buffer(),
+    : vertex_buffer(),
     index_buffer(),
     num_indices(),
     diffuse_tex(),
@@ -57,7 +57,6 @@ DrawableGeometry::DrawableGeometry()
 
 DrawableGeometry::~DrawableGeometry()
 {
-    glDeleteVertexArrays(1, &vertex_array);
     glDeleteBuffers(1, &vertex_buffer);
     glDeleteBuffers(1, &index_buffer);
 
@@ -125,6 +124,24 @@ void GLRenderer::ApplyPerFrameShaderConstants()
     shaderConstantManager->SetShaderConstant("uiDisplayType", perFrameConstantBuffer, &value);
 }
 
+void GLRenderer::BindVertexBuffer(GLType_uint vertexBuffer)
+{
+    if (m_activeVertexBuffer != vertexBuffer)
+    {
+        m_activeVertexBuffer = vertexBuffer;
+        glBindVertexBuffer(0, m_activeVertexBuffer, 0, m_activeVertexSpecification->GetVertexStride());
+    }
+}
+
+void GLRenderer::BindIndexBuffer(GLType_uint indexBuffer)
+{
+    if (m_activeIndexBuffer != indexBuffer)
+    {
+        m_activeIndexBuffer = indexBuffer;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_activeIndexBuffer);
+    }
+}
+
 void GLRenderer::ClearFramebuffer(RenderEnums::ClearType clearFlags)
 {
     GLenum flags = 0;
@@ -150,17 +167,24 @@ void GLRenderer::ClearLists()
 void GLRenderer::CreateBuffersAndUploadData(const Geometry& model, DrawableGeometry& out)
 {
     // Create Vertex/Index buffers
-    glGenBuffers(1, &(out.vertex_buffer));
-    glGenBuffers(1, &(out.index_buffer));
+    glCreateBuffers(1, &(out.vertex_buffer));
+    glCreateBuffers(1, &(out.index_buffer));
 
-    // Upload vertex data
-    glBindBuffer(GL_ARRAY_BUFFER, out.vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, model.vertices.size() * sizeof(Vertex), &model.vertices[0], GL_STATIC_DRAW);
+    // Create vertex buffer storage and upload data
+    glNamedBufferStorage(out.vertex_buffer, model.vertices.size() * sizeof(Vertex), &model.vertices[0], 0); // This is a static buffer that may not be mapped or written CPU-side, so no extra flags.
 
-    // Upload Indices
+    // Create vertex buffer storage and upload data
     out.num_indices = model.indices.size();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, out.index_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, out.num_indices * sizeof(GLuint), &model.indices[0], GL_STATIC_DRAW);
+    glNamedBufferStorage(out.index_buffer, out.num_indices * sizeof(GLuint), &model.indices[0], 0);
+}
+
+void GLRenderer::CreateVertexSpecification(const std::string& vertSpecName, const std::vector<VertexAttribute>& vertexAttributeList, uint32_t vertexStride)
+{
+    uint32_t vertSpecNameHash = Utility::HashCString(vertSpecName.c_str());
+    if (m_vertexSpecifications.find(vertSpecNameHash) == m_vertexSpecifications.end())
+    {
+        m_vertexSpecifications[vertSpecNameHash] = std::make_shared<VertexSpecification>(vertexAttributeList, vertexStride);
+    }
 }
 
 void GLRenderer::DrawAlphaMaskedList()
@@ -174,9 +198,10 @@ void GLRenderer::DrawGeometry(const DrawableGeometry* geom)
     assert(m_currentProgram != nullptr);
     m_currentProgram->CommitTextureBindings();
     m_currentProgram->CommitConstantBufferChanges();
+    SetVertexSpecification(geom->vertexSpecification);
+    BindVertexBuffer(geom->vertex_buffer);
+    BindIndexBuffer(geom->index_buffer);
 
-    glBindVertexArray(geom->vertex_array);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buffer);
     glDrawElements(GL_TRIANGLES, geom->num_indices, GL_UNSIGNED_INT, 0);
 }
 
@@ -258,7 +283,6 @@ void GLRenderer::DrawOpaqueList()
 
         DrawGeometry(m_opaqueList[i]);
     }
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
 
@@ -274,52 +298,48 @@ void GLRenderer::EndActiveFramebuffer()
 
 void GLRenderer::InitFramebuffers()
 {
-    GLenum FBOstatus;
-    glActiveTexture(GL_TEXTURE9);
-
-    glGenTextures(1, &m_depthTexture);
-    glGenTextures(1, &m_normalTexture);
-    glGenTextures(1, &m_positionTexture);
-    glGenTextures(1, &m_colorTexture);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_depthTexture);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_normalTexture);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_positionTexture);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_colorTexture);
 
     glEnable(GL_FRAMEBUFFER_SRGB);
 
     //Set up depth texture
-    glBindTexture(GL_TEXTURE_2D, m_depthTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_depthTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_depthTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameterf(m_depthTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameterf(m_depthTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 //    glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_DEPTH_COMPONENT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTextureStorage2D(m_depthTexture, 1, GL_DEPTH_COMPONENT32, m_width, m_height);
+    glTextureSubImage2D(m_depthTexture, 0, 0, 0, m_width, m_height, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
     //Set up normal texture
-    glBindTexture(GL_TEXTURE_2D, m_normalTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_FLOAT, 0);
+    glTextureParameteri(m_normalTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_normalTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameterf(m_normalTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameterf(m_normalTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureStorage2D(m_normalTexture, 1, GL_RGBA8, m_width, m_height);
+    glTextureSubImage2D(m_normalTexture, 0, 0, 0, m_width, m_height, GL_RGBA, GL_FLOAT, 0);
 
     //Set up position texture
-    glBindTexture(GL_TEXTURE_2D, m_positionTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_FLOAT, 0);
+    glTextureParameteri(m_positionTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_positionTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameterf(m_positionTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameterf(m_positionTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureStorage2D(m_positionTexture, 1, GL_RGBA8, m_width, m_height);
+    glTextureSubImage2D(m_positionTexture, 0, 0, 0, m_width, m_height, GL_RGBA, GL_FLOAT, 0);
 
     //Set up color texture
-    glBindTexture(GL_TEXTURE_2D, m_colorTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_FLOAT, 0);
+    glTextureParameteri(m_colorTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_colorTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameterf(m_colorTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameterf(m_colorTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureStorage2D(m_colorTexture, 1, GL_RGBA8, m_width, m_height);
+    glTextureSubImage2D(m_colorTexture, 0, 0, 0, m_width, m_height, GL_RGBA, GL_FLOAT, 0);
 
     GLType_uint fbo = 0;
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glCreateFramebuffers(1, &fbo);
 
     GLType_int normal_loc;
     if (!m_passProg->GetOutputBindLocation("out_f4Normal", reinterpret_cast<GLType_uint&>(normal_loc)))
@@ -335,20 +355,16 @@ void GLRenderer::InitFramebuffers()
     draws[normal_loc] = GL_COLOR_ATTACHMENT0;
     draws[position_loc] = GL_COLOR_ATTACHMENT1;
     draws[color_loc] = GL_COLOR_ATTACHMENT2;
-    glDrawBuffers(3, draws);
+    glNamedFramebufferDrawBuffers(fbo, 3, draws);
 
     // attach the texture to FBO depth attachment point
-    glBindTexture(GL_TEXTURE_2D, m_depthTexture);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_depthTexture, 0);
-    glBindTexture(GL_TEXTURE_2D, m_normalTexture);
-    glFramebufferTexture(GL_FRAMEBUFFER, draws[normal_loc], m_normalTexture, 0);
-    glBindTexture(GL_TEXTURE_2D, m_positionTexture);
-    glFramebufferTexture(GL_FRAMEBUFFER, draws[position_loc], m_positionTexture, 0);
-    glBindTexture(GL_TEXTURE_2D, m_colorTexture);
-    glFramebufferTexture(GL_FRAMEBUFFER, draws[color_loc], m_colorTexture, 0);
+    glNamedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, m_depthTexture, 0);
+    glNamedFramebufferTexture(fbo, draws[normal_loc], m_normalTexture, 0);
+    glNamedFramebufferTexture(fbo, draws[position_loc], m_positionTexture, 0);
+    glNamedFramebufferTexture(fbo, draws[color_loc], m_colorTexture, 0);
 
     // check FBO status
-    FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    GLenum FBOstatus = glCheckNamedFramebufferStatus(fbo, GL_FRAMEBUFFER);
     if (FBOstatus == GL_FRAMEBUFFER_COMPLETE)
         m_FBO.push_back(fbo);
     else
@@ -356,40 +372,33 @@ void GLRenderer::InitFramebuffers()
 
     //Post Processing buffer!
     //Set up post texture
-    glGenTextures(1, &m_postTexture);
-    glBindTexture(GL_TEXTURE_2D, m_postTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, m_width, m_height, 0, GL_RGB, GL_FLOAT, 0);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_postTexture);
+    glTextureParameteri(m_postTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_postTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameterf(m_postTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameterf(m_postTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureStorage2D(m_postTexture, 1, GL_SRGB8, m_width, m_height);
+    glTextureSubImage2D(m_postTexture, 0, 0, 0, m_width, m_height, GL_RGB, GL_FLOAT, 0);
 
     // create a framebuffer object
     fbo = 0;
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glCreateFramebuffers(1, &fbo);
 
     if (!m_directionalProg->GetOutputBindLocation("out_f4Colour", reinterpret_cast<GLType_uint&>(color_loc)))
         assert(false);
     GLenum draw[1];
     draw[color_loc] = GL_COLOR_ATTACHMENT0;
-    glDrawBuffers(1, draw);
+    glNamedFramebufferDrawBuffers(fbo, 1, draw);
 
     // attach the texture to FBO depth attachment point
-    glBindTexture(GL_TEXTURE_2D, m_postTexture);
-    glFramebufferTexture(GL_FRAMEBUFFER, draw[color_loc], m_postTexture, 0);
+    glNamedFramebufferTexture(fbo, draw[color_loc], m_postTexture, 0);
 
     // check FBO status
-    FBOstatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    FBOstatus = glCheckNamedFramebufferStatus(fbo, GL_FRAMEBUFFER);
     if (FBOstatus == GL_FRAMEBUFFER_COMPLETE)
         m_FBO.push_back(fbo);
     else
         assert(false);
-
-    // switch back to window-system-provided framebuffer
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void GLRenderer::Initialize(const Camera* renderCamera)
@@ -412,20 +421,16 @@ void GLRenderer::InitNoise()
     const char * rand_png = "../res/random.png";
 
     m_randomNormalTexture = TextureManager::GetSingleton()->Acquire(rand_norm_png);
-    glBindTexture(GL_TEXTURE_2D, m_randomNormalTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glTextureParameteri(m_randomNormalTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_randomNormalTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameterf(m_randomNormalTexture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameterf(m_randomNormalTexture, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     m_randomScalarTexture = TextureManager::GetSingleton()->Acquire(rand_png);
-    glBindTexture(GL_TEXTURE_2D, m_randomScalarTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glTextureParameteri(m_randomScalarTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_randomScalarTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameterf(m_randomScalarTexture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameterf(m_randomScalarTexture, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
 void GLRenderer::InitQuad()
@@ -447,14 +452,25 @@ void GLRenderer::InitQuad()
     CreateBuffersAndUploadData(quad, m_QuadGeometry);
 
     // Quad vertex specification
-    glGenVertexArrays(1, &(m_QuadGeometry.vertex_array));
-    glBindVertexArray(m_QuadGeometry.vertex_array);
-    glVertexAttribPointer(quad_attributes::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-    glVertexAttribPointer(quad_attributes::TEXCOORD, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, texcoord)));
-    glEnableVertexAttribArray(quad_attributes::POSITION);
-    glEnableVertexAttribArray(quad_attributes::TEXCOORD);
+    std::string quadVertSpecName = "Quad";
+    std::vector<VertexAttribute> quadVertexAttribList;
+    {
+        VertexAttribute positionAttribute;
+        positionAttribute.numElements = 3;
+        positionAttribute.dataType = GL_FLOAT;
+        positionAttribute.normalizeTo01Range = false;
+        positionAttribute.bytesFromStartOfVertexData = 0;
+        quadVertexAttribList.push_back(positionAttribute);
 
-    glBindVertexArray(0);
+        VertexAttribute texCoordAttribute;
+        texCoordAttribute.numElements = 2;
+        texCoordAttribute.dataType = GL_FLOAT;
+        texCoordAttribute.normalizeTo01Range = false;
+        texCoordAttribute.bytesFromStartOfVertexData = offsetof(Vertex, texcoord);
+        quadVertexAttribList.push_back(texCoordAttribute);
+    }
+    CreateVertexSpecification(quadVertSpecName, quadVertexAttribList, sizeof(Vertex));
+    m_QuadGeometry.vertexSpecification = m_vertexSpecifications[Utility::HashCString(quadVertSpecName.c_str())];
 }
 
 void GLRenderer::InitShaders()
@@ -472,13 +488,13 @@ void GLRenderer::InitShaders()
     std::vector<std::pair<std::string, RenderEnums::RenderProgramStage>> shaderSourceAndStagePair;
     std::map<std::string, GLType_uint> meshAttributeBindIndices, quadAttributeBindIndices, outputBindIndices;
 
-    meshAttributeBindIndices["in_f3Position"] = mesh_attributes::POSITION;
-    meshAttributeBindIndices["in_f3Normal"] = mesh_attributes::NORMAL;
-    meshAttributeBindIndices["in_f2Texcoord"] = mesh_attributes::TEXCOORD;
-    meshAttributeBindIndices["in_f3Tangent"] = mesh_attributes::TANGENT;
+    meshAttributeBindIndices["in_f3Position"] = 0;
+    meshAttributeBindIndices["in_f3Normal"] = 1;
+    meshAttributeBindIndices["in_f2Texcoord"] = 2;
+    meshAttributeBindIndices["in_f3Tangent"] = 3;
 
-    quadAttributeBindIndices["in_f3Position"] = quad_attributes::POSITION;
-    quadAttributeBindIndices["in_f2Texcoord"] = quad_attributes::TEXCOORD;
+    quadAttributeBindIndices["in_f3Position"] = 0;
+    quadAttributeBindIndices["in_f2Texcoord"] = 1;
 
     outputBindIndices["out_f4Colour"] = 0;
     outputBindIndices["out_f4Normal"] = 1;
@@ -538,16 +554,32 @@ void GLRenderer::InitSphere()
     CreateBuffersAndUploadData(sphere, m_SphereGeometry);
 
     // Sphere vertex specification
-    glGenVertexArrays(1, &(m_SphereGeometry.vertex_array));
-    glBindVertexArray(m_SphereGeometry.vertex_array);
-    glVertexAttribPointer(mesh_attributes::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-    glVertexAttribPointer(mesh_attributes::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, normal)));
-    glVertexAttribPointer(mesh_attributes::TEXCOORD, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, texcoord)));
-    glEnableVertexAttribArray(mesh_attributes::POSITION);
-    glEnableVertexAttribArray(mesh_attributes::NORMAL);
-    glEnableVertexAttribArray(mesh_attributes::TEXCOORD);
+    std::string sphereVertSpecName = "Sphere";
+    std::vector<VertexAttribute> sphereVertexAttribList;
+    {
+        VertexAttribute positionAttribute;
+        positionAttribute.numElements = 3;
+        positionAttribute.dataType = GL_FLOAT;
+        positionAttribute.normalizeTo01Range = false;
+        positionAttribute.bytesFromStartOfVertexData = 0;
+        sphereVertexAttribList.push_back(positionAttribute);
 
-    glBindVertexArray(0);
+        VertexAttribute normalAttribute;
+        normalAttribute.numElements = 3;
+        normalAttribute.dataType = GL_FLOAT;
+        normalAttribute.normalizeTo01Range = false;
+        normalAttribute.bytesFromStartOfVertexData = offsetof(Vertex, normal);
+        sphereVertexAttribList.push_back(normalAttribute);
+
+        VertexAttribute texCoordAttribute;
+        texCoordAttribute.numElements = 2;
+        texCoordAttribute.dataType = GL_FLOAT;
+        texCoordAttribute.normalizeTo01Range = false;
+        texCoordAttribute.bytesFromStartOfVertexData = offsetof(Vertex, texcoord);
+        sphereVertexAttribList.push_back(texCoordAttribute);
+    }
+    CreateVertexSpecification(sphereVertSpecName, sphereVertexAttribList, sizeof(Vertex));
+    m_SphereGeometry.vertexSpecification = m_vertexSpecifications[Utility::HashCString(sphereVertSpecName.c_str())];
 }
 
 void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out, const glm::mat4& modelMatrix)
@@ -555,19 +587,14 @@ void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out,
     CreateBuffersAndUploadData(model, out);
 
     // Vertex specification
-    glGenVertexArrays(1, &(out.vertex_array));
-    glBindVertexArray(out.vertex_array);
-    glVertexAttribPointer(mesh_attributes::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-    glVertexAttribPointer(mesh_attributes::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, normal)));
-    glVertexAttribPointer(mesh_attributes::TEXCOORD, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, texcoord)));
-    glVertexAttribPointer(mesh_attributes::TANGENT, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, tangent)));
-    glEnableVertexAttribArray(mesh_attributes::POSITION);
-    glEnableVertexAttribArray(mesh_attributes::NORMAL);
-    glEnableVertexAttribArray(mesh_attributes::TEXCOORD);
-    glEnableVertexAttribArray(mesh_attributes::TANGENT);
-
-    // Unplug Vertex Array
-    glBindVertexArray(0);
+    try
+    {
+        out.vertexSpecification = m_vertexSpecifications.at(Utility::HashCString(model.vertex_specification.c_str()));
+    }
+    catch (std::out_of_range&)
+    {
+        assert(false); // Trying to reference an invalid or non created vertex specification.
+    }
 
     out.diffuse_tex = TextureManager::GetSingleton()->Acquire(model.diffuse_texpath);
     out.normal_tex = TextureManager::GetSingleton()->Acquire(model.normal_texpath);
@@ -630,10 +657,6 @@ void GLRenderer::RenderDirectionalAndAmbientLighting()
 void GLRenderer::RenderFramebuffers()
 {
     SetShaderProgram(m_diagnosticProg);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     SetTexturesForFullScreenPass();
     m_diagnosticProg->SetTexture("u_Colortex", m_colorTexture);
 
@@ -645,10 +668,6 @@ void GLRenderer::RenderFramebuffers()
 void GLRenderer::RenderPostProcessEffects()
 {
     SetShaderProgram(m_postProg);
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     SetTexturesForFullScreenPass();
     m_postProg->SetTexture("u_Posttex", m_postTexture);
 
@@ -665,7 +684,6 @@ void GLRenderer::RenderQuad()
 void GLRenderer::SetFramebufferActive(GLType_uint fbID)
 {
     assert(fbID < m_FBO.size());
-    glBindTexture(GL_TEXTURE_2D, 0); //Bad mojo to unbind the framebuffer using the texture
     glBindFramebuffer(GL_FRAMEBUFFER, m_FBO[fbID]);
 }
 
@@ -682,4 +700,22 @@ void GLRenderer::SetTexturesForFullScreenPass()
     m_currentProgram->SetTexture("u_Positiontex", m_positionTexture);
     m_currentProgram->SetTexture("u_RandomNormaltex", m_randomNormalTexture);
     m_currentProgram->SetTexture("u_RandomScalartex", m_randomScalarTexture);
+}
+
+void GLRenderer::SetVertexSpecification(const std::weak_ptr<VertexSpecification>& vertexSpecification)
+{
+    try
+    {
+        std::shared_ptr<VertexSpecification> vertSpecRef = std::shared_ptr<VertexSpecification>(vertexSpecification);
+        if (vertSpecRef != m_activeVertexSpecification)
+        {
+            m_activeVertexSpecification = vertSpecRef;
+            m_activeVertexSpecification->SetActive();
+            m_activeVertexBuffer = m_activeIndexBuffer = 0; // Force rebind of Vertex/Index buffers upon Vertex Specification change.
+        }
+    }
+    catch (std::bad_weak_ptr&)
+    {
+        assert(false); // Bad weak reference to a Vertex Specification. This vertex specification was destroyed somehow.
+    }
 }
