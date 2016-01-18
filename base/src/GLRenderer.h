@@ -2,6 +2,8 @@
 
 #include "glm/glm.hpp"
 #include <vector>
+#include <memory>
+#include <map>
 
 #include "Common.h"
 
@@ -21,18 +23,20 @@ struct Geometry
 {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
+    std::string vertex_specification;
     std::string diffuse_texpath;
     std::string normal_texpath;
     std::string specular_texpath;
     glm::vec3 color;
 };
 
+class VertexSpecification;
 class DrawableGeometry
 {
 public:
     DrawableGeometry();
     ~DrawableGeometry();
-    GLType_uint vertex_array;
+
     GLType_uint vertex_buffer;
     GLType_uint index_buffer;
     uint32_t num_indices;
@@ -44,29 +48,13 @@ public:
     glm::vec3 color;
     glm::mat4 modelMat;
     glm::mat4 inverseModelMat;
-};
 
-namespace mesh_attributes
-{
-    enum
-    {
-        POSITION,
-        NORMAL,
-        TEXCOORD,
-        TANGENT
-    };
-}
-namespace quad_attributes
-{
-    enum
-    {
-        POSITION,
-        TEXCOORD
-    };
-}
+    std::weak_ptr<VertexSpecification> vertexSpecification;
+};
 
 class Camera;
 class GLProgram;
+struct VertexAttribute;
 class GLRenderer
 {
     uint32_t m_height;
@@ -110,6 +98,11 @@ class GLRenderer
     std::vector<const DrawableGeometry*> m_transparentList;
     std::vector<const DrawableGeometry*> m_lightList;
 
+    std::map<uint32_t, std::shared_ptr<VertexSpecification>> m_vertexSpecifications;
+    std::shared_ptr<VertexSpecification> m_activeVertexSpecification;
+    GLType_uint m_activeVertexBuffer;
+    GLType_uint m_activeIndexBuffer;
+
     void InitShaders();
     void InitNoise();
     void InitFramebuffers();
@@ -126,6 +119,7 @@ class GLRenderer
     void DrawAlphaMaskedList();
     void DrawTransparentList();
     void DrawLightList();
+    void drawLight(glm::vec3 pos, float strength); //TODORC
 
     void RenderDirectionalAndAmbientLighting();
     void RenderFramebuffers();
@@ -133,9 +127,10 @@ class GLRenderer
     void ApplyPerFrameShaderConstants();
 
     void SetTexturesForFullScreenPass();
-
-    void drawLight(glm::vec3 pos, float strength); //TODORC
     void SetShaderProgram(GLProgram* currentlyUsedProgram);
+    void SetVertexSpecification(const std::weak_ptr<VertexSpecification>& vertexSpec);
+    void BindVertexBuffer(GLType_uint vertexBuffer);
+    void BindIndexBuffer(GLType_uint indexBuffer);
 
 public:
     GLRenderer(uint32_t width, uint32_t height, float nearPlaneDistance, float farPlaneDistance);
@@ -144,6 +139,7 @@ public:
     void Initialize(const Camera* renderCamera);
 
     void MakeDrawableModel(const Geometry& model, DrawableGeometry& out, const glm::mat4& modelMatrix = glm::mat4());
+    void CreateVertexSpecification(const std::string& vertSpecName, const std::vector<VertexAttribute>& vertexAttributeList, uint32_t vertexStride);
 
     const DrawableGeometry& GetQuadGeometry() const { return m_QuadGeometry; }
     const DrawableGeometry& GetSphereGeometry() const { return m_SphereGeometry; }

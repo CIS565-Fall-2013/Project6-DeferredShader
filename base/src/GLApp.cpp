@@ -3,6 +3,7 @@
 #include "Utility.h"
 #include "EventHandlers.h"
 #include "TextureManager.h"
+#include "VertexSpecification.h"
 #include <sstream>
 
 #include "gl/glew.h"
@@ -125,6 +126,40 @@ GLApp::~GLApp()
 
 bool GLApp::ProcessScene(const std::string& sceneFile)
 {
+    // Create vertex specification for scene models:
+    std::string sceneModelVertSpecName = "SceneModel";
+    std::vector<VertexAttribute> sceneModelVertexAtribList;
+    {
+        VertexAttribute positionAttribute;
+        positionAttribute.numElements = 3;
+        positionAttribute.dataType = GL_FLOAT;
+        positionAttribute.normalizeTo01Range = false;
+        positionAttribute.bytesFromStartOfVertexData = 0;
+        sceneModelVertexAtribList.push_back(positionAttribute);
+
+        VertexAttribute normalAttribute;
+        normalAttribute.numElements = 3;
+        normalAttribute.dataType = GL_FLOAT;
+        normalAttribute.normalizeTo01Range = false;
+        normalAttribute.bytesFromStartOfVertexData = offsetof(Vertex, normal);
+        sceneModelVertexAtribList.push_back(normalAttribute);
+
+        VertexAttribute texCoordAttribute;
+        texCoordAttribute.numElements = 2;
+        texCoordAttribute.dataType = GL_FLOAT;
+        texCoordAttribute.normalizeTo01Range = false;
+        texCoordAttribute.bytesFromStartOfVertexData = offsetof(Vertex, texcoord);
+        sceneModelVertexAtribList.push_back(texCoordAttribute);
+
+        VertexAttribute tangentAttribute;
+        tangentAttribute.numElements = 3;
+        tangentAttribute.dataType = GL_FLOAT;
+        tangentAttribute.normalizeTo01Range = false;
+        tangentAttribute.bytesFromStartOfVertexData = offsetof(Vertex, tangent);
+        sceneModelVertexAtribList.push_back(tangentAttribute);
+    }
+    m_renderer->CreateVertexSpecification(sceneModelVertSpecName, sceneModelVertexAtribList, sizeof(Vertex));
+
     std::vector<tinyobj::shape_t> sceneObjects;
     std::vector<tinyobj::material_t> materialList;
     
@@ -238,6 +273,7 @@ bool GLApp::ProcessScene(const std::string& sceneFile)
                 model.specular_texpath.append(modelMaterial.specular_texname);
             }
         }
+        model.vertex_specification = sceneModelVertSpecName;
 
         std::unique_ptr<DrawableGeometry> drawableModel = std::make_unique<DrawableGeometry>();
         m_renderer->MakeDrawableModel(model, *drawableModel, m_world);

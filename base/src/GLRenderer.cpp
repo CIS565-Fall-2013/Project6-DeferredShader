@@ -5,6 +5,7 @@
 #include "Camera.h"
 #include "ShaderConstantManager.h"
 #include "TextureManager.h"
+#include "VertexSpecification.h"
 
 namespace Colours
 {
@@ -46,8 +47,7 @@ GLRenderer::~GLRenderer()
 }
 
 DrawableGeometry::DrawableGeometry()
-    : vertex_array(),
-    vertex_buffer(),
+    : vertex_buffer(),
     index_buffer(),
     num_indices(),
     diffuse_tex(),
@@ -57,7 +57,6 @@ DrawableGeometry::DrawableGeometry()
 
 DrawableGeometry::~DrawableGeometry()
 {
-    glDeleteVertexArrays(1, &vertex_array);
     glDeleteBuffers(1, &vertex_buffer);
     glDeleteBuffers(1, &index_buffer);
 
@@ -125,6 +124,24 @@ void GLRenderer::ApplyPerFrameShaderConstants()
     shaderConstantManager->SetShaderConstant("uiDisplayType", perFrameConstantBuffer, &value);
 }
 
+void GLRenderer::BindVertexBuffer(GLType_uint vertexBuffer)
+{
+    if (m_activeVertexBuffer != vertexBuffer)
+    {
+        m_activeVertexBuffer = vertexBuffer;
+        glBindVertexBuffer(0, m_activeVertexBuffer, 0, m_activeVertexSpecification->GetVertexStride());
+    }
+}
+
+void GLRenderer::BindIndexBuffer(GLType_uint indexBuffer)
+{
+    if (m_activeIndexBuffer != indexBuffer)
+    {
+        m_activeIndexBuffer = indexBuffer;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_activeIndexBuffer);
+    }
+}
+
 void GLRenderer::ClearFramebuffer(RenderEnums::ClearType clearFlags)
 {
     GLenum flags = 0;
@@ -161,6 +178,15 @@ void GLRenderer::CreateBuffersAndUploadData(const Geometry& model, DrawableGeome
     glNamedBufferStorage(out.index_buffer, out.num_indices * sizeof(GLuint), &model.indices[0], 0);
 }
 
+void GLRenderer::CreateVertexSpecification(const std::string& vertSpecName, const std::vector<VertexAttribute>& vertexAttributeList, uint32_t vertexStride)
+{
+    uint32_t vertSpecNameHash = Utility::HashCString(vertSpecName.c_str());
+    if (m_vertexSpecifications.find(vertSpecNameHash) == m_vertexSpecifications.end())
+    {
+        m_vertexSpecifications[vertSpecNameHash] = std::make_shared<VertexSpecification>(vertexAttributeList, vertexStride);
+    }
+}
+
 void GLRenderer::DrawAlphaMaskedList()
 {
     glDepthMask(GL_FALSE);
@@ -172,8 +198,10 @@ void GLRenderer::DrawGeometry(const DrawableGeometry* geom)
     assert(m_currentProgram != nullptr);
     m_currentProgram->CommitTextureBindings();
     m_currentProgram->CommitConstantBufferChanges();
+    SetVertexSpecification(geom->vertexSpecification);
+    BindVertexBuffer(geom->vertex_buffer);
+    BindIndexBuffer(geom->index_buffer);
 
-    glBindVertexArray(geom->vertex_array);
     glDrawElements(GL_TRIANGLES, geom->num_indices, GL_UNSIGNED_INT, 0);
 }
 
@@ -424,16 +452,25 @@ void GLRenderer::InitQuad()
     CreateBuffersAndUploadData(quad, m_QuadGeometry);
 
     // Quad vertex specification
-    glGenVertexArrays(1, &(m_QuadGeometry.vertex_array));
-    glBindVertexArray(m_QuadGeometry.vertex_array);
-    glBindBuffer(GL_ARRAY_BUFFER, m_QuadGeometry.vertex_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_QuadGeometry.index_buffer);
-    glVertexAttribPointer(quad_attributes::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-    glVertexAttribPointer(quad_attributes::TEXCOORD, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, texcoord)));
-    glEnableVertexAttribArray(quad_attributes::POSITION);
-    glEnableVertexAttribArray(quad_attributes::TEXCOORD);
+    std::string quadVertSpecName = "Quad";
+    std::vector<VertexAttribute> quadVertexAttribList;
+    {
+        VertexAttribute positionAttribute;
+        positionAttribute.numElements = 3;
+        positionAttribute.dataType = GL_FLOAT;
+        positionAttribute.normalizeTo01Range = false;
+        positionAttribute.bytesFromStartOfVertexData = 0;
+        quadVertexAttribList.push_back(positionAttribute);
 
-    glBindVertexArray(0);
+        VertexAttribute texCoordAttribute;
+        texCoordAttribute.numElements = 2;
+        texCoordAttribute.dataType = GL_FLOAT;
+        texCoordAttribute.normalizeTo01Range = false;
+        texCoordAttribute.bytesFromStartOfVertexData = offsetof(Vertex, texcoord);
+        quadVertexAttribList.push_back(texCoordAttribute);
+    }
+    CreateVertexSpecification(quadVertSpecName, quadVertexAttribList, sizeof(Vertex));
+    m_QuadGeometry.vertexSpecification = m_vertexSpecifications[Utility::HashCString(quadVertSpecName.c_str())];
 }
 
 void GLRenderer::InitShaders()
@@ -451,13 +488,13 @@ void GLRenderer::InitShaders()
     std::vector<std::pair<std::string, RenderEnums::RenderProgramStage>> shaderSourceAndStagePair;
     std::map<std::string, GLType_uint> meshAttributeBindIndices, quadAttributeBindIndices, outputBindIndices;
 
-    meshAttributeBindIndices["in_f3Position"] = mesh_attributes::POSITION;
-    meshAttributeBindIndices["in_f3Normal"] = mesh_attributes::NORMAL;
-    meshAttributeBindIndices["in_f2Texcoord"] = mesh_attributes::TEXCOORD;
-    meshAttributeBindIndices["in_f3Tangent"] = mesh_attributes::TANGENT;
+    meshAttributeBindIndices["in_f3Position"] = 0;
+    meshAttributeBindIndices["in_f3Normal"] = 1;
+    meshAttributeBindIndices["in_f2Texcoord"] = 2;
+    meshAttributeBindIndices["in_f3Tangent"] = 3;
 
-    quadAttributeBindIndices["in_f3Position"] = quad_attributes::POSITION;
-    quadAttributeBindIndices["in_f2Texcoord"] = quad_attributes::TEXCOORD;
+    quadAttributeBindIndices["in_f3Position"] = 0;
+    quadAttributeBindIndices["in_f2Texcoord"] = 1;
 
     outputBindIndices["out_f4Colour"] = 0;
     outputBindIndices["out_f4Normal"] = 1;
@@ -517,18 +554,32 @@ void GLRenderer::InitSphere()
     CreateBuffersAndUploadData(sphere, m_SphereGeometry);
 
     // Sphere vertex specification
-    glGenVertexArrays(1, &(m_SphereGeometry.vertex_array));
-    glBindVertexArray(m_SphereGeometry.vertex_array);
-    glBindBuffer(GL_ARRAY_BUFFER, m_SphereGeometry.vertex_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_SphereGeometry.index_buffer);
-    glVertexAttribPointer(mesh_attributes::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-    glVertexAttribPointer(mesh_attributes::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, normal)));
-    glVertexAttribPointer(mesh_attributes::TEXCOORD, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, texcoord)));
-    glEnableVertexAttribArray(mesh_attributes::POSITION);
-    glEnableVertexAttribArray(mesh_attributes::NORMAL);
-    glEnableVertexAttribArray(mesh_attributes::TEXCOORD);
+    std::string sphereVertSpecName = "Sphere";
+    std::vector<VertexAttribute> sphereVertexAttribList;
+    {
+        VertexAttribute positionAttribute;
+        positionAttribute.numElements = 3;
+        positionAttribute.dataType = GL_FLOAT;
+        positionAttribute.normalizeTo01Range = false;
+        positionAttribute.bytesFromStartOfVertexData = 0;
+        sphereVertexAttribList.push_back(positionAttribute);
 
-    glBindVertexArray(0);
+        VertexAttribute normalAttribute;
+        normalAttribute.numElements = 3;
+        normalAttribute.dataType = GL_FLOAT;
+        normalAttribute.normalizeTo01Range = false;
+        normalAttribute.bytesFromStartOfVertexData = offsetof(Vertex, normal);
+        sphereVertexAttribList.push_back(normalAttribute);
+
+        VertexAttribute texCoordAttribute;
+        texCoordAttribute.numElements = 2;
+        texCoordAttribute.dataType = GL_FLOAT;
+        texCoordAttribute.normalizeTo01Range = false;
+        texCoordAttribute.bytesFromStartOfVertexData = offsetof(Vertex, texcoord);
+        sphereVertexAttribList.push_back(texCoordAttribute);
+    }
+    CreateVertexSpecification(sphereVertSpecName, sphereVertexAttribList, sizeof(Vertex));
+    m_SphereGeometry.vertexSpecification = m_vertexSpecifications[Utility::HashCString(sphereVertSpecName.c_str())];
 }
 
 void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out, const glm::mat4& modelMatrix)
@@ -536,21 +587,14 @@ void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out,
     CreateBuffersAndUploadData(model, out);
 
     // Vertex specification
-    glGenVertexArrays(1, &(out.vertex_array));
-    glBindVertexArray(out.vertex_array);
-    glBindBuffer(GL_ARRAY_BUFFER, out.vertex_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, out.index_buffer);
-    glVertexAttribPointer(mesh_attributes::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-    glVertexAttribPointer(mesh_attributes::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, normal)));
-    glVertexAttribPointer(mesh_attributes::TEXCOORD, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, texcoord)));
-    glVertexAttribPointer(mesh_attributes::TANGENT, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, tangent)));
-    glEnableVertexAttribArray(mesh_attributes::POSITION);
-    glEnableVertexAttribArray(mesh_attributes::NORMAL);
-    glEnableVertexAttribArray(mesh_attributes::TEXCOORD);
-    glEnableVertexAttribArray(mesh_attributes::TANGENT);
-
-    // Unplug Vertex Array
-    glBindVertexArray(0);
+    try
+    {
+        out.vertexSpecification = m_vertexSpecifications.at(Utility::HashCString(model.vertex_specification.c_str()));
+    }
+    catch (std::out_of_range&)
+    {
+        assert(false); // Trying to reference an invalid or non created vertex specification.
+    }
 
     out.diffuse_tex = TextureManager::GetSingleton()->Acquire(model.diffuse_texpath);
     out.normal_tex = TextureManager::GetSingleton()->Acquire(model.normal_texpath);
@@ -656,4 +700,22 @@ void GLRenderer::SetTexturesForFullScreenPass()
     m_currentProgram->SetTexture("u_Positiontex", m_positionTexture);
     m_currentProgram->SetTexture("u_RandomNormaltex", m_randomNormalTexture);
     m_currentProgram->SetTexture("u_RandomScalartex", m_randomScalarTexture);
+}
+
+void GLRenderer::SetVertexSpecification(const std::weak_ptr<VertexSpecification>& vertexSpecification)
+{
+    try
+    {
+        std::shared_ptr<VertexSpecification> vertSpecRef = std::shared_ptr<VertexSpecification>(vertexSpecification);
+        if (vertSpecRef != m_activeVertexSpecification)
+        {
+            m_activeVertexSpecification = vertSpecRef;
+            m_activeVertexSpecification->SetActive();
+            m_activeVertexBuffer = m_activeIndexBuffer = 0; // Force rebind of Vertex/Index buffers upon Vertex Specification change.
+        }
+    }
+    catch (std::bad_weak_ptr&)
+    {
+        assert(false); // Bad weak reference to a Vertex Specification. This vertex specification was destroyed somehow.
+    }
 }

@@ -85,6 +85,7 @@
     <ClCompile Include="..\..\..\src\ShaderConstantManager.cpp" />
     <ClCompile Include="..\..\..\src\TextureManager.cpp" />
     <ClCompile Include="..\..\..\src\Utility.cpp" />
+    <ClCompile Include="..\..\..\src\VertexSpecification.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\Camera.h" />
@@ -97,6 +98,7 @@
     <ClInclude Include="..\..\..\src\ShaderConstantManager.h" />
     <ClInclude Include="..\..\..\src\TextureManager.h" />
     <ClInclude Include="..\..\..\src\Utility.h" />
+    <ClInclude Include="..\..\..\src\VertexSpecification.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\res\shaders\ambient.frag" />
