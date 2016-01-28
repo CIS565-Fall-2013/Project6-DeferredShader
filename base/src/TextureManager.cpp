@@ -13,7 +13,7 @@ extern "C"
     #include "SOIL/image_helper.h"
 }
 
-TextureManager* TextureManager::singleton = nullptr;
+std::weak_ptr<TextureManager> TextureManager::singleton;
 
 namespace
 {
@@ -64,15 +64,26 @@ TextureManager::~TextureManager()
     m_textureNameToObjectMap.clear();
 }
 
-void TextureManager::Create()
+std::shared_ptr<TextureManager> TextureManager::GetSingleton()
 {
-    singleton = new TextureManager();
-}
-
-void TextureManager::Destroy()
-{
-    delete singleton;
-    singleton = nullptr;
+    try
+    {
+        return std::shared_ptr<TextureManager>(singleton);
+    }
+    catch (std::bad_weak_ptr&)
+    {
+        try
+        {
+            TextureManager* pTextureManager = new TextureManager;
+            std::shared_ptr<TextureManager> newTextureManager = std::shared_ptr<TextureManager>(pTextureManager);
+            singleton = newTextureManager;
+            return newTextureManager;
+        }
+        catch (std::bad_alloc&)
+        {
+            assert(false); // Out of memory!
+        }
+    }
 }
 
 GLType_uint TextureManager::Acquire(const std::string& textureName)

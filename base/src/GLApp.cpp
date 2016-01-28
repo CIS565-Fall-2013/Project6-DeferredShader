@@ -81,7 +81,7 @@ namespace
     }
 }
 
-GLApp* GLApp::m_singleton = nullptr;
+std::weak_ptr<GLApp> GLApp::g_spSingleton;
 
 GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle)
     : m_startTime(0), 
@@ -98,11 +98,19 @@ GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle)
     m_mouseCaptured(true),
     mouse_dof_x(0),
     mouse_dof_y(0),
+    m_glfwWindow(nullptr),
     m_windowTitle(windowTitle) 
 {
     m_world = glm::mat4();
 
-    m_cam = new Camera(vec3(0, 0, 0), glm::normalize(vec3(0, 0, -1)), glm::normalize(vec3(0, 1, 0)));
+    try
+    {
+        m_spViewCamera = std::make_shared<Camera>(vec3(0, 0, 0), glm::normalize(vec3(0, 0, -1)), glm::normalize(vec3(0, 1, 0)));
+    }
+    catch (std::bad_alloc&)
+    {
+        assert(false);  // Out of memory.
+    }
 
     m_invHeight = 1.0f / (m_height - 1);
     m_invWidth = 1.0f / (m_width - 1);
@@ -110,7 +118,7 @@ GLApp::GLApp(uint32_t width, uint32_t height, std::string windowTitle)
     m_lastX = width / 2.0;
     m_lastY = height / 2.0;
 
-    TextureManager::Create();
+    m_spTextureManager = TextureManager::GetSingleton();
 }
 
 GLApp::~GLApp()
@@ -119,9 +127,22 @@ GLApp::~GLApp()
     {
         m_drawableModels[i] = nullptr;
     }
-    delete m_cam;
-    delete m_renderer;
-    TextureManager::Destroy();
+    m_spRenderer = nullptr;
+}
+
+std::shared_ptr<GLApp> GLApp::Create(uint32_t width, uint32_t height, std::string windowTitle)
+{
+    try
+    {
+        return std::shared_ptr<GLApp>(GLApp::Get());
+    }
+    catch (std::bad_weak_ptr&)
+    {
+        GLApp* pNewApp = new GLApp(width, height, windowTitle);
+        std::shared_ptr<GLApp> singleton = std::shared_ptr<GLApp>(pNewApp);
+        g_spSingleton = singleton;
+        return singleton;
+    }
 }
 
 bool GLApp::ProcessScene(const std::string& sceneFile)
@@ -158,7 +179,7 @@ bool GLApp::ProcessScene(const std::string& sceneFile)
         tangentAttribute.bytesFromStartOfVertexData = offsetof(Vertex, tangent);
         sceneModelVertexAtribList.push_back(tangentAttribute);
     }
-    m_renderer->CreateVertexSpecification(sceneModelVertSpecName, sceneModelVertexAtribList, sizeof(Vertex));
+    m_spRenderer->CreateVertexSpecification(sceneModelVertSpecName, sceneModelVertexAtribList, sizeof(Vertex));
 
     std::vector<tinyobj::shape_t> sceneObjects;
     std::vector<tinyobj::material_t> materialList;
@@ -275,9 +296,16 @@ bool GLApp::ProcessScene(const std::string& sceneFile)
         }
         model.vertex_specification = sceneModelVertSpecName;
 
-        std::unique_ptr<DrawableGeometry> drawableModel = std::make_unique<DrawableGeometry>();
-        m_renderer->MakeDrawableModel(model, *drawableModel, m_world);
-        m_drawableModels.push_back(std::move(drawableModel));
+        try
+        {
+            std::unique_ptr<DrawableGeometry> drawableModel = std::make_unique<DrawableGeometry>();
+            m_spRenderer->MakeDrawableModel(model, *drawableModel, m_world);
+            m_drawableModels.push_back(std::move(drawableModel));
+        }
+        catch (std::bad_alloc&)
+        {
+            assert(false);  // Out of memory.
+        }
     }
 
     // Apply scene adaptive scaling. This ensures that our vertices will always be in the range [-100, 100] in all axes.
@@ -297,16 +325,16 @@ bool GLApp::ProcessScene(const std::string& sceneFile)
 
 void GLApp::display()
 {
-    m_cam->CalculateViewProjection(45.0f, m_width, m_height, RENDERER->GetNearPlaneDistance(), RENDERER->GetFarPlaneDistance());
+    m_spViewCamera->CalculateViewProjection(45.0f, m_width, m_height, RENDERER->GetNearPlaneDistance(), RENDERER->GetFarPlaneDistance());
 
-    m_renderer->ClearLists();
-    m_renderer->SetDisplayType(m_displayType);
+    m_spRenderer->ClearLists();
+    m_spRenderer->SetDisplayType(m_displayType);
     for (uint32_t i = 0; i < m_drawableModels.size(); ++i)
     {
-        m_renderer->AddDrawableGeometryToList(m_drawableModels[i].get(), RenderEnums::OPAQUE_LIST);
+        m_spRenderer->AddDrawableGeometryToList(m_drawableModels[i].get(), RenderEnums::OPAQUE_LIST);
     }
 
-    m_renderer->Render();
+    m_spRenderer->Render();
 }
 
 void GLApp::reshape(int w, int h)
@@ -335,19 +363,19 @@ void GLApp::reshape(int w, int h)
 
 void GLApp::AdjustCamera(float xAdjustment, float yAdjustment, float zAdjustment)
 { 
-    if (m_cam)
-        m_cam->adjust(0.0f, 0.0f, 0.0f, xAdjustment, yAdjustment, zAdjustment); 
+    if (m_spViewCamera)
+        m_spViewCamera->adjust(0.0f, 0.0f, 0.0f, xAdjustment, yAdjustment, zAdjustment); 
 }
 
 void GLApp::RotateCamera(float xAngle, float yAngle)
 {
-    if (m_cam)
-        m_cam->adjust(xAngle, yAngle, 0.0f, 0.0f, 0.0f, 0.0f);
+    if (m_spViewCamera)
+        m_spViewCamera->adjust(xAngle, yAngle, 0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void GLApp::ReloadShaders()
 {
-//    m_renderer->InitShaders();
+//    m_spRenderer->InitShaders();
 }
 
 bool GLApp::Initialize(const std::map<std::string, std::string>& argumentList)
@@ -392,14 +420,17 @@ bool GLApp::Initialize(const std::map<std::string, std::string>& argumentList)
 
     float nearPlane = 0.1f;
     float farPlane = 2000.0f;
-    m_renderer = new GLRenderer(m_width, m_height, nearPlane, farPlane);
-    if (m_renderer == nullptr)
+    try
+    {
+        m_spRenderer = std::make_unique<GLRenderer>(m_width, m_height, nearPlane, farPlane);
+    }
+    catch (std::bad_alloc&)
     {
         Utility::LogMessageAndEndLine("Failed to create the renderer.");
         return false;
     }
 
-    m_renderer->Initialize(m_cam);
+    m_spRenderer->Initialize(m_spViewCamera);
 
     return ProcessScene(argumentList.at(c_meshArgumentString));
 }

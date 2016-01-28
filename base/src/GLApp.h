@@ -5,6 +5,7 @@
 #include <map>
 
 class Camera;
+class TextureManager;
 struct GLFWwindow;
 class GLApp
 {
@@ -29,12 +30,13 @@ class GLApp
     int32_t mouse_dof_y;
 
     glm::mat4 m_world;
-    Camera* m_cam;
+    std::shared_ptr<Camera> m_spViewCamera;
 
-    GLRenderer* m_renderer;
+    std::unique_ptr<GLRenderer> m_spRenderer;
+    std::shared_ptr<TextureManager> m_spTextureManager;
 
     GLFWwindow* m_glfwWindow;
-    static GLApp* m_singleton;
+    static std::weak_ptr<GLApp> g_spSingleton;
 
     std::vector<std::unique_ptr<DrawableGeometry>> m_drawableModels;
 
@@ -54,15 +56,8 @@ public:
     bool Initialize(const std::map<std::string, std::string>& argumentList);
     int32_t Run();
 
-    static GLApp* Create(uint32_t width, uint32_t height, std::string windowTitle)
-    { 
-        if (m_singleton)
-            delete m_singleton;
-        
-        m_singleton = new GLApp(width, height, windowTitle);
-        return m_singleton;
-    }
-    static GLApp* Get() { return m_singleton; }
+    static std::shared_ptr<GLApp> Create(uint32_t width, uint32_t height, std::string windowTitle); // Whomever calls this gets the owning reference. Only the very first call is effective. Subsequent calls are ignored.
+    static std::weak_ptr<GLApp>& Get() { return g_spSingleton; }
 
     double GetLastX() { return m_lastX; }
     double GetLastY() { return m_lastY; }
@@ -102,4 +97,4 @@ public:
     static const std::string c_meshArgumentString;
 };
 
-#define RENDERER m_renderer
+#define RENDERER m_spRenderer

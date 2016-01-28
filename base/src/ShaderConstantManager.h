@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "Common.h"
 
@@ -11,9 +12,10 @@ class ConstantBuffer;
 class ShaderConstantManager
 {
     std::unordered_map<uint32_t, ConstantBuffer*> m_constantBufferNameToDataMap;
-    static ShaderConstantManager* singleton;
+    static std::weak_ptr<ShaderConstantManager> singleton;
     static uint32_t resolver;
 
+    ShaderConstantManager();
 public:
     enum SupportedTypes
     {
@@ -25,16 +27,15 @@ public:
         BOOL,
     };
     
-    ShaderConstantManager();
     ~ShaderConstantManager();
+
     void SetupConstantBuffer(std::string& constantBufferName, int32_t constantBufferSize, std::vector<ShaderConstantSignature>& constantBufferSignature);
     void SetShaderConstant(const char* constantName, const std::string& constantBufferName, const void* value_in);
     void ApplyShaderConstantChanges(const std::string& constantBufferName = std::string()) const;
     GLType_uint GetConstantBufferObject(const std::string& constantBufferName) const;
     
-    static void Create();
-    static void Destroy();
-    static ShaderConstantManager* GetSingleton() { return singleton; }
+    static std::shared_ptr<ShaderConstantManager> Create(); // Caller gets the owning reference.
+    static std::weak_ptr<ShaderConstantManager>& GetSingleton();
     static SupportedTypes GetTypeFromString(const std::string& typeString);
     static uint32_t GetSizeForType(ShaderConstantManager::SupportedTypes type);
     static uint32_t GetAlignmentForType(ShaderConstantManager::SupportedTypes type);

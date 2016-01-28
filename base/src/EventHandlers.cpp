@@ -8,31 +8,39 @@ namespace EventHandler
     {
         if ((pressedButton == GLFW_MOUSE_BUTTON_LEFT) && (action == GLFW_PRESS))
         {
-            GLApp* thisApp = GLApp::Get();
-            if (thisApp == nullptr)
-                return;
-
-            thisApp->ToggleMouseCaptured();
-            glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            try
+            {
+                std::shared_ptr<GLApp> thisApp = std::shared_ptr<GLApp>(GLApp::Get());
+                thisApp->ToggleMouseCaptured();
+                glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+            catch (std::bad_weak_ptr&)
+            {
+                assert(false); // The app doesn't exist? HOW!?
+            }
         }
     }
 
     void OnMouseMove(GLFWwindow* windowHandle, double xPos, double yPos)
     {
-        GLApp* thisApp = GLApp::Get();
-        if (thisApp == nullptr)
-            return;
-
-        if (thisApp->IsMouseCaptured())
+        try
         {
-            double dx, dy;
-            dx = (xPos - thisApp->GetLastX()) / thisApp->GetWidth();
-            dy = (yPos - thisApp->GetLastY()) / thisApp->GetHeight();
+            std::shared_ptr<GLApp> thisApp = std::shared_ptr<GLApp>(GLApp::Get());
+            if (thisApp->IsMouseCaptured())
+            {
+                double dx, dy;
+                dx = (xPos - thisApp->GetLastX()) / thisApp->GetWidth();
+                dy = (yPos - thisApp->GetLastY()) / thisApp->GetHeight();
 
-            thisApp->RotateCamera(dx/2.0, dy/2.0);
+                thisApp->RotateCamera(dx / 2.0, dy / 2.0);
 
-            thisApp->SetLastX(xPos);
-            thisApp->SetLastY(yPos);
+                thisApp->SetLastX(xPos);
+                thisApp->SetLastY(yPos);
+            }
+        }
+        catch (std::bad_weak_ptr&)
+        {
+            assert(false); // The app doesn't exist? HOW!?
         }
     }
 
@@ -44,87 +52,91 @@ namespace EventHandler
         if (action == GLFW_RELEASE)
             return;
 
-        GLApp* thisApp = GLApp::Get();
-        if (thisApp == nullptr)
-            return;
-
-        switch (pressedKey)
+        try
         {
-        case GLFW_KEY_ESCAPE:
-            if (thisApp->IsMouseCaptured())
+            std::shared_ptr<GLApp> thisApp = std::shared_ptr<GLApp>(GLApp::Get());
+            switch (pressedKey)
             {
-                glfwSetInputMode(someWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                thisApp->ToggleMouseCaptured();
+            case GLFW_KEY_ESCAPE:
+                if (thisApp->IsMouseCaptured())
+                {
+                    glfwSetInputMode(someWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                    thisApp->ToggleMouseCaptured();
+                }
+                else
+                    glfwSetWindowShouldClose(someWindow, GL_TRUE);
+                break;
+            case GLFW_KEY_W:
+                absoluteTranslation.z = -1.0f;
+                break;
+            case GLFW_KEY_S:
+                absoluteTranslation.z = 1.0f;
+                break;
+            case GLFW_KEY_D:
+                absoluteTranslation.x = 1.0f;
+                break;
+            case GLFW_KEY_A:
+                absoluteTranslation.x = -1.0f;
+                break;
+            case GLFW_KEY_Q:
+                absoluteTranslation.y = 1.0f;
+                break;
+            case GLFW_KEY_Z:
+                absoluteTranslation.y = -1.0f;
+                break;
+            case GLFW_KEY_1:
+            case GLFW_KEY_KP_1:
+                thisApp->SetDisplayType(RenderEnums::DISPLAY_DEPTH);
+                break;
+            case GLFW_KEY_2:
+            case GLFW_KEY_KP_2:
+                thisApp->SetDisplayType(RenderEnums::DISPLAY_NORMAL);
+                break;
+            case GLFW_KEY_3:
+            case GLFW_KEY_KP_3:
+                thisApp->SetDisplayType(RenderEnums::DISPLAY_COLOR);
+                break;
+            case GLFW_KEY_4:
+            case GLFW_KEY_KP_4:
+                thisApp->SetDisplayType(RenderEnums::DISPLAY_POSITION);
+                break;
+            case GLFW_KEY_5:
+            case GLFW_KEY_KP_5:
+                thisApp->SetDisplayType(RenderEnums::DISPLAY_LIGHTING);
+                break;
+            case GLFW_KEY_0:
+            case GLFW_KEY_KP_0:
+                thisApp->SetDisplayType(RenderEnums::DISPLAY_TOTAL);
+                break;
+            case GLFW_KEY_X:
+                thisApp->ToggleScissor();
+                break;
+            case GLFW_KEY_R:
+                thisApp->ReloadShaders();
+                break;
+            case GLFW_KEY_B:
+                thisApp->ToggleBloom();
+                break;
+            case GLFW_KEY_T:
+                thisApp->ToggleToon();
+                break;
+            case GLFW_KEY_F:
+                thisApp->ToggleDOF();
+                break;
+            case GLFW_KEY_G:
+                thisApp->ToggleDOFDebug();
+                break;
             }
-            else
-                glfwSetWindowShouldClose(someWindow, GL_TRUE);
-            break;
-        case GLFW_KEY_W:
-            absoluteTranslation.z = -1.0f;
-            break;
-        case GLFW_KEY_S:
-            absoluteTranslation.z = 1.0f;
-            break;
-        case GLFW_KEY_D:
-            absoluteTranslation.x = 1.0f;
-            break;
-        case GLFW_KEY_A:
-            absoluteTranslation.x = -1.0f;
-            break;
-        case GLFW_KEY_Q:
-            absoluteTranslation.y = 1.0f;
-            break;
-        case GLFW_KEY_Z:
-            absoluteTranslation.y = -1.0f;
-            break;
-        case GLFW_KEY_1:
-        case GLFW_KEY_KP_1:
-            thisApp->SetDisplayType(RenderEnums::DISPLAY_DEPTH);
-            break;
-        case GLFW_KEY_2:
-        case GLFW_KEY_KP_2:
-            thisApp->SetDisplayType(RenderEnums::DISPLAY_NORMAL);
-            break;
-        case GLFW_KEY_3:
-        case GLFW_KEY_KP_3:
-            thisApp->SetDisplayType(RenderEnums::DISPLAY_COLOR);
-            break;
-        case GLFW_KEY_4:
-        case GLFW_KEY_KP_4:
-            thisApp->SetDisplayType(RenderEnums::DISPLAY_POSITION);
-            break;
-        case GLFW_KEY_5:
-        case GLFW_KEY_KP_5:
-            thisApp->SetDisplayType(RenderEnums::DISPLAY_LIGHTING);
-            break;
-        case GLFW_KEY_0:
-        case GLFW_KEY_KP_0:
-            thisApp->SetDisplayType(RenderEnums::DISPLAY_TOTAL);
-            break;
-        case GLFW_KEY_X:
-            thisApp->ToggleScissor();
-            break;
-        case GLFW_KEY_R:
-            thisApp->ReloadShaders();
-            break;
-        case GLFW_KEY_B:
-            thisApp->ToggleBloom();
-            break;
-        case GLFW_KEY_T:
-            thisApp->ToggleToon();
-            break;
-        case GLFW_KEY_F:
-            thisApp->ToggleDOF();
-            break;
-        case GLFW_KEY_G:
-            thisApp->ToggleDOFDebug();
-            break;
-        }
 
-        absoluteTranslation *= translateRate;
-        if ((abs(absoluteTranslation.x) > 0.0f) || (abs(absoluteTranslation.y) > 0.0f) || (abs(absoluteTranslation.z) > 0.0f))
+            absoluteTranslation *= translateRate;
+            if ((abs(absoluteTranslation.x) > 0.0f) || (abs(absoluteTranslation.y) > 0.0f) || (abs(absoluteTranslation.z) > 0.0f))
+            {
+                thisApp->AdjustCamera(absoluteTranslation.x, absoluteTranslation.y, absoluteTranslation.z);
+            }
+        }
+        catch (std::bad_weak_ptr&)
         {
-            thisApp->AdjustCamera(absoluteTranslation.x, absoluteTranslation.y, absoluteTranslation.z);
+            assert(false); // The app doesn't exist? HOW!?
         }
     }
 }

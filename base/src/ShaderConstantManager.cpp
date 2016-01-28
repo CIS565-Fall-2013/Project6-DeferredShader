@@ -19,7 +19,7 @@ static bool AreMat4sEqual(const glm::mat4& a, const glm::mat4& b)
     return (AreVec4sEqual(a[0], b[0]) && AreVec4sEqual(a[1], b[1]) && AreVec4sEqual(a[2], b[2]) && AreVec4sEqual(a[3], b[3]));
 }
 
-ShaderConstantManager* ShaderConstantManager::singleton = nullptr;
+std::weak_ptr<ShaderConstantManager> ShaderConstantManager::singleton;
 uint32_t ShaderConstantManager::resolver = 0;
 
 ShaderConstantManager::ShaderConstantManager()
@@ -45,17 +45,25 @@ ShaderConstantManager::~ShaderConstantManager()
     glDeleteBuffers(i, constantBufferIds);
 }
 
-void ShaderConstantManager::Create()
+// We want Create() to create the singular instance, and GetSingleton() to return that instance. Creation needs to be explicit.
+std::shared_ptr<ShaderConstantManager> ShaderConstantManager::Create()
 {
-    assert(singleton == nullptr);
-    singleton = new ShaderConstantManager();
-    assert(singleton != nullptr);
+    try
+    {
+        return std::shared_ptr<ShaderConstantManager>(ShaderConstantManager::GetSingleton());
+    }
+    catch (std::bad_weak_ptr&)
+    {
+        ShaderConstantManager* pShaderConstantManager = new ShaderConstantManager;
+        std::shared_ptr<ShaderConstantManager> newShaderConstantManager = std::shared_ptr<ShaderConstantManager>(pShaderConstantManager);
+        singleton = newShaderConstantManager;
+        return newShaderConstantManager;
+    }
 }
 
-void ShaderConstantManager::Destroy()
+std::weak_ptr<ShaderConstantManager>& ShaderConstantManager::GetSingleton()
 {
-    delete singleton;
-    singleton = nullptr;
+    return singleton;
 }
 
 ShaderConstantManager::SupportedTypes ShaderConstantManager::GetTypeFromString(const std::string& typeString)

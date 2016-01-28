@@ -138,14 +138,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
     }
 
-    GLApp* app = GLApp::Create(1280, 720, "P6");
+    std::shared_ptr<GLApp> app = GLApp::Create(1280, 720, "P6");
     if (!app || !app->Initialize(argumentList))
     {
-        delete app;
         return EXIT_FAILURE;
     }
 
     int32_t returnCode = app->Run();
-    delete app;
     return returnCode;
 }

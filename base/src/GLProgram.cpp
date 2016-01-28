@@ -86,9 +86,17 @@ void GLProgram::Create(RenderEnums::ProgramType programType, const std::vector<s
 void GLProgram::SetActive() const
 {
     glUseProgram(m_id);
-    for (const auto& itr : m_constantBufferBindIndicesMap) // Bind constant buffers to buffer slots/bind points.
+    try
     {
-        glBindBufferBase(GL_UNIFORM_BUFFER, itr.second, ShaderConstantManager::GetSingleton()->GetConstantBufferObject(itr.first));
+        std::shared_ptr<ShaderConstantManager> spShaderConstantManager = std::shared_ptr<ShaderConstantManager>(ShaderConstantManager::GetSingleton());
+        for (const auto& itr : m_constantBufferBindIndicesMap) // Bind constant buffers to buffer slots/bind points.
+        {
+            glBindBufferBase(GL_UNIFORM_BUFFER, itr.second, spShaderConstantManager->GetConstantBufferObject(itr.first));
+        }
+    }
+    catch (std::bad_weak_ptr&)
+    {
+        assert(false); // ShaderConstantManager wasn't Create()d.
     }
 }
 
@@ -98,11 +106,16 @@ void GLProgram::SetShaderConstant(const char* constantName, const void* value_in
     try
     {
         const std::string& mappedConstantBuffer = m_shaderConstantToConstantBufferBindingMap.at(Utility::HashCString(constantName));
-        ShaderConstantManager::GetSingleton()->SetShaderConstant(constantName, mappedConstantBuffer, value_in);
+        std::shared_ptr<ShaderConstantManager> spShaderConstantManager = std::shared_ptr<ShaderConstantManager>(ShaderConstantManager::GetSingleton());
+        spShaderConstantManager->SetShaderConstant(constantName, mappedConstantBuffer, value_in);
     }
     catch (std::out_of_range&)
     {
         assert(false);  // Constant should be mapped to a constant buffer.
+    }
+    catch (std::bad_weak_ptr&)
+    {
+        assert(false); // ShaderConstantManager wasn't Create()d.
     }
 }
 
@@ -158,6 +171,16 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
     std::vector<std::string> activeUniforms;
     std::string constBufferName;
     std::vector<ShaderConstantSignature> constBufferSignature;
+    std::shared_ptr<ShaderConstantManager> spShaderConstantManager;
+    try
+    {
+        spShaderConstantManager = std::shared_ptr<ShaderConstantManager>(ShaderConstantManager::GetSingleton());
+    }
+    catch (std::bad_weak_ptr&)
+    {
+        assert(false); // ShaderConstantManager wasn't Create()d.
+    }
+
     for (auto& i : uniformTokenPositions)
     {
         // Gather all sampler uniforms - these will be passed to SetupTextureBindings()
@@ -275,7 +298,7 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
                 GLType_int constBufferSize = 0;
                 glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &constBufferSize);
                 assert(static_cast<uint32_t>(constBufferSize) >= stdOffset);
-                ShaderConstantManager::GetSingleton()->SetupConstantBuffer(constBufferName, constBufferSize, constBufferSignature);
+                spShaderConstantManager->SetupConstantBuffer(constBufferName, constBufferSize, constBufferSignature);
 
                 const auto& mapEnd = m_shaderConstantToConstantBufferBindingMap.end();
                 for (auto& iterator : activeUniforms)
@@ -373,9 +396,17 @@ bool GLProgram::GetOutputBindLocation(const std::string& outputName, GLType_uint
 
 void GLProgram::CommitConstantBufferChanges() const
 {
-    for (const auto& itr : m_constantBufferBindIndicesMap)
+    try
     {
-        ShaderConstantManager::GetSingleton()->ApplyShaderConstantChanges(itr.first);
+        std::shared_ptr<ShaderConstantManager> spShaderConstantManager = std::shared_ptr<ShaderConstantManager>(ShaderConstantManager::GetSingleton());
+        for (const auto& itr : m_constantBufferBindIndicesMap)
+        {
+            spShaderConstantManager->ApplyShaderConstantChanges(itr.first);
+        }
+    }
+    catch (std::bad_weak_ptr&)
+    {
+        assert(false); // ShaderConstantManager wasn't Create()d.
     }
 }
 

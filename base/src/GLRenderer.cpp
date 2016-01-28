@@ -27,24 +27,28 @@ GLRenderer::GLRenderer(uint32_t width, uint32_t height, float nearPlaneDistance,
     m_positionTexture(0),
     m_colorTexture(0),
     m_postTexture(0),
-    m_passProg(0),
-    m_pointProg(0),
-    m_directionalProg(0),
-    m_diagnosticProg(0),
-    m_postProg(0),
-    m_currentProgram(0),
-    m_pRenderCam(nullptr)
+    m_passProg(),
+    m_pointProg(),
+    m_directionalProg(),
+    m_diagnosticProg(),
+    m_postProg(),
+    m_currentProgram(nullptr)
 {
     m_invWidth = 1.0f / m_width;
     m_invHeight = 1.0f / m_height;
 
-    ShaderConstantManager::Create();
+    try
+    {
+        m_spShaderConstantManager = ShaderConstantManager::Create();
+    }
+    catch (std::bad_alloc&)
+    {
+        assert(false); // Out of memory.
+    }
 }
 
 GLRenderer::~GLRenderer()
-{
-    ShaderConstantManager::Destroy();
-}
+{}
 
 DrawableGeometry::DrawableGeometry()
     : vertex_buffer(),
@@ -94,34 +98,32 @@ void GLRenderer::AddDrawableGeometryToList(const DrawableGeometry* geometry, Ren
 
 void GLRenderer::ApplyPerFrameShaderConstants()
 {
-    ShaderConstantManager* shaderConstantManager = ShaderConstantManager::GetSingleton();
-
     std::string perFrameConstantBuffer("PerFrame");
-    shaderConstantManager->SetShaderConstant("ufFar", perFrameConstantBuffer, &m_farPlane);
-    shaderConstantManager->SetShaderConstant("ufNear", perFrameConstantBuffer, &m_nearPlane);
-    shaderConstantManager->SetShaderConstant("uiScreenHeight", perFrameConstantBuffer, &m_height);
-    shaderConstantManager->SetShaderConstant("uiScreenWidth", perFrameConstantBuffer, &m_width);
-    shaderConstantManager->SetShaderConstant("ufInvScrHeight", perFrameConstantBuffer, &m_invHeight);
-    shaderConstantManager->SetShaderConstant("ufInvScrWidth", perFrameConstantBuffer, &m_invWidth);
+    m_spShaderConstantManager->SetShaderConstant("ufFar", perFrameConstantBuffer, &m_farPlane);
+    m_spShaderConstantManager->SetShaderConstant("ufNear", perFrameConstantBuffer, &m_nearPlane);
+    m_spShaderConstantManager->SetShaderConstant("uiScreenHeight", perFrameConstantBuffer, &m_height);
+    m_spShaderConstantManager->SetShaderConstant("uiScreenWidth", perFrameConstantBuffer, &m_width);
+    m_spShaderConstantManager->SetShaderConstant("ufInvScrHeight", perFrameConstantBuffer, &m_invHeight);
+    m_spShaderConstantManager->SetShaderConstant("ufInvScrWidth", perFrameConstantBuffer, &m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "ufMouseTexX"), mouse_dof_x*m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "ufMouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
 
-    glm::mat4 view = m_pRenderCam->GetView();
-    glm::mat4 persp = m_pRenderCam->GetPerspective();
-    shaderConstantManager->SetShaderConstant("um4View", perFrameConstantBuffer, &view); 
-    shaderConstantManager->SetShaderConstant("um4Persp", perFrameConstantBuffer, &persp);
+    glm::mat4 view = m_spRenderCam->GetView();
+    glm::mat4 persp = m_spRenderCam->GetPerspective();
+    m_spShaderConstantManager->SetShaderConstant("um4View", perFrameConstantBuffer, &view);
+    m_spShaderConstantManager->SetShaderConstant("um4Persp", perFrameConstantBuffer, &persp);
 
     float zero = 0.0f;
-    shaderConstantManager->SetShaderConstant("ufGlowmask", perFrameConstantBuffer, &zero);
+    m_spShaderConstantManager->SetShaderConstant("ufGlowmask", perFrameConstantBuffer, &zero);
 
     int32_t value = 0;
-    shaderConstantManager->SetShaderConstant("ubBloomOn", perFrameConstantBuffer, &value/*m_bloomEnabled*/);
-    shaderConstantManager->SetShaderConstant("ubToonOn", perFrameConstantBuffer, &value/*m_toonEnabled*/);
-    shaderConstantManager->SetShaderConstant("ubDOFOn", perFrameConstantBuffer, &value/*m_DOFEnabled*/);
-    shaderConstantManager->SetShaderConstant("ubDOFDebug", perFrameConstantBuffer, &value/*m_DOFDebug*/);
+    m_spShaderConstantManager->SetShaderConstant("ubBloomOn", perFrameConstantBuffer, &value/*m_bloomEnabled*/);
+    m_spShaderConstantManager->SetShaderConstant("ubToonOn", perFrameConstantBuffer, &value/*m_toonEnabled*/);
+    m_spShaderConstantManager->SetShaderConstant("ubDOFOn", perFrameConstantBuffer, &value/*m_DOFEnabled*/);
+    m_spShaderConstantManager->SetShaderConstant("ubDOFDebug", perFrameConstantBuffer, &value/*m_DOFDebug*/);
 
     value = m_displayType;
-    shaderConstantManager->SetShaderConstant("uiDisplayType", perFrameConstantBuffer, &value);
+    m_spShaderConstantManager->SetShaderConstant("uiDisplayType", perFrameConstantBuffer, &value);
 }
 
 void GLRenderer::BindVertexBuffer(GLType_uint vertexBuffer)
@@ -183,7 +185,14 @@ void GLRenderer::CreateVertexSpecification(const std::string& vertSpecName, cons
     uint32_t vertSpecNameHash = Utility::HashCString(vertSpecName.c_str());
     if (m_vertexSpecifications.find(vertSpecNameHash) == m_vertexSpecifications.end())
     {
-        m_vertexSpecifications[vertSpecNameHash] = std::make_shared<VertexSpecification>(vertexAttributeList, vertexStride);
+        try
+        {
+            m_vertexSpecifications[vertSpecNameHash] = std::make_shared<VertexSpecification>(vertexAttributeList, vertexStride);
+        }
+        catch (std::bad_alloc&)
+        {
+            assert(false);  // Out of memory.
+        }
     }
 }
 
@@ -207,7 +216,7 @@ void GLRenderer::DrawGeometry(const DrawableGeometry* geom)
 
 void GLRenderer::drawLight(glm::vec3 pos, float strength)
 {
-    glm::vec4 light = m_pRenderCam->GetView() * glm::vec4(pos, 1.0);
+    glm::vec4 light = m_spRenderCam->GetView() * glm::vec4(pos, 1.0);
     if ((light.z - strength) > -m_nearPlane) // strength = radius.
     {
         return;
@@ -216,8 +225,8 @@ void GLRenderer::drawLight(glm::vec3 pos, float strength)
     m_currentProgram->SetShaderConstant("uf4Light", light);
     m_currentProgram->SetShaderConstant("ufLightIl", strength);
 
-    //glm::vec4 left = vp * glm::vec4(pos + radius*m_pRenderCam->start_left, 1.0);
-    //glm::vec4 up = vp * glm::vec4(pos + radius*m_pRenderCam->up, 1.0);
+    //glm::vec4 left = vp * glm::vec4(pos + radius*m_spRenderCam->start_left, 1.0);
+    //glm::vec4 up = vp * glm::vec4(pos + radius*m_spRenderCam->up, 1.0);
     //glm::vec4 center = vp * glm::vec4(pos, 1.0);
 
     //left = sc * left;
@@ -242,7 +251,7 @@ void GLRenderer::drawLight(glm::vec3 pos, float strength)
 
 void GLRenderer::DrawLightList()
 {
-    SetShaderProgram(m_pointProg);
+    SetShaderProgram(m_pointProg.get());
     SetTexturesForFullScreenPass();
 
     m_pointProg->SetTexture("u_Colortex", m_colorTexture);
@@ -267,8 +276,8 @@ void GLRenderer::DrawLightList()
 
 void GLRenderer::DrawOpaqueList()
 {
-    glm::mat4 inverseView = m_pRenderCam->GetInverseView();
-    SetShaderProgram(m_passProg);
+    glm::mat4 inverseView = m_spRenderCam->GetInverseView();
+    SetShaderProgram(m_passProg.get());
 
     for (uint32_t i = 0; i < m_opaqueList.size(); ++i)
     {
@@ -401,7 +410,7 @@ void GLRenderer::InitFramebuffers()
         assert(false);
 }
 
-void GLRenderer::Initialize(const Camera* renderCamera)
+void GLRenderer::Initialize(const std::shared_ptr<Camera>& renderCamera)
 {
     InitNoise();
     InitShaders();
@@ -409,7 +418,7 @@ void GLRenderer::Initialize(const Camera* renderCamera)
     InitQuad();
     InitSphere();
 
-    m_pRenderCam = const_cast<Camera*>(renderCamera);
+    m_spRenderCam = renderCamera;
     glDepthFunc(GL_LEQUAL);
     glCullFace(GL_BACK);
     glEnable(GL_CULL_FACE);
@@ -500,26 +509,33 @@ void GLRenderer::InitShaders()
     outputBindIndices["out_f4Normal"] = 1;
     outputBindIndices["out_f4Position"] = 2;
 
-    shaderSourceAndStagePair.clear();
-    shaderSourceAndStagePair.push_back(std::make_pair(pass_vert, RenderEnums::VERT));
-    shaderSourceAndStagePair.push_back(std::make_pair(pass_frag, RenderEnums::FRAG));
-    m_passProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, meshAttributeBindIndices, outputBindIndices);
+    try
+    {
+        shaderSourceAndStagePair.clear();
+        shaderSourceAndStagePair.push_back(std::make_pair(pass_vert, RenderEnums::VERT));
+        shaderSourceAndStagePair.push_back(std::make_pair(pass_frag, RenderEnums::FRAG));
+        m_passProg = std::make_unique<GLProgram>(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, meshAttributeBindIndices, outputBindIndices);
 
-    shaderSourceAndStagePair.clear();
-    shaderSourceAndStagePair.push_back(std::make_pair(shade_vert, RenderEnums::VERT));
-    shaderSourceAndStagePair.push_back(std::make_pair(diagnostic_frag, RenderEnums::FRAG));
-    m_diagnosticProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
+        shaderSourceAndStagePair.clear();
+        shaderSourceAndStagePair.push_back(std::make_pair(shade_vert, RenderEnums::VERT));
+        shaderSourceAndStagePair.push_back(std::make_pair(diagnostic_frag, RenderEnums::FRAG));
+        m_diagnosticProg = std::make_unique<GLProgram>(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
 
-    shaderSourceAndStagePair[1] = std::make_pair(ambient_frag, RenderEnums::FRAG);
-    m_directionalProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
+        shaderSourceAndStagePair[1] = std::make_pair(ambient_frag, RenderEnums::FRAG);
+        m_directionalProg = std::make_unique<GLProgram>(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
 
-    shaderSourceAndStagePair[1] = std::make_pair(point_frag, RenderEnums::FRAG);
-    m_pointProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
+        shaderSourceAndStagePair[1] = std::make_pair(point_frag, RenderEnums::FRAG);
+        m_pointProg = std::make_unique<GLProgram>(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
 
-    shaderSourceAndStagePair.clear();
-    shaderSourceAndStagePair.push_back(std::make_pair(post_vert, RenderEnums::VERT));
-    shaderSourceAndStagePair.push_back(std::make_pair(post_frag, RenderEnums::FRAG));
-    m_postProg = new GLProgram(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
+        shaderSourceAndStagePair.clear();
+        shaderSourceAndStagePair.push_back(std::make_pair(post_vert, RenderEnums::VERT));
+        shaderSourceAndStagePair.push_back(std::make_pair(post_frag, RenderEnums::FRAG));
+        m_postProg = std::make_unique<GLProgram>(RenderEnums::RENDER_PROGRAM, shaderSourceAndStagePair, quadAttributeBindIndices, outputBindIndices);
+    }
+    catch (std::bad_alloc&)
+    {
+        assert(false); // Out of memory.
+    }
 }
 
 void GLRenderer::InitSphere()
@@ -638,12 +654,12 @@ void GLRenderer::Render()
 void GLRenderer::RenderDirectionalAndAmbientLighting()
 {
     glm::vec4 dir_light(0.0, 1.0, 1.0, 0.0);
-    dir_light = m_pRenderCam->GetView() * dir_light;
+    dir_light = m_spRenderCam->GetView() * dir_light;
     dir_light = glm::normalize(dir_light);
     dir_light.w = 1.0f; // strength
     glm::vec3 ambient(0.04f);
 
-    SetShaderProgram(m_directionalProg);
+    SetShaderProgram(m_directionalProg.get());
     SetTexturesForFullScreenPass();
     m_directionalProg->SetTexture("u_Colortex", m_colorTexture);
     m_directionalProg->SetShaderConstant("uf4DirecLightDir", dir_light);
@@ -656,7 +672,7 @@ void GLRenderer::RenderDirectionalAndAmbientLighting()
 
 void GLRenderer::RenderFramebuffers()
 {
-    SetShaderProgram(m_diagnosticProg);
+    SetShaderProgram(m_diagnosticProg.get());
     SetTexturesForFullScreenPass();
     m_diagnosticProg->SetTexture("u_Colortex", m_colorTexture);
 
@@ -667,7 +683,7 @@ void GLRenderer::RenderFramebuffers()
 
 void GLRenderer::RenderPostProcessEffects()
 {
-    SetShaderProgram(m_postProg);
+    SetShaderProgram(m_postProg.get());
     SetTexturesForFullScreenPass();
     m_postProg->SetTexture("u_Posttex", m_postTexture);
 

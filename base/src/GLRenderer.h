@@ -54,6 +54,7 @@ public:
 
 class Camera;
 class GLProgram;
+class ShaderConstantManager;
 struct VertexAttribute;
 class GLRenderer
 {
@@ -78,17 +79,20 @@ class GLRenderer
     GLType_uint m_postTexture;
 
     // Techniques
-    GLProgram* m_passProg;
-    GLProgram* m_pointProg;
-    GLProgram* m_directionalProg;
-    GLProgram* m_diagnosticProg;
-    GLProgram* m_postProg;
+    std::unique_ptr<GLProgram> m_passProg;
+    std::unique_ptr<GLProgram> m_pointProg;
+    std::unique_ptr<GLProgram> m_directionalProg;
+    std::unique_ptr<GLProgram> m_diagnosticProg;
+    std::unique_ptr<GLProgram> m_postProg;
+    
     GLProgram* m_currentProgram;
+
+    std::shared_ptr<ShaderConstantManager> m_spShaderConstantManager;
 
     DrawableGeometry m_QuadGeometry;
     DrawableGeometry m_SphereGeometry;
 
-    const Camera* m_pRenderCam;
+    std::shared_ptr<const Camera> m_spRenderCam;
 
     // FBOs
     std::vector<GLType_uint> m_FBO;
@@ -136,7 +140,7 @@ public:
     GLRenderer(uint32_t width, uint32_t height, float nearPlaneDistance, float farPlaneDistance);
     ~GLRenderer();
 
-    void Initialize(const Camera* renderCamera);
+    void Initialize(const std::shared_ptr<Camera>& renderCamera);
 
     void MakeDrawableModel(const Geometry& model, DrawableGeometry& out, const glm::mat4& modelMatrix = glm::mat4());
     void CreateVertexSpecification(const std::string& vertSpecName, const std::vector<VertexAttribute>& vertexAttributeList, uint32_t vertexStride);
