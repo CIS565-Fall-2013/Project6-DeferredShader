@@ -143,7 +143,7 @@ public:
     void Initialize(const std::shared_ptr<Camera>& renderCamera);
 
     void MakeDrawableModel(const Geometry& model, DrawableGeometry& out, const glm::mat4& modelMatrix = glm::mat4());
-    void CreateVertexSpecification(const std::string& vertSpecName, const std::vector<VertexAttribute>& vertexAttributeList, uint32_t vertexStride);
+    std::weak_ptr<VertexSpecification> CreateVertexSpecification(const std::string& vertSpecName, const std::vector<VertexAttribute>& vertexAttributeList, uint32_t vertexStride);
 
     const DrawableGeometry& GetQuadGeometry() const { return m_QuadGeometry; }
     const DrawableGeometry& GetSphereGeometry() const { return m_SphereGeometry; }

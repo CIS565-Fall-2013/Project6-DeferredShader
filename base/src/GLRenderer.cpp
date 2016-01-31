@@ -180,7 +180,7 @@ void GLRenderer::CreateBuffersAndUploadData(const Geometry& model, DrawableGeome
     glNamedBufferStorage(out.index_buffer, out.num_indices * sizeof(GLuint), &model.indices[0], 0);
 }
 
-void GLRenderer::CreateVertexSpecification(const std::string& vertSpecName, const std::vector<VertexAttribute>& vertexAttributeList, uint32_t vertexStride)
+std::weak_ptr<VertexSpecification> GLRenderer::CreateVertexSpecification(const std::string& vertSpecName, const std::vector<VertexAttribute>& vertexAttributeList, uint32_t vertexStride)
 {
     uint32_t vertSpecNameHash = Utility::HashCString(vertSpecName.c_str());
     if (m_vertexSpecifications.find(vertSpecNameHash) == m_vertexSpecifications.end())
@@ -194,6 +194,8 @@ void GLRenderer::CreateVertexSpecification(const std::string& vertSpecName, cons
             assert(false);  // Out of memory.
         }
     }
+
+    return m_vertexSpecifications[vertSpecNameHash];
 }
 
 void GLRenderer::DrawAlphaMaskedList()
@@ -478,8 +480,8 @@ void GLRenderer::InitQuad()
         texCoordAttribute.bytesFromStartOfVertexData = offsetof(Vertex, texcoord);
         quadVertexAttribList.push_back(texCoordAttribute);
     }
-    CreateVertexSpecification(quadVertSpecName, quadVertexAttribList, sizeof(Vertex));
-    m_QuadGeometry.vertexSpecification = m_vertexSpecifications[Utility::HashCString(quadVertSpecName.c_str())];
+
+    m_QuadGeometry.vertexSpecification = CreateVertexSpecification(quadVertSpecName, quadVertexAttribList, sizeof(Vertex));
 }
 
 void GLRenderer::InitShaders()
@@ -594,8 +596,8 @@ void GLRenderer::InitSphere()
         texCoordAttribute.bytesFromStartOfVertexData = offsetof(Vertex, texcoord);
         sphereVertexAttribList.push_back(texCoordAttribute);
     }
-    CreateVertexSpecification(sphereVertSpecName, sphereVertexAttribList, sizeof(Vertex));
-    m_SphereGeometry.vertexSpecification = m_vertexSpecifications[Utility::HashCString(sphereVertSpecName.c_str())];
+    
+    m_SphereGeometry.vertexSpecification = CreateVertexSpecification(sphereVertSpecName, sphereVertexAttribList, sizeof(Vertex));
 }
 
 void GLRenderer::MakeDrawableModel(const Geometry& model, DrawableGeometry& out, const glm::mat4& modelMatrix)
