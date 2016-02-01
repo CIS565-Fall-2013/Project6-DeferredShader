@@ -27,6 +27,8 @@ sph/output/*
 
 [Dd]ebug/
 [Rr]elease/
+[Dd]ebug_2015/
+[Rr]elease_2015/
 x64/
 build/
 [Bb]in/
