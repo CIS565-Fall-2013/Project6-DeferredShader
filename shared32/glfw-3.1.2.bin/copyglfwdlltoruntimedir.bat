@@ -1,10 +1,10 @@
 if "%1"=="vs2013" ( 
 	set srcdir=lib-vc2013 
-	set destdir=runtime 
+	set destdir=runtime_2013
 ) else (
 	if "%1"=="vs2015" ( 
 		set srcdir=lib-vc2015 
-		set destdir=runtime_2015 
+		set destdir=runtime 
 	) else (
 		echo Incorrect usage. Only vs2013 or vs2015 supported.
 		exit 1

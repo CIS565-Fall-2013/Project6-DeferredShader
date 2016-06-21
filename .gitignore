@@ -27,12 +27,13 @@ sph/output/*
 
 [Dd]ebug/
 [Rr]elease/
-[Dd]ebug_2015/
-[Rr]elease_2015/
+[Dd]ebug_2013/
+[Rr]elease_2013/
 x64/
 build/
 [Bb]in/
 [Oo]bj/
+base/runtime*
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
@@ -164,4 +165,3 @@ $RECYCLE.BIN/
 # Vim stuff
 *.swp
 *.dll
-base/runtime/logfile.txt
