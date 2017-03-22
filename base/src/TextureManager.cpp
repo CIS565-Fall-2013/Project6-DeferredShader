@@ -26,7 +26,7 @@ namespace
     {
         int32_t numExts;
         glGetIntegerv(GL_NUM_EXTENSIONS, &numExts);
-        for (uint32_t i = 0; i < numExts; ++i)
+        for (int32_t i = 0; i < numExts; ++i)
         {
             if (strstr(reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i)), "GL_ARB_texture_non_power_of_two"))
             {
@@ -41,7 +41,7 @@ namespace
     {
         int32_t numExts;
         glGetIntegerv(GL_NUM_EXTENSIONS, &numExts);
-        for (uint32_t i = 0; i < numExts; ++i)
+        for (int32_t i = 0; i < numExts; ++i)
         {
             if (strstr(reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i)), "GL_EXT_texture_compression_s3tc"))
             {
