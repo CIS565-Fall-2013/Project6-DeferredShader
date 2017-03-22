@@ -32,7 +32,8 @@ GLRenderer::GLRenderer(uint32_t width, uint32_t height, float nearPlaneDistance,
     m_directionalProg(),
     m_diagnosticProg(),
     m_postProg(),
-    m_currentProgram(nullptr)
+    m_currentProgram(nullptr),
+    m_perFrameConstBufIndex(0)
 {
     m_invWidth = 1.0f / m_width;
     m_invHeight = 1.0f / m_height;
@@ -98,32 +99,32 @@ void GLRenderer::AddDrawableGeometryToList(const DrawableGeometry* geometry, Ren
 
 void GLRenderer::ApplyPerFrameShaderConstants()
 {
-    std::string perFrameConstantBuffer("PerFrame");
-    m_spShaderConstantManager->SetShaderConstant("ufFar", perFrameConstantBuffer, &m_farPlane);
-    m_spShaderConstantManager->SetShaderConstant("ufNear", perFrameConstantBuffer, &m_nearPlane);
-    m_spShaderConstantManager->SetShaderConstant("uiScreenHeight", perFrameConstantBuffer, &m_height);
-    m_spShaderConstantManager->SetShaderConstant("uiScreenWidth", perFrameConstantBuffer, &m_width);
-    m_spShaderConstantManager->SetShaderConstant("ufInvScrHeight", perFrameConstantBuffer, &m_invHeight);
-    m_spShaderConstantManager->SetShaderConstant("ufInvScrWidth", perFrameConstantBuffer, &m_invWidth);
+    using ShaderResourceReferences::perFrameShaderConstants;
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.ufFar, m_perFrameConstBufIndex, &m_farPlane);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.ufNear, m_perFrameConstBufIndex, &m_nearPlane);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.uiScreenHeight, m_perFrameConstBufIndex, &m_height);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.uiScreenWidth, m_perFrameConstBufIndex, &m_width);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.ufInvScrHeight, m_perFrameConstBufIndex, &m_invHeight);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.ufInvScrWidth, m_perFrameConstBufIndex, &m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "ufMouseTexX"), mouse_dof_x*m_invWidth);
     //glUniform1f(glGetUniformLocation(m_postProg, "ufMouseTexY"), abs(static_cast<int32_t>(m_height)-mouse_dof_y)*m_invHeight);
 
     glm::mat4 view = m_spRenderCam->GetView();
     glm::mat4 persp = m_spRenderCam->GetPerspective();
-    m_spShaderConstantManager->SetShaderConstant("um4View", perFrameConstantBuffer, &view);
-    m_spShaderConstantManager->SetShaderConstant("um4Persp", perFrameConstantBuffer, &persp);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.um4View, m_perFrameConstBufIndex, &view);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.um4Persp, m_perFrameConstBufIndex, &persp);
 
     float zero = 0.0f;
-    m_spShaderConstantManager->SetShaderConstant("ufGlowmask", perFrameConstantBuffer, &zero);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.ufGlowmask, m_perFrameConstBufIndex, &zero);
 
     int32_t value = 0;
-    m_spShaderConstantManager->SetShaderConstant("ubBloomOn", perFrameConstantBuffer, &value/*m_bloomEnabled*/);
-    m_spShaderConstantManager->SetShaderConstant("ubToonOn", perFrameConstantBuffer, &value/*m_toonEnabled*/);
-    m_spShaderConstantManager->SetShaderConstant("ubDOFOn", perFrameConstantBuffer, &value/*m_DOFEnabled*/);
-    m_spShaderConstantManager->SetShaderConstant("ubDOFDebug", perFrameConstantBuffer, &value/*m_DOFDebug*/);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.ubBloomOn, m_perFrameConstBufIndex, &value/*m_bloomEnabled*/);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.ubToonOn, m_perFrameConstBufIndex, &value/*m_toonEnabled*/);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.ubDOFOn, m_perFrameConstBufIndex, &value/*m_DOFEnabled*/);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.ubDOFDebug, m_perFrameConstBufIndex, &value/*m_DOFDebug*/);
 
     value = m_displayType;
-    m_spShaderConstantManager->SetShaderConstant("uiDisplayType", perFrameConstantBuffer, &value);
+    m_spShaderConstantManager->SetShaderConstant(perFrameShaderConstants.uiDisplayType, m_perFrameConstBufIndex, &value);
 }
 
 void GLRenderer::BindVertexBuffer(GLType_uint vertexBuffer)
@@ -224,8 +225,10 @@ void GLRenderer::drawLight(glm::vec3 pos, float strength)
         return;
     }
     light.w = strength;
-    m_currentProgram->SetShaderConstant("uf4Light", light);
-    m_currentProgram->SetShaderConstant("ufLightIl", strength);
+
+    using ShaderResourceReferences::lightPassShaderConstants;
+    m_currentProgram->SetShaderConstant(lightPassShaderConstants.uf4Light, light);
+    m_currentProgram->SetShaderConstant(lightPassShaderConstants.ufLightIl, strength);
 
     //glm::vec4 left = vp * glm::vec4(pos + radius*m_spRenderCam->start_left, 1.0);
     //glm::vec4 up = vp * glm::vec4(pos + radius*m_spRenderCam->up, 1.0);
@@ -256,22 +259,24 @@ void GLRenderer::DrawLightList()
     SetShaderProgram(m_pointProg.get());
     SetTexturesForFullScreenPass();
 
-    m_pointProg->SetTexture("u_Colortex", m_colorTexture);
-    m_pointProg->SetShaderConstant("uf3LightCol", Colours::yellow);
+    m_pointProg->SetTexture(ShaderResourceReferences::fullScreenPassTextures.u_Colortex, m_colorTexture);
+
+    using ShaderResourceReferences::lightPassShaderConstants;
+    m_pointProg->SetShaderConstant(lightPassShaderConstants.uf3LightCol, Colours::yellow);
     glDepthMask(GL_FALSE);
     drawLight(glm::vec3(5.4, -0.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -0.5, 3.0), 1.0);
-    m_pointProg->SetShaderConstant("uf3LightCol", Colours::orange);
+    m_pointProg->SetShaderConstant(lightPassShaderConstants.uf3LightCol, Colours::orange);
     drawLight(glm::vec3(5.4, -2.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -2.5, 3.0), 1.0);
-    m_pointProg->SetShaderConstant("uf3LightCol", Colours::yellow);
+    m_pointProg->SetShaderConstant(lightPassShaderConstants.uf3LightCol, Colours::yellow);
     drawLight(glm::vec3(5.4, -4.5, 3.0), 1.0);
     drawLight(glm::vec3(0.2, -4.5, 3.0), 1.0);
 
-    m_pointProg->SetShaderConstant("uf3LightCol", Colours::red);
+    m_pointProg->SetShaderConstant(lightPassShaderConstants.uf3LightCol, Colours::red);
     drawLight(glm::vec3(2.5, -1.2, 0.5), 2.5);
 
-    m_pointProg->SetShaderConstant("uf3LightCol", Colours::blue);
+    m_pointProg->SetShaderConstant(lightPassShaderConstants.uf3LightCol, Colours::blue);
     drawLight(glm::vec3(2.5, -5.0, 4.2), 2.5);
     glDepthMask(GL_TRUE);
 }
@@ -281,16 +286,19 @@ void GLRenderer::DrawOpaqueList()
     glm::mat4 inverseView = m_spRenderCam->GetInverseView();
     SetShaderProgram(m_passProg.get());
 
+    using ShaderResourceReferences::geometryPassShaderConstants;
+    using ShaderResourceReferences::geometryPassTextures;
+
     for (uint32_t i = 0; i < m_opaqueList.size(); ++i)
     {
         glm::mat4 inverse_transposed = glm::transpose(m_opaqueList[i]->inverseModelMat * inverseView);
-        m_passProg->SetShaderConstant("um4Model", m_opaqueList[i]->modelMat);
-        m_passProg->SetShaderConstant("um4InvTrans", inverse_transposed);
-        m_passProg->SetShaderConstant("uf3Color", m_opaqueList[i]->color);
+        m_passProg->SetShaderConstant(geometryPassShaderConstants.um4Model, m_opaqueList[i]->modelMat);
+        m_passProg->SetShaderConstant(geometryPassShaderConstants.um4InvTrans, inverse_transposed);
+        m_passProg->SetShaderConstant(geometryPassShaderConstants.uf3Color, m_opaqueList[i]->color);
 
-        m_passProg->SetTexture("t2DDiffuse", m_opaqueList[i]->diffuse_tex);
-        m_passProg->SetTexture("t2DNormal", m_opaqueList[i]->normal_tex);
-        m_passProg->SetTexture("t2DSpecular", m_opaqueList[i]->specular_tex);
+        m_passProg->SetTexture(geometryPassTextures.t2DDiffuse, m_opaqueList[i]->diffuse_tex);
+        m_passProg->SetTexture(geometryPassTextures.t2DNormal, m_opaqueList[i]->normal_tex);
+        m_passProg->SetTexture(geometryPassTextures.t2DSpecular, m_opaqueList[i]->specular_tex);
 
         DrawGeometry(m_opaqueList[i]);
     }
@@ -538,6 +546,9 @@ void GLRenderer::InitShaders()
     {
         assert(false); // Out of memory.
     }
+
+    m_perFrameConstBufIndex = Utility::HashCString("PerFrame");
+    ShaderResourceReferences::Initialize();
 }
 
 void GLRenderer::InitSphere()
@@ -663,9 +674,11 @@ void GLRenderer::RenderDirectionalAndAmbientLighting()
 
     SetShaderProgram(m_directionalProg.get());
     SetTexturesForFullScreenPass();
-    m_directionalProg->SetTexture("u_Colortex", m_colorTexture);
-    m_directionalProg->SetShaderConstant("uf4DirecLightDir", dir_light);
-    m_directionalProg->SetShaderConstant("uf3AmbientContrib", ambient);
+    m_directionalProg->SetTexture(ShaderResourceReferences::fullScreenPassTextures.u_Colortex, m_colorTexture);
+
+    using ShaderResourceReferences::lightPassShaderConstants;
+    m_directionalProg->SetShaderConstant(lightPassShaderConstants.uf4DirecLightDir, dir_light);
+    m_directionalProg->SetShaderConstant(lightPassShaderConstants.uf3AmbientContrib, ambient);
 
     glDepthMask(GL_FALSE);
     RenderQuad();
@@ -676,7 +689,7 @@ void GLRenderer::RenderFramebuffers()
 {
     SetShaderProgram(m_diagnosticProg.get());
     SetTexturesForFullScreenPass();
-    m_diagnosticProg->SetTexture("u_Colortex", m_colorTexture);
+    m_diagnosticProg->SetTexture(ShaderResourceReferences::fullScreenPassTextures.u_Colortex, m_colorTexture);
 
     glDepthMask(GL_FALSE);
     RenderQuad();
@@ -687,7 +700,7 @@ void GLRenderer::RenderPostProcessEffects()
 {
     SetShaderProgram(m_postProg.get());
     SetTexturesForFullScreenPass();
-    m_postProg->SetTexture("u_Posttex", m_postTexture);
+    m_postProg->SetTexture(ShaderResourceReferences::fullScreenPassTextures.u_Posttex, m_postTexture);
 
     glDepthMask(GL_FALSE);
     RenderQuad();
@@ -713,11 +726,12 @@ void GLRenderer::SetShaderProgram(GLProgram* currentlyUsedProgram)
 
 void GLRenderer::SetTexturesForFullScreenPass()
 {
-    m_currentProgram->SetTexture("u_Depthtex", m_depthTexture);
-    m_currentProgram->SetTexture("u_Normaltex", m_normalTexture);
-    m_currentProgram->SetTexture("u_Positiontex", m_positionTexture);
-    m_currentProgram->SetTexture("u_RandomNormaltex", m_randomNormalTexture);
-    m_currentProgram->SetTexture("u_RandomScalartex", m_randomScalarTexture);
+    using ShaderResourceReferences::fullScreenPassTextures;
+    m_currentProgram->SetTexture(fullScreenPassTextures.u_Depthtex, m_depthTexture);
+    m_currentProgram->SetTexture(fullScreenPassTextures.u_Normaltex, m_normalTexture);
+    m_currentProgram->SetTexture(fullScreenPassTextures.u_Positiontex, m_positionTexture);
+    m_currentProgram->SetTexture(fullScreenPassTextures.u_RandomNormaltex, m_randomNormalTexture);
+    m_currentProgram->SetTexture(fullScreenPassTextures.u_RandomScalartex, m_randomScalarTexture);
 }
 
 void GLRenderer::SetVertexSpecification(const std::weak_ptr<VertexSpecification>& vertexSpecification)

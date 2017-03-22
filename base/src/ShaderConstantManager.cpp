@@ -28,9 +28,9 @@ ShaderConstantManager::ShaderConstantManager()
 
 ShaderConstantManager::~ShaderConstantManager()
 {
-    GLType_uint* constantBufferIds = new GLType_uint[m_constantBufferNameToDataMap.size()];
+    GLType_uint* constantBufferIds = new GLType_uint[m_constantBufferIndexToDataMap.size()];
     uint32_t i = 0;
-    for (auto& iterator : m_constantBufferNameToDataMap)
+    for (auto& iterator : m_constantBufferIndexToDataMap)
     {
         //iterator->second->clear();
         if (iterator.second)
@@ -130,10 +130,11 @@ uint32_t ShaderConstantManager::GetSizeForType(ShaderConstantManager::SupportedT
     }
 }
 
-void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName, int32_t constantBufferSize, std::vector<ShaderConstantSignature>& constantBufferSignature)
+ConstantBufferIndex ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName, int32_t constantBufferSize, std::vector<ShaderConstantSignature>& constantBufferSignature)
 {
-    auto& mapItr = m_constantBufferNameToDataMap.find(Utility::HashCString(constantBufferName.c_str()));
-    if (mapItr != m_constantBufferNameToDataMap.end())
+    ConstantBufferIndex cbIndex = Utility::HashCString(constantBufferName.c_str());
+    auto& mapItr = m_constantBufferIndexToDataMap.find(cbIndex);
+    if (mapItr != m_constantBufferIndexToDataMap.end())
     {
         ConstantBuffer* existingBuffer = mapItr->second;
 
@@ -158,17 +159,15 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
         }
 
         if (i == constantBufferSignature.size())    // Signatures match. Don't create a duplicate. 
-            return;
+            return cbIndex;
         
         // If not, try again with resolver integer appended to buffer name.
-        std::ostringstream newConstantBufferName;
         do
         {
-            newConstantBufferName.clear();
+            std::ostringstream newConstantBufferName;
             newConstantBufferName << constantBufferName << resolver++;
-        } while (m_constantBufferNameToDataMap.count(Utility::HashCString(newConstantBufferName.str().c_str())) != 0); // Currently, it'd be impossible for count to be != 0 here.
-
-        constantBufferName = newConstantBufferName.str();
+            cbIndex = Utility::HashCString(newConstantBufferName.str().c_str());
+        } while (m_constantBufferIndexToDataMap.count(cbIndex) != 0); // Currently, it'd be impossible for count to be != 0 here.
     }
 
     ConstantBuffer* newConstantBuffer = new ConstantBuffer();
@@ -181,21 +180,19 @@ void ShaderConstantManager::SetupConstantBuffer(std::string& constantBufferName,
     assert(newConstantBuffer->m_data != nullptr);
     newConstantBuffer->m_size = constantBufferSize;
     memset(newConstantBuffer->m_data, 0, constantBufferSize);
-    m_constantBufferNameToDataMap[Utility::HashCString(constantBufferName.c_str())] = newConstantBuffer;
+    m_constantBufferIndexToDataMap[cbIndex] = newConstantBuffer;
 
     glCreateBuffers(1, &newConstantBuffer->m_id);
     glNamedBufferStorage(newConstantBuffer->m_id, newConstantBuffer->m_size, newConstantBuffer->m_data, GL_MAP_WRITE_BIT); // We'll use unsynchronized MapBufferRange to modify the data in its data store.
+    return cbIndex;
 }
 
-void ShaderConstantManager::SetShaderConstant(const char* constantName, const std::string& constantBufferName, const void* value_in)
+void ShaderConstantManager::SetShaderConstant(ShaderConstantReference constantHandle, ConstantBufferIndex indexOfConstantBuffer, const void* value_in)
 {
-    if (!constantName)
-        return;
-
     try
     {
-        ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(Utility::HashCString(constantBufferName.c_str()));
-        const ShaderConstantSignature& constantSignature = constantBuffer->m_signature.at(Utility::HashCString(constantName));
+        ConstantBuffer* constantBuffer = m_constantBufferIndexToDataMap.at(indexOfConstantBuffer);
+        const ShaderConstantSignature& constantSignature = constantBuffer->m_signature.at(constantHandle);
         char* data = reinterpret_cast<char*>(constantBuffer->m_data);
         data += constantSignature.offset;
         const char* value_in_bytePtr = reinterpret_cast<const char*>(value_in);
@@ -268,11 +265,11 @@ void ShaderConstantManager::SetShaderConstant(const char* constantName, const st
     }
 }
 
-void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& constantBufferName /* = std::string() */) const
+void ShaderConstantManager::ApplyShaderConstantChanges(ConstantBufferIndex indexOfCBToApplyChangesTo) const
 {
-    if (constantBufferName.length() == 0)
+    if (indexOfCBToApplyChangesTo == 0)
     {
-        for (auto& itr : m_constantBufferNameToDataMap)
+        for (auto& itr : m_constantBufferIndexToDataMap)
         {
             if (itr.second->m_dirty)
             {
@@ -287,7 +284,7 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
     {
         try
         {
-            ConstantBuffer* constantBuffer = m_constantBufferNameToDataMap.at(Utility::HashCString(constantBufferName.c_str()));
+            ConstantBuffer* constantBuffer = m_constantBufferIndexToDataMap.at(indexOfCBToApplyChangesTo);
             if (constantBuffer->m_dirty)
             {
                 void* pDataStore = glMapNamedBufferRange(constantBuffer->m_id, 0, constantBuffer->m_size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
@@ -303,11 +300,11 @@ void ShaderConstantManager::ApplyShaderConstantChanges(const std::string& consta
     }
 }
 
-GLType_uint ShaderConstantManager::GetConstantBufferObject(const std::string& constantBufferName) const
+GLType_uint ShaderConstantManager::GetConstantBufferObject(ConstantBufferIndex constantBufferIndex) const
 {
     try
     {
-        ConstantBuffer* buffer = m_constantBufferNameToDataMap.at(Utility::HashCString(constantBufferName.c_str()));
+        ConstantBuffer* buffer = m_constantBufferIndexToDataMap.at(constantBufferIndex);
         assert(buffer != nullptr);
         return buffer->m_id;
     }

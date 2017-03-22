@@ -42,6 +42,9 @@
     <ClCompile Include="..\..\..\src\VertexSpecification.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\ShaderResourceReferences.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\Utility.h">
@@ -75,6 +78,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\VertexSpecification.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ShaderResourceReferences.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

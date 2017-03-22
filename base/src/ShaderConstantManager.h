@@ -6,12 +6,13 @@
 #include <memory>
 
 #include "Common.h"
+#include "ShaderResourceReferences.h"
 
 struct ShaderConstantSignature;
 class ConstantBuffer;
 class ShaderConstantManager
 {
-    std::unordered_map<uint32_t, ConstantBuffer*> m_constantBufferNameToDataMap;
+    std::unordered_map<uint32_t, ConstantBuffer*> m_constantBufferIndexToDataMap;
     static std::weak_ptr<ShaderConstantManager> singleton;
     static uint32_t resolver;
 
@@ -29,10 +30,10 @@ public:
     
     ~ShaderConstantManager();
 
-    void SetupConstantBuffer(std::string& constantBufferName, int32_t constantBufferSize, std::vector<ShaderConstantSignature>& constantBufferSignature);
-    void SetShaderConstant(const char* constantName, const std::string& constantBufferName, const void* value_in);
-    void ApplyShaderConstantChanges(const std::string& constantBufferName = std::string()) const;
-    GLType_uint GetConstantBufferObject(const std::string& constantBufferName) const;
+    ConstantBufferIndex SetupConstantBuffer(std::string& constantBufferName, int32_t constantBufferSize, std::vector<ShaderConstantSignature>& constantBufferSignature);
+    void SetShaderConstant(ShaderConstantReference constantHandle, ConstantBufferIndex indexOfConstantBuffer, const void* value_in);
+    void ApplyShaderConstantChanges(ConstantBufferIndex indexOfCBToApplyChangesTo) const;
+    GLType_uint GetConstantBufferObject(ConstantBufferIndex cbIndex) const;
     
     static std::shared_ptr<ShaderConstantManager> Create(); // Caller gets the owning reference.
     static std::weak_ptr<ShaderConstantManager>& GetSingleton();

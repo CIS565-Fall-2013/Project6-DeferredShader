@@ -100,14 +100,13 @@ void GLProgram::SetActive() const
     }
 }
 
-void GLProgram::SetShaderConstant(const char* constantName, const void* value_in) const
+void GLProgram::SetShaderConstant(ShaderConstantReference constantHandle, const void* value_in) const
 {
-    assert(constantName != nullptr);
     try
     {
-        const std::string& mappedConstantBuffer = m_shaderConstantToConstantBufferBindingMap.at(Utility::HashCString(constantName));
+        ConstantBufferIndex indexOfConstantBuffer = m_shaderConstantToConstantBufferBindingMap.at(constantHandle);
         std::shared_ptr<ShaderConstantManager> spShaderConstantManager = std::shared_ptr<ShaderConstantManager>(ShaderConstantManager::GetSingleton());
-        spShaderConstantManager->SetShaderConstant(constantName, mappedConstantBuffer, value_in);
+        spShaderConstantManager->SetShaderConstant(constantHandle, indexOfConstantBuffer, value_in);
     }
     catch (std::out_of_range&)
     {
@@ -193,8 +192,8 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
         {
             // This is a constant buffer.
             constBufferName = tokenList[i + 1];
-            GLType_uint constBufferIndex = glGetUniformBlockIndex(m_id, constBufferName.c_str());
-            if (constBufferIndex != GL_INVALID_INDEX)   // Check if the constant buffer exists in this program.
+            GLType_uint constBufferBlockIndex = glGetUniformBlockIndex(m_id, constBufferName.c_str());
+            if (constBufferBlockIndex != GL_INVALID_INDEX)   // Check if the constant buffer exists in this program.
             {
                 bool stdLayout = false;
                 for (int32_t previous = i - 1; previous >= 0; --previous)
@@ -296,30 +295,30 @@ void GLProgram::SetupTextureBindingsAndConstantBuffers(const std::string& shader
                 }
 
                 GLType_int constBufferSize = 0;
-                glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &constBufferSize);
+                glGetActiveUniformBlockiv(m_id, constBufferBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &constBufferSize);
                 assert(static_cast<uint32_t>(constBufferSize) >= stdOffset);
-                spShaderConstantManager->SetupConstantBuffer(constBufferName, constBufferSize, constBufferSignature);
+                auto indexOfConstantBuffer = spShaderConstantManager->SetupConstantBuffer(constBufferName, constBufferSize, constBufferSignature);
 
                 const auto& mapEnd = m_shaderConstantToConstantBufferBindingMap.end();
                 for (auto& iterator : activeUniforms)
                 {
-                    uint32_t uniformHashValue = Utility::HashCString(iterator.c_str());
-                    const auto& mapItr = m_shaderConstantToConstantBufferBindingMap.find(uniformHashValue);
+                    ShaderConstantReference shaderConstantHandle = Utility::HashCString(iterator.c_str());
+                    const auto& mapItr = m_shaderConstantToConstantBufferBindingMap.find(shaderConstantHandle);
                     if (mapItr != mapEnd)
                     {
-                        if (mapItr->second.compare(constBufferName) != 0)
+                        if (mapItr->second != indexOfConstantBuffer)
                             assert(false);  // This constant is already mapped to a different constant buffer.
                     }
                     else
                     {
-                        m_shaderConstantToConstantBufferBindingMap[uniformHashValue] = constBufferName;
+                        m_shaderConstantToConstantBufferBindingMap[shaderConstantHandle] = indexOfConstantBuffer;
                     }
                 }
 
                 GLType_int constBufferBindPoint = -1;
-                glGetActiveUniformBlockiv(m_id, constBufferIndex, GL_UNIFORM_BLOCK_BINDING, &constBufferBindPoint);
+                glGetActiveUniformBlockiv(m_id, constBufferBlockIndex, GL_UNIFORM_BLOCK_BINDING, &constBufferBindPoint);
                 assert(constBufferBindPoint > -1);
-                m_constantBufferBindIndicesMap[constBufferName] = constBufferBindPoint;
+                m_constantBufferBindIndicesMap[indexOfConstantBuffer] = constBufferBindPoint;
             }
         }
 
@@ -349,13 +348,12 @@ void GLProgram::SetupTextureBindings(const std::vector<std::string>& textureName
     }
 }
 
-void GLProgram::SetTexture(const char* textureName, GLType_uint textureObject)
+void GLProgram::SetTexture(TextureReference textureHandle, GLType_uint textureObject)
 {
-    assert(textureName != nullptr);
-    auto& mapItr = m_textureBindIndicesMap.find(Utility::HashCString(textureName));
+    auto& mapItr = m_textureBindIndicesMap.find(textureHandle);
     if (mapItr != m_textureBindIndicesMap.end())
     {
-        std::pair<GLType_uint, GLType_uint>& textureBindPoint = mapItr->second;
+        auto& textureBindPoint = mapItr->second;
         textureBindPoint.second = textureObject;
     }
     else

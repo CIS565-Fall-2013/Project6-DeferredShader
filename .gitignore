@@ -165,3 +165,7 @@ $RECYCLE.BIN/
 # Vim stuff
 *.swp
 *.dll
+
+# VS 2015+ Intellisense
+*.db
+*.opendb

@@ -6,6 +6,7 @@
 #include <map>
 
 #include "Common.h"
+#include "ShaderResourceReferences.h"
 
 struct Vertex
 {
@@ -106,6 +107,8 @@ class GLRenderer
     std::shared_ptr<VertexSpecification> m_activeVertexSpecification;
     GLType_uint m_activeVertexBuffer;
     GLType_uint m_activeIndexBuffer;
+
+    ConstantBufferIndex m_perFrameConstBufIndex;
 
     void InitShaders();
     void InitNoise();
